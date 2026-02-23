@@ -1,0 +1,1 @@
+{"version":3,"file":"require-privileges.decorator.js","sourceRoot":"","sources":["../../../../../apps/api/src/rbac/require-privileges.decorator.ts"],"names":[],"mappings":";;;AAAA,2CAA4C;AAG/B,QAAA,sBAAsB,GAAG,oBAAoB,CAAA;AAEnD,MAAM,iBAAiB,GAAG,CAAC,UAA0B,EAAE,EAAE,CAC9D,IAAA,oBAAW,EAAC,8BAAsB,EAAE,UAAU,CAAC,CAAA;AADpC,QAAA,iBAAiB,qBACmB"}

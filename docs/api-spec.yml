@@ -1,0 +1,1462 @@
+openapi: 3.0.3
+info:
+  title: JTrack API
+  version: 1.0.0
+  description: |
+    REST API for JTrack CRM (field service, location-scoped multi-tenancy, offline sync).
+servers:
+  - url: http://localhost:3001
+tags:
+  - name: Auth
+  - name: Locations
+  - name: Users
+  - name: Tickets
+  - name: Comments
+  - name: Attachments
+  - name: Payments
+  - name: Sync
+  - name: RBAC
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login by email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Access token + user payload
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie `refresh_token`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      description: |
+        Refresh token is read from `refresh_token` cookie first, then from request body.
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshInput'
+      responses:
+        '200':
+          description: New access token + user payload
+          headers:
+            Set-Cookie:
+              description: Updated HttpOnly cookie `refresh_token`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Missing/invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout current user
+      responses:
+        '200':
+          description: Logout completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '401':
+          description: Missing/invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Missing/invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /locations:
+    get:
+      tags: [Locations]
+      summary: List locations available for current user
+      responses:
+        '200':
+          description: Location list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationWithMembership'
+    post:
+      tags: [Locations]
+      summary: Create location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLocationInput'
+      responses:
+        '200':
+          description: Created location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /locations/{id}:
+    patch:
+      tags: [Locations]
+      summary: Update location
+      parameters:
+        - $ref: '#/components/parameters/PathId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationInput'
+      responses:
+        '200':
+          description: Updated location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '403':
+          description: Only owner/admin can update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Locations]
+      summary: Delete location
+      parameters:
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '403':
+          description: Only owner/admin can delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users in location
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      responses:
+        '200':
+          description: User list for location
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserWithMembership'
+    post:
+      tags: [Users]
+      summary: Create user (optionally assign to location)
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserInput'
+      responses:
+        '200':
+          description: Created/upserted user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/invite:
+    post:
+      tags: [Users]
+      summary: Invite user to location
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserInput'
+      responses:
+        '200':
+          description: Invitation created/updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteResponse'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by id
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: User or null
+          content:
+            application/json:
+              schema:
+                nullable: true
+                allOf:
+                  - $ref: '#/components/schemas/User'
+    patch:
+      tags: [Users]
+      summary: Update user
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserInput'
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    delete:
+      tags: [Users]
+      summary: Delete user and memberships
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+
+  /tickets:
+    get:
+      tags: [Tickets]
+      summary: List tickets in location
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/TicketStatus'
+        - in: query
+          name: assignedToUserId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ticket list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+    post:
+      tags: [Tickets]
+      summary: Create ticket
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTicketInput'
+      responses:
+        '200':
+          description: Created ticket
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+
+  /tickets/{id}:
+    get:
+      tags: [Tickets]
+      summary: Get ticket details
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Ticket details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetails'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [Tickets]
+      summary: Update ticket
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTicketInput'
+      responses:
+        '200':
+          description: Updated ticket details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetails'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Tickets]
+      summary: Soft-delete ticket
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tickets/{id}/status:
+    patch:
+      tags: [Tickets]
+      summary: Transition ticket status
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTicketStatusInput'
+      responses:
+        '200':
+          description: Updated ticket details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetails'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /comments:
+    get:
+      tags: [Comments]
+      summary: List comments for ticket
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - in: query
+          name: ticketId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comment list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketComment'
+    post:
+      tags: [Comments]
+      summary: Create comment
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentInput'
+      responses:
+        '200':
+          description: Created comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketComment'
+
+  /comments/{id}:
+    delete:
+      tags: [Comments]
+      summary: Soft-delete comment
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /attachments/presign:
+    post:
+      tags: [Attachments]
+      summary: Create upload slot and storage key
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignInput'
+      responses:
+        '200':
+          description: Presigned upload data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUpload'
+
+  /attachments/upload/{storageKey}:
+    put:
+      tags: [Attachments]
+      summary: Upload file payload as base64
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - in: path
+          name: storageKey
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadInput'
+      responses:
+        '200':
+          description: Stored payload metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+
+  /attachments/metadata:
+    post:
+      tags: [Attachments]
+      summary: Persist attachment metadata in DB
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAttachmentMetadataInput'
+      responses:
+        '200':
+          description: Created attachment metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketAttachment'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /attachments:
+    get:
+      tags: [Attachments]
+      summary: List attachments for ticket
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - in: query
+          name: ticketId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attachment list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketAttachment'
+
+  /attachments/{id}:
+    delete:
+      tags: [Attachments]
+      summary: Soft-delete attachment
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '404':
+          description: Attachment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments:
+    get:
+      tags: [Payments]
+      summary: List payment records
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - in: query
+          name: ticketId
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentRecord'
+    post:
+      tags: [Payments]
+      summary: Create payment record
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRecordInput'
+      responses:
+        '200':
+          description: Created payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments/{id}/status:
+    patch:
+      tags: [Payments]
+      summary: Update payment status
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentStatusInput'
+      responses:
+        '200':
+          description: Updated payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+        '404':
+          description: Payment record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sync/pull:
+    post:
+      tags: [Sync]
+      summary: Pull changes since last client timestamp
+      description: Body `locationId` must match `x-location-id`.
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncPullRequest'
+      responses:
+        '200':
+          description: Changeset and server timestamp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPullResponse'
+        '403':
+          description: Location mismatch or permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sync/push:
+    post:
+      tags: [Sync]
+      summary: Push client changes
+      description: Body `locationId` must match `x-location-id`.
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncPushRequest'
+      responses:
+        '200':
+          description: Push accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPushResponse'
+        '403':
+          description: Location mismatch or permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /rbac/roles:
+    get:
+      tags: [RBAC]
+      summary: List roles with privileges
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      responses:
+        '200':
+          description: Role list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleWithPrivileges'
+
+  /rbac/privileges:
+    get:
+      tags: [RBAC]
+      summary: List privilege catalog
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+      responses:
+        '200':
+          description: Privilege list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Privilege'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    XLocationId:
+      in: header
+      name: x-location-id
+      required: true
+      schema:
+        type: string
+      description: Active location scope for multi-tenant resources.
+    PathId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        error:
+          type: string
+      required: [statusCode, message]
+
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+      required: [ok]
+
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+      required: [email, password]
+
+    RefreshInput:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+
+    RoleKey:
+      type: string
+      enum: [Owner, Manager, Technician]
+
+    UserLocationStatus:
+      type: string
+      enum: [invited, active, suspended]
+
+    TicketStatus:
+      type: string
+      enum: [New, Scheduled, InProgress, Done, Invoiced, Paid, Canceled]
+
+    AttachmentKind:
+      type: string
+      enum: [Photo, File]
+
+    PaymentProvider:
+      type: string
+      enum: [manual, stripe]
+
+    PaymentStatus:
+      type: string
+      enum: [Pending, Succeeded, Failed, Refunded]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        isAdmin:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, email, name, isAdmin, createdAt, updatedAt]
+
+    UserWithMembership:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            role:
+              $ref: '#/components/schemas/RoleKey'
+            membershipStatus:
+              $ref: '#/components/schemas/UserLocationStatus'
+          required: [role, membershipStatus]
+
+    Location:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        timezone:
+          type: string
+        address:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, timezone, createdAt, updatedAt]
+
+    LocationWithMembership:
+      allOf:
+        - $ref: '#/components/schemas/Location'
+        - type: object
+          properties:
+            role:
+              $ref: '#/components/schemas/RoleKey'
+            membershipStatus:
+              $ref: '#/components/schemas/UserLocationStatus'
+          required: [role, membershipStatus]
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+      required: [accessToken, user]
+
+    CreateUserInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 8
+        role:
+          $ref: '#/components/schemas/RoleKey'
+        locationId:
+          type: string
+      required: [email, name]
+
+    UpdateUserInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        isAdmin:
+          type: boolean
+
+    InviteResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [invited]
+      required: [ok, userId, status]
+
+    CreateLocationInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+        address:
+          type: string
+      required: [name, timezone]
+
+    UpdateLocationInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+        address:
+          type: string
+          nullable: true
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+        locationId:
+          type: string
+        createdByUserId:
+          type: string
+        assignedToUserId:
+          type: string
+          nullable: true
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        scheduledStartAt:
+          type: string
+          format: date-time
+          nullable: true
+        scheduledEndAt:
+          type: string
+          format: date-time
+          nullable: true
+        priority:
+          type: string
+          nullable: true
+        totalAmountCents:
+          type: integer
+          nullable: true
+        currency:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - locationId
+        - createdByUserId
+        - title
+        - status
+        - currency
+        - createdAt
+        - updatedAt
+
+    TicketComment:
+      type: object
+      properties:
+        id:
+          type: string
+        ticketId:
+          type: string
+        locationId:
+          type: string
+        authorUserId:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, ticketId, locationId, authorUserId, body, createdAt, updatedAt]
+
+    TicketAttachment:
+      type: object
+      properties:
+        id:
+          type: string
+        ticketId:
+          type: string
+        locationId:
+          type: string
+        uploadedByUserId:
+          type: string
+        kind:
+          $ref: '#/components/schemas/AttachmentKind'
+        storageKey:
+          type: string
+        url:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - ticketId
+        - locationId
+        - uploadedByUserId
+        - kind
+        - storageKey
+        - url
+        - mimeType
+        - size
+        - createdAt
+        - updatedAt
+
+    PaymentRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        ticketId:
+          type: string
+        locationId:
+          type: string
+        provider:
+          $ref: '#/components/schemas/PaymentProvider'
+        amountCents:
+          type: integer
+        currency:
+          type: string
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - ticketId
+        - locationId
+        - provider
+        - amountCents
+        - currency
+        - status
+        - createdAt
+        - updatedAt
+
+    TicketDetails:
+      allOf:
+        - $ref: '#/components/schemas/Ticket'
+        - type: object
+          properties:
+            comments:
+              type: array
+              items:
+                $ref: '#/components/schemas/TicketComment'
+            attachments:
+              type: array
+              items:
+                $ref: '#/components/schemas/TicketAttachment'
+            paymentRecords:
+              type: array
+              items:
+                $ref: '#/components/schemas/PaymentRecord'
+          required: [comments, attachments, paymentRecords]
+
+    CreateTicketInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        assignedToUserId:
+          type: string
+        scheduledStartAt:
+          type: string
+          format: date-time
+        scheduledEndAt:
+          type: string
+          format: date-time
+        priority:
+          type: string
+        totalAmountCents:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          default: EUR
+      required: [title]
+
+    UpdateTicketInput:
+      allOf:
+        - $ref: '#/components/schemas/CreateTicketInput'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/TicketStatus'
+
+    UpdateTicketStatusInput:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+      required: [status]
+
+    CreateCommentInput:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        body:
+          type: string
+          minLength: 1
+      required: [ticketId, body]
+
+    PresignInput:
+      type: object
+      properties:
+        fileName:
+          type: string
+          minLength: 1
+        mimeType:
+          type: string
+          minLength: 1
+      required: [fileName, mimeType]
+
+    PresignedUpload:
+      type: object
+      properties:
+        storageKey:
+          type: string
+        uploadUrl:
+          type: string
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+      required: [storageKey, uploadUrl, headers]
+
+    UploadInput:
+      type: object
+      properties:
+        base64:
+          type: string
+          minLength: 1
+      required: [base64]
+
+    UploadResponse:
+      type: object
+      properties:
+        url:
+          type: string
+        size:
+          type: integer
+      required: [url, size]
+
+    CreateAttachmentMetadataInput:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        kind:
+          $ref: '#/components/schemas/AttachmentKind'
+        storageKey:
+          type: string
+        url:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+          minimum: 0
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+      required: [ticketId, kind, storageKey, url, mimeType, size]
+
+    CreatePaymentRecordInput:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        provider:
+          $ref: '#/components/schemas/PaymentProvider'
+        amountCents:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          default: EUR
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+      required: [ticketId, provider, amountCents]
+
+    UpdatePaymentStatusInput:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+      required: [status]
+
+    SyncEntityChangesTicket:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+        updated:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+        deleted:
+          type: array
+          items:
+            type: string
+      required: [created, updated, deleted]
+
+    SyncEntityChangesComment:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketComment'
+        updated:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketComment'
+        deleted:
+          type: array
+          items:
+            type: string
+      required: [created, updated, deleted]
+
+    SyncEntityChangesAttachment:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketAttachment'
+        updated:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketAttachment'
+        deleted:
+          type: array
+          items:
+            type: string
+      required: [created, updated, deleted]
+
+    SyncEntityChangesPayment:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentRecord'
+        updated:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentRecord'
+        deleted:
+          type: array
+          items:
+            type: string
+      required: [created, updated, deleted]
+
+    SyncChanges:
+      type: object
+      properties:
+        tickets:
+          $ref: '#/components/schemas/SyncEntityChangesTicket'
+        ticketComments:
+          $ref: '#/components/schemas/SyncEntityChangesComment'
+        ticketAttachments:
+          $ref: '#/components/schemas/SyncEntityChangesAttachment'
+        paymentRecords:
+          $ref: '#/components/schemas/SyncEntityChangesPayment'
+      required: [tickets, ticketComments, ticketAttachments, paymentRecords]
+
+    SyncPullRequest:
+      type: object
+      properties:
+        locationId:
+          type: string
+        lastPulledAt:
+          type: integer
+          format: int64
+          nullable: true
+      required: [locationId, lastPulledAt]
+
+    SyncPullResponse:
+      type: object
+      properties:
+        changes:
+          $ref: '#/components/schemas/SyncChanges'
+        timestamp:
+          type: integer
+          format: int64
+      required: [changes, timestamp]
+
+    SyncPushRequest:
+      type: object
+      properties:
+        locationId:
+          type: string
+        lastPulledAt:
+          type: integer
+          format: int64
+          nullable: true
+        changes:
+          $ref: '#/components/schemas/SyncChanges'
+        clientId:
+          type: string
+      required: [locationId, lastPulledAt, changes, clientId]
+
+    SyncPushResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        newTimestamp:
+          type: integer
+          format: int64
+      required: [ok, newTimestamp]
+
+    RoleWithPrivileges:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/RoleKey'
+        name:
+          type: string
+        privileges:
+          type: array
+          items:
+            type: string
+      required: [key, name, privileges]
+
+    Privilege:
+      type: object
+      properties:
+        key:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required: [key]

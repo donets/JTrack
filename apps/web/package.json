@@ -1,0 +1,43 @@
+{
+  "name": "@jtrack/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "pnpm --filter @jtrack/shared build",
+    "dev": "nuxt dev --port 3000",
+    "prebuild": "pnpm --filter @jtrack/shared build",
+    "build": "nuxt build",
+    "build:mobile": "nuxt generate",
+    "preview": "nuxt preview",
+    "lint": "eslint . --ext .ts,.vue",
+    "typecheck": "nuxt prepare && vue-tsc --noEmit -p .nuxt/tsconfig.json"
+  },
+  "dependencies": {
+    "@capacitor/camera": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/filesystem": "^7.0.0",
+    "@jtrack/shared": "workspace:*",
+    "@pinia/nuxt": "^0.9.0",
+    "@vite-pwa/nuxt": "^1.0.0",
+    "dexie": "^4.0.10",
+    "nuxt": "^4.0.3",
+    "pinia": "^3.0.0",
+    "rxdb": "^16.11.0",
+    "vue": "^3.5.13",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@jtrack/eslint-config": "workspace:*",
+    "@jtrack/tsconfig": "workspace:*",
+    "@nuxtjs/tailwindcss": "^6.12.2",
+    "@types/node": "^22.10.2",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.3",
+    "eslint-plugin-vue": "^9.32.0",
+    "vue-eslint-parser": "^9.4.3",
+    "vue-tsc": "^2.2.0"
+  }
+}

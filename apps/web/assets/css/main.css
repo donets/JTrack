@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: #ffffff;
+  --surface-muted: #e2e8f0;
+  --ink: #0f172a;
+  --accent: #10b981;
+  --warning: #f97316;
+}
+
+body {
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at top left, #ecfeff, #f8fafc 45%, #ffffff);
+}

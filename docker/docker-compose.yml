@@ -1,0 +1,69 @@
+name: jtrack
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: jtrack-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jtrack
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jtrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      default:
+        aliases:
+          - jtrack
+
+  api:
+    image: jtrack-api
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: jtrack-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@jtrack:5432/jtrack?schema=public
+      JWT_ACCESS_SECRET: change-me-access
+      JWT_REFRESH_SECRET: change-me-refresh
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL: 30d
+      API_PORT: "3001"
+      WEB_ORIGIN: http://localhost:3000
+      UPLOAD_DIR: ./uploads
+      STORAGE_PROVIDER: local
+    ports:
+      - "3001:3001"
+    volumes:
+      - api_uploads:/app/apps/api/uploads
+
+  web:
+    image: jtrack-web
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    container_name: jtrack-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NUXT_PUBLIC_API_BASE: http://localhost:3001
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: "3000"
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  api_uploads:

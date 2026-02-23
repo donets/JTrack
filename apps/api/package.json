@@ -1,0 +1,51 @@
+{
+  "name": "@jtrack/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "predev": "prisma generate",
+    "dev": "nest start --watch",
+    "prebuild": "prisma generate",
+    "build": "nest build && tsc-alias -p tsconfig.json",
+    "start": "node dist/src/main.js",
+    "lint": "eslint src prisma/seed.ts --ext .ts",
+    "typecheck": "pnpm --filter @jtrack/shared build && tsc -p tsconfig.json --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed"
+  },
+  "dependencies": {
+    "@jtrack/shared": "workspace:*",
+    "@nestjs/common": "^11.0.3",
+    "@nestjs/config": "^4.0.1",
+    "@nestjs/core": "^11.0.3",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.3",
+    "@prisma/client": "^6.1.0",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "uuid": "^11.0.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@jtrack/eslint-config": "workspace:*",
+    "@jtrack/tsconfig": "workspace:*",
+    "@nestjs/cli": "^11.0.3",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "eslint": "^8.57.1",
+    "prisma": "^6.1.0",
+    "tsc-alias": "^1.8.10",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "@types/bcryptjs": "^2.4.6"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

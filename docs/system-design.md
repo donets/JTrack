@@ -1,0 +1,90 @@
+# JTrack System Design
+
+## 1. Goals
+- Support field-service CRM workflows for distributed teams.
+- Provide location-scoped multi-tenancy with strict authorization.
+- Work reliably in low-connectivity environments via offline-first sync.
+- Keep operational setup simple for local development and staging.
+
+## 2. Functional Scope
+- Authentication: email/password + JWT access token + refresh token.
+- Multi-location tenancy: each domain record belongs to a `locationId`.
+- RBAC: role/privilege model with guards on each protected endpoint.
+- Core entities: tickets, comments, attachments, payment records.
+- Offline sync: pull/push protocol over deterministic change-sets.
+
+## 3. Runtime Components
+- `apps/web`: Nuxt 4 SPA/PWA, UI + client sync orchestration.
+- `apps/mobile`: Capacitor shell around web output.
+- `apps/api`: NestJS service with auth, RBAC, domain modules, sync module.
+- PostgreSQL: canonical persistent store.
+- Local object store (dev): filesystem-backed attachment storage under `/uploads`.
+
+## 4. Request Security Model
+- Access token must be sent in `Authorization: Bearer <jwt>`.
+- For location-scoped endpoints, `x-location-id` header is mandatory.
+- `LocationGuard` validates location membership for non-admin users.
+- `PrivilegesGuard` validates endpoint privileges resolved from role.
+- Internal admins (`isAdmin = true`) bypass membership and privilege constraints.
+
+## 5. Data Model Strategy
+- Relational core with explicit foreign keys.
+- Soft-delete for user-generated mutable records:
+  - `Ticket.deletedAt`
+  - `TicketComment.deletedAt`
+  - `TicketAttachment.deletedAt`
+- Strong indexing by location and update time to optimize pull windows.
+- Role privileges persisted in DB but defined in code and seeded.
+
+## 6. Offline Sync Protocol
+### 6.1 Pull (`POST /sync/pull`)
+- Input: `{ locationId, lastPulledAt }`.
+- Server returns records where:
+  - `updatedAt > lastPulledAt`, or
+  - `deletedAt > lastPulledAt` (for soft-deletable entities).
+- Output grouped by entity and operation:
+  - `created[]`
+  - `updated[]`
+  - `deleted[]` (IDs only)
+- Returns `timestamp` for next client checkpoint.
+
+### 6.2 Push (`POST /sync/push`)
+- Input: `{ locationId, lastPulledAt, changes, clientId }`.
+- Server applies each entity batch inside one DB transaction.
+- Conflict policy: server-wins (last-write-wins by server timeline).
+  - If existing row was updated after client `lastPulledAt`, incoming mutation is skipped.
+- On success returns `{ ok: true, newTimestamp }`.
+
+### 6.3 Client Storage Implementation Note
+- RxDB v16 document updates must use `incrementalPatch`/`incrementalModify`.
+- `atomicPatch` is not supported in this version and causes runtime method errors.
+
+## 7. Consistency and Conflict Rules
+- Canonical state is always server DB.
+- Client convergence guarantee:
+  - push may skip stale updates,
+  - next pull returns authoritative state.
+- Deletions are modeled as tombstones (`deletedAt`), not hard delete.
+
+## 8. Error Handling
+- Auth failures: `401 Unauthorized`.
+- Missing location context: `400 Bad Request` (`x-location-id` absent).
+- Permission and membership violations: `403 Forbidden`.
+- Missing domain object: `404 Not Found`.
+- Validation is schema-based (Zod) and fails fast at controller boundary.
+
+## 9. Non-Functional Requirements
+- Security:
+  - bcrypt hash for passwords and stored refresh tokens.
+  - refresh token cookie is `httpOnly`, `sameSite=lax`, path-scoped to `/auth`.
+- Performance:
+  - location/update-time indexes for sync and listing patterns.
+  - bounded payloads by incremental timestamp windows.
+- Operability:
+  - Dockerized local stack with separate containers for web/api/postgres.
+  - Single-command monorepo dev workflow via Turbo.
+
+## 10. Tradeoffs
+- `isAdmin` bypass simplifies internal operations but centralizes trust.
+- Soft-delete increases query complexity but is required for sync tombstones.
+- Server-wins conflict policy is simple and predictable, but may overwrite unsynced local intent.

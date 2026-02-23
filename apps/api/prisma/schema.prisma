@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleKey {
+  Owner
+  Manager
+  Technician
+}
+
+enum MembershipStatus {
+  invited
+  active
+  suspended
+}
+
+enum TicketStatus {
+  New
+  Scheduled
+  InProgress
+  Done
+  Invoiced
+  Paid
+  Canceled
+}
+
+enum AttachmentKind {
+  Photo
+  File
+}
+
+enum PaymentProvider {
+  manual
+  stripe
+}
+
+enum PaymentStatus {
+  Pending
+  Succeeded
+  Failed
+  Refunded
+}
+
+model User {
+  id               String             @id @default(uuid()) @db.Uuid
+  email            String             @unique
+  passwordHash     String
+  refreshTokenHash String?
+  name             String
+  isAdmin          Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  userLocations    UserLocation[]
+  createdTickets   Ticket[]           @relation("CreatedTickets")
+  assignedTickets  Ticket[]           @relation("AssignedTickets")
+  comments         TicketComment[]    @relation("CommentAuthor")
+  attachments      TicketAttachment[] @relation("AttachmentUploader")
+
+  @@index([createdAt])
+}
+
+model Location {
+  id              String             @id @default(uuid()) @db.Uuid
+  name            String
+  timezone        String
+  address         String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  userLocations   UserLocation[]
+  tickets         Ticket[]
+  ticketComments  TicketComment[]
+  attachments     TicketAttachment[]
+  paymentRecords  PaymentRecord[]
+
+  @@index([name])
+}
+
+model UserLocation {
+  userId     String           @db.Uuid
+  locationId String           @db.Uuid
+  role       RoleKey
+  status     MembershipStatus @default(active)
+  createdAt  DateTime         @default(now())
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location   Location         @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, locationId])
+  @@index([locationId])
+  @@index([userId])
+}
+
+model Role {
+  key            RoleKey        @id
+  name           String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  rolePrivileges RolePrivilege[]
+}
+
+model Privilege {
+  key            String          @id
+  description    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  rolePrivileges RolePrivilege[]
+}
+
+model RolePrivilege {
+  roleKey      RoleKey
+  privilegeKey String
+  role         Role      @relation(fields: [roleKey], references: [key], onDelete: Cascade)
+  privilege    Privilege @relation(fields: [privilegeKey], references: [key], onDelete: Cascade)
+
+  @@id([roleKey, privilegeKey])
+}
+
+model Ticket {
+  id               String             @id @default(uuid()) @db.Uuid
+  locationId       String             @db.Uuid
+  createdByUserId  String             @db.Uuid
+  assignedToUserId String?            @db.Uuid
+  title            String
+  description      String?
+  status           TicketStatus       @default(New)
+  scheduledStartAt DateTime?
+  scheduledEndAt   DateTime?
+  priority         String?
+  totalAmountCents Int?
+  currency         String             @default("EUR")
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?
+  location         Location           @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  createdBy        User               @relation("CreatedTickets", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  assignedTo       User?              @relation("AssignedTickets", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  comments         TicketComment[]
+  attachments      TicketAttachment[]
+  paymentRecords   PaymentRecord[]
+
+  @@index([locationId, updatedAt])
+  @@index([locationId, status])
+  @@index([locationId, assignedToUserId])
+  @@index([deletedAt])
+}
+
+model TicketComment {
+  id           String    @id @default(uuid()) @db.Uuid
+  ticketId     String    @db.Uuid
+  locationId   String    @db.Uuid
+  authorUserId String    @db.Uuid
+  body         String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  ticket       Ticket    @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  location     Location  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  author       User      @relation("CommentAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
+
+  @@index([locationId, updatedAt])
+  @@index([ticketId])
+  @@index([deletedAt])
+}
+
+model TicketAttachment {
+  id               String         @id @default(uuid()) @db.Uuid
+  ticketId         String         @db.Uuid
+  locationId       String         @db.Uuid
+  uploadedByUserId String         @db.Uuid
+  kind             AttachmentKind
+  storageKey       String
+  url              String
+  mimeType         String
+  size             Int
+  width            Int?
+  height           Int?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+  ticket           Ticket         @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  location         Location       @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  uploadedBy       User           @relation("AttachmentUploader", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([locationId, updatedAt])
+  @@index([ticketId])
+  @@index([deletedAt])
+}
+
+model PaymentRecord {
+  id          String          @id @default(uuid()) @db.Uuid
+  ticketId    String          @db.Uuid
+  locationId  String          @db.Uuid
+  provider    PaymentProvider
+  amountCents Int
+  currency    String
+  status      PaymentStatus
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  ticket      Ticket          @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  location    Location        @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  @@index([locationId, updatedAt])
+  @@index([ticketId])
+}

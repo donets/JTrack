@@ -1,0 +1,19 @@
+FROM node:20-alpine
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+
+COPY . .
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @jtrack/shared build
+RUN pnpm --filter @jtrack/web build
+
+EXPOSE 3000
+
+CMD ["node", "apps/web/.output/server/index.mjs"]
+

@@ -1,0 +1,23 @@
+{
+  "name": "@jtrack/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build:web:mobile": "pnpm --filter @jtrack/web build:mobile",
+    "lint": "echo \"No lint rules for mobile shell\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "cap:sync": "pnpm run build:web:mobile && npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@capacitor/cli": "^7.0.0",
+    "typescript": "^5.7.3"
+  }
+}

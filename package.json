@@ -1,0 +1,21 @@
+{
+  "name": "jtrack",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:migrate": "pnpm --filter @jtrack/api prisma:migrate",
+    "db:seed": "pnpm --filter @jtrack/shared build && pnpm --filter @jtrack/api prisma:seed",
+    "build:web:mobile": "pnpm --filter @jtrack/web build:mobile",
+    "cap:sync": "pnpm --filter @jtrack/mobile cap:sync",
+    "cap:open:ios": "pnpm --filter @jtrack/mobile cap:open:ios",
+    "cap:open:android": "pnpm --filter @jtrack/mobile cap:open:android"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3"
+  }
+}

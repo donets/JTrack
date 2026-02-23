@@ -1,0 +1,14 @@
+{
+  "extends": "@jtrack/tsconfig/nest.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "rootDir": "./",
+    "outDir": "dist",
+    "exactOptionalPropertyTypes": false,
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "prisma/seed.ts"],
+  "exclude": ["node_modules", "dist"]
+}

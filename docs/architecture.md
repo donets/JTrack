@@ -1,0 +1,132 @@
+# JTrack Architecture
+
+## 1. Overview
+JTrack is a monorepo CRM platform with a web client, mobile shell, and a NestJS API backed by PostgreSQL.  
+The architecture favors:
+- clear domain modules,
+- strict tenant scoping by location,
+- offline-first client behavior with explicit server reconciliation.
+
+## 2. Repository Structure
+```text
+apps/
+  api/        # NestJS + Prisma + RBAC + sync
+  web/        # Nuxt 4 + Pinia + RxDB
+  mobile/     # Capacitor wrapper
+packages/
+  shared/     # Zod schemas + DTOs + RBAC constants + sync contracts
+  eslint-config/
+  tsconfig/
+docker/
+  docker-compose.yml
+```
+
+## 3. Container/Runtime View
+```mermaid
+flowchart LR
+  U["User (Browser/Mobile)"] --> W["Nuxt Web App"]
+  U --> M["Capacitor Shell"]
+  M --> W
+  W --> A["NestJS API"]
+  A --> P["PostgreSQL"]
+  A --> F["Local Upload Storage (/uploads)"]
+  W --> R["RxDB (IndexedDB/Dexie)"]
+```
+
+## 4. API Layer (NestJS)
+### 4.1 Module Boundaries
+- `auth`: login/refresh/logout/me, JWT issuance, refresh token rotation.
+- `rbac`: role/privilege resolution and access checks.
+- `locations`: tenant container lifecycle.
+- `users`: membership and operator management.
+- `tickets`, `comments`, `attachments`, `payments`: core domain CRUD.
+- `sync`: delta pull/push and conflict handling.
+- `prisma`: DB access abstraction and lifecycle.
+
+### 4.2 Cross-Cutting Guards
+- `JwtAuthGuard`: validates bearer access token.
+- `LocationGuard`: enforces `x-location-id` + active membership.
+- `PrivilegesGuard`: validates endpoint privilege set against role.
+
+## 5. Data Architecture
+- PostgreSQL as source of truth.
+- Prisma schema defines:
+  - enums for role/status/provider kinds,
+  - referential integrity via foreign keys,
+  - indexes tuned for location-scoped queries and sync windows.
+- Soft-delete only where sync tombstones are required.
+
+## 6. Client Architecture
+### 6.1 Web App
+- Nuxt 4 (Vue 3) for UI and routing.
+- RxDB/Dexie as local reactive storage.
+- RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
+- Outbox pattern:
+  - local mutation first,
+  - enqueue operation,
+  - background push + pull convergence.
+
+### 6.2 Mobile App
+- Capacitor wraps web build output.
+- Reuses same frontend and sync logic.
+
+## 7. Sync and Data Flow
+```mermaid
+sequenceDiagram
+  participant C as Client (RxDB)
+  participant S as API /sync
+  participant D as PostgreSQL
+
+  C->>S: POST /sync/push (changes, lastPulledAt)
+  S->>D: Transaction apply changes
+  D-->>S: Commit
+  S-->>C: { ok: true, newTimestamp }
+  C->>S: POST /sync/pull (locationId, lastPulledAt=newTimestamp)
+  S->>D: Query deltas by updatedAt/deletedAt
+  D-->>S: changes
+  S-->>C: { changes, timestamp }
+```
+
+## 8. Security Architecture
+- Access:
+  - short-lived JWT access token in Authorization header.
+  - refresh token in HttpOnly cookie (`/auth` path).
+- Authorization:
+  - location scoping for tenant separation.
+  - privilege-based endpoint checks.
+  - admin override for internal operators.
+
+## 9. Deployment Notes
+- Local dev:
+  - Dedicated Docker images/containers:
+    - `docker/Dockerfile.web` -> image `jtrack-web`, container `jtrack-web`
+    - `docker/Dockerfile.api` -> image `jtrack-api`, container `jtrack-api`
+    - `postgres:16` -> `jtrack-postgres`
+  - Startup via `docker/docker-compose.yml` (`docker-compose up -d --build`).
+  - API container startup runs `prisma migrate deploy` before starting Nest runtime.
+  - DB service has network alias `jtrack`; API uses `postgresql://...@jtrack:5432/...`.
+  - Legacy Prisma migration `20260223082027_init` is a no-op placeholder to keep migration chain valid in clean environments.
+  - API TypeScript output is fixed to `apps/api/dist` (`apps/api/tsconfig.json` with explicit `outDir`).
+  - API runtime entrypoint is `node dist/src/main.js` (`apps/api/package.json` start script).
+- Cloud deploy:
+  - Backend (Render): `/Users/vlad/Projects/JTrack/render.yaml`
+    - Deploys `jtrack-api` from `docker/Dockerfile.api`.
+    - Uses Render Postgres `jtrack-db`.
+    - Uses `dockerCommand` to map `API_PORT` to Render `PORT`.
+  - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
+    - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
+    - Publishes `apps/web/.output/public`.
+    - SPA fallback rewrite to `/index.html`.
+- Production target:
+  - stateless API instances behind load balancer,
+  - managed PostgreSQL,
+  - object storage provider replacing local uploads,
+  - optional CDN for static/web assets.
+
+## 10. Architectural Risks and Mitigations
+- Risk: sync conflicts under intermittent connectivity.
+  - Mitigation: deterministic server-wins policy + pull-after-push.
+- Risk: tenant leakage by missing location context.
+  - Mitigation: mandatory `x-location-id` guard and role checks.
+- Risk: stale refresh tokens.
+  - Mitigation: refresh token hashing + rotation on refresh/login.

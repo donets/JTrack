@@ -1,0 +1,14 @@
+.git
+.idea
+.turbo
+node_modules
+**/node_modules
+**/.nuxt
+**/.output
+**/dist
+**/.DS_Store
+pnpm-debug.log*
+npm-debug.log*
+yarn-error.log*
+coverage
+
