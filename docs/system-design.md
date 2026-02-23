@@ -83,6 +83,7 @@
 - Operability:
   - Dockerized local stack with separate containers for web/api/postgres.
   - Single-command monorepo dev workflow via Turbo.
+  - Repository hygiene: local IDE metadata (`.idea`) is excluded from VCS via `.gitignore`.
 
 ## 10. Tradeoffs
 - `isAdmin` bypass simplifies internal operations but centralizes trust.

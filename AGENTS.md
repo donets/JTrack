@@ -118,6 +118,7 @@ Always include references to updated docs under `/Users/vlad/Projects/JTrack/doc
 
 ## 9) Change Log
 
+- 2026-02-23: Added `.idea` to repository `.gitignore`; documented VCS hygiene in system design docs.
 - 2026-02-23: Frontend RxDB mutation API fixed for v16 compatibility (`atomicPatch` -> `incrementalPatch`) in sync/offline flows; docs updated.
 - 2026-02-23: Added separate Docker images/containers for frontend (`jtrack-web`) and backend (`jtrack-api`), updated compose runtime and docs.
 - 2026-02-23: Fixed API container entrypoint to run compiled Nest output from `/app/packages/tsconfig/dist/src/main.js` after migrations.
