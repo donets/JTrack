@@ -808,15 +808,70 @@ export declare const syncChangesSchema: z.ZodObject<{
         deleted: string[];
     };
 }>;
+export declare const syncPullCursorSchema: z.ZodObject<{
+    snapshotAt: z.ZodNumber;
+    ticketsOffset: z.ZodNumber;
+    ticketCommentsOffset: z.ZodNumber;
+    ticketAttachmentsOffset: z.ZodNumber;
+    paymentRecordsOffset: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    snapshotAt: number;
+    ticketsOffset: number;
+    ticketCommentsOffset: number;
+    ticketAttachmentsOffset: number;
+    paymentRecordsOffset: number;
+}, {
+    snapshotAt: number;
+    ticketsOffset: number;
+    ticketCommentsOffset: number;
+    ticketAttachmentsOffset: number;
+    paymentRecordsOffset: number;
+}>;
 export declare const syncPullRequestSchema: z.ZodObject<{
     locationId: z.ZodString;
     lastPulledAt: z.ZodNullable<z.ZodNumber>;
+    limit: z.ZodDefault<z.ZodNumber>;
+    cursor: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        snapshotAt: z.ZodNumber;
+        ticketsOffset: z.ZodNumber;
+        ticketCommentsOffset: z.ZodNumber;
+        ticketAttachmentsOffset: z.ZodNumber;
+        paymentRecordsOffset: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        snapshotAt: number;
+        ticketsOffset: number;
+        ticketCommentsOffset: number;
+        ticketAttachmentsOffset: number;
+        paymentRecordsOffset: number;
+    }, {
+        snapshotAt: number;
+        ticketsOffset: number;
+        ticketCommentsOffset: number;
+        ticketAttachmentsOffset: number;
+        paymentRecordsOffset: number;
+    }>>>>;
 }, "strip", z.ZodTypeAny, {
     locationId: string;
+    limit: number;
     lastPulledAt: number | null;
+    cursor: {
+        snapshotAt: number;
+        ticketsOffset: number;
+        ticketCommentsOffset: number;
+        ticketAttachmentsOffset: number;
+        paymentRecordsOffset: number;
+    } | null;
 }, {
     locationId: string;
     lastPulledAt: number | null;
+    limit?: number | undefined;
+    cursor?: {
+        snapshotAt: number;
+        ticketsOffset: number;
+        ticketCommentsOffset: number;
+        ticketAttachmentsOffset: number;
+        paymentRecordsOffset: number;
+    } | null | undefined;
 }>;
 export declare const syncPullResponseSchema: z.ZodObject<{
     changes: z.ZodObject<{
@@ -1616,7 +1671,28 @@ export declare const syncPullResponseSchema: z.ZodObject<{
         };
     }>;
     timestamp: z.ZodNumber;
+    hasMore: z.ZodDefault<z.ZodBoolean>;
+    nextCursor: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        snapshotAt: z.ZodNumber;
+        ticketsOffset: z.ZodNumber;
+        ticketCommentsOffset: z.ZodNumber;
+        ticketAttachmentsOffset: z.ZodNumber;
+        paymentRecordsOffset: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        snapshotAt: number;
+        ticketsOffset: number;
+        ticketCommentsOffset: number;
+        ticketAttachmentsOffset: number;
+        paymentRecordsOffset: number;
+    }, {
+        snapshotAt: number;
+        ticketsOffset: number;
+        ticketCommentsOffset: number;
+        ticketAttachmentsOffset: number;
+        paymentRecordsOffset: number;
+    }>>>>;
 }, "strip", z.ZodTypeAny, {
+    hasMore: boolean;
     changes: {
         tickets: {
             created: {
@@ -1740,6 +1816,13 @@ export declare const syncPullResponseSchema: z.ZodObject<{
         };
     };
     timestamp: number;
+    nextCursor: {
+        snapshotAt: number;
+        ticketsOffset: number;
+        ticketCommentsOffset: number;
+        ticketAttachmentsOffset: number;
+        paymentRecordsOffset: number;
+    } | null;
 }, {
     changes: {
         tickets: {
@@ -1864,6 +1947,14 @@ export declare const syncPullResponseSchema: z.ZodObject<{
         };
     };
     timestamp: number;
+    hasMore?: boolean | undefined;
+    nextCursor?: {
+        snapshotAt: number;
+        ticketsOffset: number;
+        ticketCommentsOffset: number;
+        ticketAttachmentsOffset: number;
+        paymentRecordsOffset: number;
+    } | null | undefined;
 }>;
 export declare const syncPushRequestSchema: z.ZodObject<{
     locationId: z.ZodString;
@@ -2929,6 +3020,7 @@ export declare const syncPushResponseSchema: z.ZodObject<{
     newTimestamp: number;
 }>;
 export type SyncChanges = z.infer<typeof syncChangesSchema>;
+export type SyncPullCursor = z.infer<typeof syncPullCursorSchema>;
 export type SyncPullRequest = z.infer<typeof syncPullRequestSchema>;
 export type SyncPullResponse = z.infer<typeof syncPullResponseSchema>;
 export type SyncPushRequest = z.infer<typeof syncPushRequestSchema>;

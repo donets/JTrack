@@ -120,6 +120,7 @@ Always include references to updated docs under `/Users/vlad/Projects/JTrack/doc
 
 ## 9) Change Log
 
+- 2026-02-24: JTR-9 completed: added pagination for `GET /tickets` (`limit`/`offset`) and paginated `POST /sync/pull` with `limit` + `cursor` (`hasMore`/`nextCursor`), updated API/Web/Shared contracts and tests.
 - 2026-02-24: Fixed CI web test failure for missing `.nuxt/tsconfig.json`: `apps/web` test script now runs `nuxt prepare` before `vitest`.
 - 2026-02-24: CI test workflow trigger scope adjusted: `pnpm test` now runs on all pull requests and on pushes to `main`/`develop`.
 - 2026-02-24: Fixed API typecheck baseline errors: removed direct Prisma enum imports from `prisma/seed.ts`, added explicit service callback/transaction typing across API modules, and aligned docs for type-safety quality gate.

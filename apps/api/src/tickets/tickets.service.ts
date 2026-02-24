@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import {
   createTicketSchema,
+  type TicketListQuery,
+  type TicketListResponse,
   ticketStatusSchema,
   updateTicketSchema,
   type TicketStatus
@@ -11,7 +13,7 @@ import { PrismaService } from '@/prisma/prisma.service'
 export class TicketsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(locationId: string, filters: { status?: string; assignedToUserId?: string }) {
+  async list(locationId: string, filters: TicketListQuery): Promise<TicketListResponse> {
     const tickets = await this.prisma.ticket.findMany({
       where: {
         locationId,
@@ -19,10 +21,25 @@ export class TicketsService {
         status: filters.status as TicketStatus | undefined,
         assignedToUserId: filters.assignedToUserId
       },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      skip: filters.offset,
+      take: filters.limit + 1
     })
 
-    return tickets.map((ticket: (typeof tickets)[number]) => this.serialize(ticket))
+    const items = tickets
+      .slice(0, filters.limit)
+      .map((ticket: (typeof tickets)[number]) => this.serialize(ticket))
+    const hasMore = tickets.length > filters.limit
+
+    return {
+      items,
+      page: {
+        limit: filters.limit,
+        offset: filters.offset,
+        nextOffset: hasMore ? filters.offset + items.length : null,
+        hasMore
+      }
+    }
   }
 
   async getById(locationId: string, ticketId: string) {

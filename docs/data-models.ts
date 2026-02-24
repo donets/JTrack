@@ -198,6 +198,25 @@ export interface UpdateTicketStatusInput {
   status: TicketStatus
 }
 
+export interface TicketListQuery {
+  status?: TicketStatus
+  assignedToUserId?: UUID
+  limit?: number
+  offset?: number
+}
+
+export interface OffsetPage {
+  limit: number
+  offset: number
+  nextOffset: number | null
+  hasMore: boolean
+}
+
+export interface TicketListResponse {
+  items: Ticket[]
+  page: OffsetPage
+}
+
 export interface CreateCommentInput {
   ticketId: UUID
   body: string
@@ -262,11 +281,23 @@ export interface SyncChanges {
 export interface SyncPullRequest {
   locationId: UUID
   lastPulledAt: UnixMs | null
+  limit?: number
+  cursor?: SyncPullCursor | null
+}
+
+export interface SyncPullCursor {
+  snapshotAt: UnixMs
+  ticketsOffset: number
+  ticketCommentsOffset: number
+  ticketAttachmentsOffset: number
+  paymentRecordsOffset: number
 }
 
 export interface SyncPullResponse {
   changes: SyncChanges
   timestamp: UnixMs
+  hasMore: boolean
+  nextCursor: SyncPullCursor | null
 }
 
 export interface SyncPushRequest {

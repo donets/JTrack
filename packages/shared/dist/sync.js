@@ -11,13 +11,25 @@ export const syncChangesSchema = z.object({
     ticketAttachments: syncEntityChangesSchema(ticketAttachmentSchema),
     paymentRecords: syncEntityChangesSchema(paymentRecordSchema)
 });
+const syncPullLimitSchema = z.number().int().min(1).max(200);
+export const syncPullCursorSchema = z.object({
+    snapshotAt: z.number().int().nonnegative(),
+    ticketsOffset: z.number().int().nonnegative(),
+    ticketCommentsOffset: z.number().int().nonnegative(),
+    ticketAttachmentsOffset: z.number().int().nonnegative(),
+    paymentRecordsOffset: z.number().int().nonnegative()
+});
 export const syncPullRequestSchema = z.object({
     locationId: idSchema,
-    lastPulledAt: z.number().int().nullable()
+    lastPulledAt: z.number().int().nullable(),
+    limit: syncPullLimitSchema.default(100),
+    cursor: syncPullCursorSchema.nullable().optional().default(null)
 });
 export const syncPullResponseSchema = z.object({
     changes: syncChangesSchema,
-    timestamp: z.number().int()
+    timestamp: z.number().int(),
+    hasMore: z.boolean().default(false),
+    nextCursor: syncPullCursorSchema.nullable().optional().default(null)
 });
 export const syncPushRequestSchema = z.object({
     locationId: idSchema,

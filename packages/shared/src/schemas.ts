@@ -160,6 +160,26 @@ export const updateTicketSchema = createTicketSchema
     status: ticketStatusSchema.optional()
   })
 
+const paginationLimitSchema = z.coerce.number().int().min(1).max(200)
+const paginationOffsetSchema = z.coerce.number().int().min(0)
+
+export const ticketListQuerySchema = z.object({
+  status: ticketStatusSchema.optional(),
+  assignedToUserId: idSchema.optional(),
+  limit: paginationLimitSchema.default(50),
+  offset: paginationOffsetSchema.default(0)
+})
+
+export const ticketListResponseSchema = z.object({
+  items: z.array(ticketSchema),
+  page: z.object({
+    limit: z.number().int().positive(),
+    offset: z.number().int().nonnegative(),
+    nextOffset: z.number().int().nonnegative().nullable(),
+    hasMore: z.boolean()
+  })
+})
+
 export const createCommentSchema = z.object({
   ticketId: idSchema,
   body: z.string().min(1)
@@ -204,6 +224,8 @@ export type CreateLocationInput = z.infer<typeof createLocationSchema>
 export type UpdateLocationInput = z.infer<typeof updateLocationSchema>
 export type CreateTicketInput = z.infer<typeof createTicketSchema>
 export type UpdateTicketInput = z.infer<typeof updateTicketSchema>
+export type TicketListQuery = z.infer<typeof ticketListQuerySchema>
+export type TicketListResponse = z.infer<typeof ticketListResponseSchema>
 export type CreateCommentInput = z.infer<typeof createCommentSchema>
 export type CreateAttachmentMetadataInput = z.infer<typeof createAttachmentMetadataSchema>
 export type CreatePaymentRecordInput = z.infer<typeof createPaymentRecordSchema>

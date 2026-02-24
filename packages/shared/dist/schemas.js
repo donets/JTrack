@@ -138,6 +138,23 @@ export const updateTicketSchema = createTicketSchema
     .extend({
     status: ticketStatusSchema.optional()
 });
+const paginationLimitSchema = z.coerce.number().int().min(1).max(200);
+const paginationOffsetSchema = z.coerce.number().int().min(0);
+export const ticketListQuerySchema = z.object({
+    status: ticketStatusSchema.optional(),
+    assignedToUserId: idSchema.optional(),
+    limit: paginationLimitSchema.default(50),
+    offset: paginationOffsetSchema.default(0)
+});
+export const ticketListResponseSchema = z.object({
+    items: z.array(ticketSchema),
+    page: z.object({
+        limit: z.number().int().positive(),
+        offset: z.number().int().nonnegative(),
+        nextOffset: z.number().int().nonnegative().nullable(),
+        hasMore: z.boolean()
+    })
+});
 export const createCommentSchema = z.object({
     ticketId: idSchema,
     body: z.string().min(1)

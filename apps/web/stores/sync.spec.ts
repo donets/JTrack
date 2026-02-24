@@ -175,7 +175,9 @@ describe('sync store', () => {
     )
     expect(post).toHaveBeenNthCalledWith(2, '/sync/pull', {
       locationId: 'loc-1',
-      lastPulledAt: 1_700_000_000_000
+      lastPulledAt: 1_700_000_000_000,
+      limit: 100,
+      cursor: null
     })
     expect(firstOutboxRemove).toHaveBeenCalledTimes(1)
     expect(secondOutboxRemove).toHaveBeenCalledTimes(1)
@@ -186,6 +188,137 @@ describe('sync store', () => {
     expect(syncStore.lastSyncedAt).toBe(1_700_000_002_000)
     expect(syncStore.error).toBeNull()
     expect(syncStore.syncing).toBe(false)
+  })
+
+  it('syncNow paginates pull requests until hasMore becomes false', async () => {
+    const authStore = useAuthStore()
+    const locationStore = useLocationStore()
+    const syncStore = useSyncStore()
+    authStore.accessToken = 'access-1'
+    locationStore.activeLocationId = 'loc-1'
+
+    const paginationCursor = {
+      snapshotAt: 1_700_000_003_000,
+      ticketsOffset: 1,
+      ticketCommentsOffset: 0,
+      ticketAttachmentsOffset: 0,
+      paymentRecordsOffset: 0
+    }
+
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        changes: {
+          ...createEmptyChanges(),
+          tickets: {
+            created: [
+              {
+                id: 'ticket-1',
+                locationId: 'loc-1',
+                createdByUserId: 'user-1',
+                assignedToUserId: null,
+                title: 'Created',
+                description: null,
+                status: 'New',
+                scheduledStartAt: null,
+                scheduledEndAt: null,
+                priority: null,
+                totalAmountCents: null,
+                currency: 'EUR',
+                createdAt: '2026-02-24T12:00:00.000Z',
+                updatedAt: '2026-02-24T12:00:00.000Z',
+                deletedAt: null
+              }
+            ],
+            updated: [],
+            deleted: []
+          }
+        },
+        timestamp: 1_700_000_003_000,
+        hasMore: true,
+        nextCursor: paginationCursor
+      })
+      .mockResolvedValueOnce({
+        changes: {
+          ...createEmptyChanges(),
+          tickets: {
+            created: [
+              {
+                id: 'ticket-2',
+                locationId: 'loc-1',
+                createdByUserId: 'user-1',
+                assignedToUserId: null,
+                title: 'Created second page',
+                description: null,
+                status: 'New',
+                scheduledStartAt: null,
+                scheduledEndAt: null,
+                priority: null,
+                totalAmountCents: null,
+                currency: 'EUR',
+                createdAt: '2026-02-24T12:05:00.000Z',
+                updatedAt: '2026-02-24T12:05:00.000Z',
+                deletedAt: null
+              }
+            ],
+            updated: [],
+            deleted: []
+          }
+        },
+        timestamp: 1_700_000_003_000,
+        hasMore: false,
+        nextCursor: null
+      })
+    vi.stubGlobal('useApiClient', () => ({ post }))
+
+    const syncStateDoc = {
+      toJSON: () => ({
+        lastPulledAt: 1_700_000_000_000
+      }),
+      incrementalPatch: vi.fn()
+    }
+
+    const ticketsCollection = createCollectionMock()
+
+    vi.stubGlobal('useRxdb', () => ({
+      collections: {
+        syncState: {
+          findOne: vi.fn(() => ({
+            exec: vi.fn(async () => syncStateDoc)
+          })),
+          insert: vi.fn()
+        },
+        outbox: {
+          find: vi.fn(() => ({
+            exec: vi.fn(async () => [])
+          }))
+        },
+        tickets: ticketsCollection,
+        ticketComments: createCollectionMock(),
+        ticketAttachments: createCollectionMock(),
+        paymentRecords: createCollectionMock()
+      }
+    }))
+
+    await syncStore.syncNow()
+
+    expect(post).toHaveBeenNthCalledWith(1, '/sync/pull', {
+      locationId: 'loc-1',
+      lastPulledAt: 1_700_000_000_000,
+      limit: 100,
+      cursor: null
+    })
+    expect(post).toHaveBeenNthCalledWith(2, '/sync/pull', {
+      locationId: 'loc-1',
+      lastPulledAt: 1_700_000_000_000,
+      limit: 100,
+      cursor: paginationCursor
+    })
+    expect(ticketsCollection.upsert).toHaveBeenCalledTimes(2)
+    expect(syncStateDoc.incrementalPatch).toHaveBeenCalledWith({
+      lastPulledAt: 1_700_000_003_000,
+      updatedAt: expect.any(Number)
+    })
   })
 
   it('applyEntityChanges soft-deletes docs with deletedAt and hard-removes others', async () => {

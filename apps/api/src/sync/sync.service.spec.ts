@@ -167,6 +167,93 @@ describe('SyncService', () => {
     expect(response.changes.ticketAttachments.deleted).toEqual(['attachment-deleted'])
     expect(response.changes.paymentRecords.updated.map((item) => item.id)).toEqual(['payment-updated'])
     expect(response.timestamp).toBeTypeOf('number')
+    expect(response.hasMore).toBe(false)
+    expect(response.nextCursor).toBeNull()
+  })
+
+  it('pull paginates with cursor and keeps timestamp snapshot stable', async () => {
+    const lastPulledAt = new Date('2026-02-24T08:00:00.000Z').getTime()
+
+    const tickets = [
+      {
+        id: 'ticket-page-1',
+        locationId: LOCATION_ID,
+        createdByUserId: USER_ID,
+        assignedToUserId: null,
+        title: 'Paged ticket 1',
+        description: null,
+        status: 'New',
+        scheduledStartAt: null,
+        scheduledEndAt: null,
+        priority: null,
+        totalAmountCents: null,
+        currency: 'EUR',
+        createdAt: new Date('2026-02-24T07:00:00.000Z'),
+        updatedAt: new Date('2026-02-24T08:01:00.000Z'),
+        deletedAt: null
+      },
+      {
+        id: 'ticket-page-2',
+        locationId: LOCATION_ID,
+        createdByUserId: USER_ID,
+        assignedToUserId: null,
+        title: 'Paged ticket 2',
+        description: null,
+        status: 'InProgress',
+        scheduledStartAt: null,
+        scheduledEndAt: null,
+        priority: null,
+        totalAmountCents: null,
+        currency: 'EUR',
+        createdAt: new Date('2026-02-24T07:10:00.000Z'),
+        updatedAt: new Date('2026-02-24T08:02:00.000Z'),
+        deletedAt: null
+      }
+    ]
+
+    prisma.ticket.findMany.mockImplementation(
+      async ({ skip = 0, take = 101 }: { skip?: number; take?: number }) =>
+        tickets.slice(skip, skip + take)
+    )
+    prisma.ticketComment.findMany.mockResolvedValue([])
+    prisma.ticketAttachment.findMany.mockResolvedValue([])
+    prisma.paymentRecord.findMany.mockResolvedValue([])
+
+    const firstPage = await service.pull(
+      {
+        locationId: LOCATION_ID,
+        lastPulledAt,
+        limit: 1
+      },
+      LOCATION_ID
+    )
+
+    expect(firstPage.changes.tickets.updated.map((item) => item.id)).toEqual(['ticket-page-1'])
+    expect(firstPage.hasMore).toBe(true)
+    expect(firstPage.nextCursor).not.toBeNull()
+
+    const secondPage = await service.pull(
+      {
+        locationId: LOCATION_ID,
+        lastPulledAt,
+        limit: 1,
+        cursor: firstPage.nextCursor
+      },
+      LOCATION_ID
+    )
+
+    expect(secondPage.changes.tickets.updated.map((item) => item.id)).toEqual(['ticket-page-2'])
+    expect(secondPage.hasMore).toBe(false)
+    expect(secondPage.nextCursor).toBeNull()
+    expect(secondPage.timestamp).toBe(firstPage.timestamp)
+    expect(prisma.ticket.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ skip: 0, take: 2 })
+    )
+    expect(prisma.ticket.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ skip: 1, take: 2 })
+    )
   })
 
   it('push writes create/update/delete operations in a single transaction', async () => {

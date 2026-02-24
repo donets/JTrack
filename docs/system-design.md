@@ -38,15 +38,19 @@
 
 ## 6. Offline Sync Protocol
 ### 6.1 Pull (`POST /sync/pull`)
-- Input: `{ locationId, lastPulledAt }`.
+- Input: `{ locationId, lastPulledAt, limit?, cursor? }`.
 - Server returns records where:
   - `updatedAt > lastPulledAt`, or
   - `deletedAt > lastPulledAt` (for soft-deletable entities).
+- Pull responses are paginated:
+  - `limit` bounds each entity page.
+  - `nextCursor` carries per-entity offsets and fixed `snapshotAt`.
+  - `hasMore=true` means client must request the next page with `cursor`.
 - Output grouped by entity and operation:
   - `created[]`
   - `updated[]`
   - `deleted[]` (IDs only)
-- Returns `timestamp` for next client checkpoint.
+- Returns stable `timestamp` (equal to `snapshotAt`) for next client checkpoint.
 
 ### 6.2 Push (`POST /sync/push`)
 - Input: `{ locationId, lastPulledAt, changes, clientId }`.
@@ -81,7 +85,7 @@
   - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`).
 - Performance:
   - location/update-time indexes for sync and listing patterns.
-  - bounded payloads by incremental timestamp windows.
+  - bounded payloads via `GET /tickets` offset pagination and `POST /sync/pull` cursor pagination.
 - Operability:
   - Dockerized local stack with separate containers for web/api/postgres.
   - API/Web images are built via multi-stage Dockerfiles to keep runtime layers lean.

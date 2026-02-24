@@ -26,37 +26,73 @@ export class SyncService {
 
     const lastPulledAt = body.lastPulledAt ?? 0
     const since = new Date(lastPulledAt)
+    const limit = body.limit
+    const snapshotAt = body.cursor?.snapshotAt ?? Date.now()
+    const snapshotDate = new Date(snapshotAt)
+    const offsets = {
+      tickets: body.cursor?.ticketsOffset ?? 0,
+      ticketComments: body.cursor?.ticketCommentsOffset ?? 0,
+      ticketAttachments: body.cursor?.ticketAttachmentsOffset ?? 0,
+      paymentRecords: body.cursor?.paymentRecordsOffset ?? 0
+    }
 
-    const [tickets, ticketComments, ticketAttachments, paymentRecords] = await Promise.all([
-      this.prisma.ticket.findMany({
-        where: {
-          locationId: body.locationId,
-          OR: [{ updatedAt: { gt: since } }, { deletedAt: { gt: since } }]
-        },
-        orderBy: { updatedAt: 'asc' }
-      }),
-      this.prisma.ticketComment.findMany({
-        where: {
-          locationId: body.locationId,
-          OR: [{ updatedAt: { gt: since } }, { deletedAt: { gt: since } }]
-        },
-        orderBy: { updatedAt: 'asc' }
-      }),
-      this.prisma.ticketAttachment.findMany({
-        where: {
-          locationId: body.locationId,
-          OR: [{ updatedAt: { gt: since } }, { deletedAt: { gt: since } }]
-        },
-        orderBy: { updatedAt: 'asc' }
-      }),
-      this.prisma.paymentRecord.findMany({
-        where: {
-          locationId: body.locationId,
-          updatedAt: { gt: since }
-        },
-        orderBy: { updatedAt: 'asc' }
-      })
-    ])
+    const [ticketRows, ticketCommentRows, ticketAttachmentRows, paymentRecordRows] =
+      await Promise.all([
+        this.prisma.ticket.findMany({
+          where: {
+            locationId: body.locationId,
+            OR: [
+              { updatedAt: { gt: since, lte: snapshotDate } },
+              { deletedAt: { gt: since, lte: snapshotDate } }
+            ]
+          },
+          orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+          skip: offsets.tickets,
+          take: limit + 1
+        }),
+        this.prisma.ticketComment.findMany({
+          where: {
+            locationId: body.locationId,
+            OR: [
+              { updatedAt: { gt: since, lte: snapshotDate } },
+              { deletedAt: { gt: since, lte: snapshotDate } }
+            ]
+          },
+          orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+          skip: offsets.ticketComments,
+          take: limit + 1
+        }),
+        this.prisma.ticketAttachment.findMany({
+          where: {
+            locationId: body.locationId,
+            OR: [
+              { updatedAt: { gt: since, lte: snapshotDate } },
+              { deletedAt: { gt: since, lte: snapshotDate } }
+            ]
+          },
+          orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+          skip: offsets.ticketAttachments,
+          take: limit + 1
+        }),
+        this.prisma.paymentRecord.findMany({
+          where: {
+            locationId: body.locationId,
+            updatedAt: { gt: since, lte: snapshotDate }
+          },
+          orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+          skip: offsets.paymentRecords,
+          take: limit + 1
+        })
+      ])
+
+    const tickets = ticketRows.slice(0, limit)
+    const ticketComments = ticketCommentRows.slice(0, limit)
+    const ticketAttachments = ticketAttachmentRows.slice(0, limit)
+    const paymentRecords = paymentRecordRows.slice(0, limit)
+    const ticketsHasMore = ticketRows.length > limit
+    const ticketCommentsHasMore = ticketCommentRows.length > limit
+    const ticketAttachmentsHasMore = ticketAttachmentRows.length > limit
+    const paymentRecordsHasMore = paymentRecordRows.length > limit
 
     const changes: SyncChanges = {
       tickets: { created: [], updated: [], deleted: [] },
@@ -103,9 +139,22 @@ export class SyncService {
       }
     }
 
+    const hasMore =
+      ticketsHasMore || ticketCommentsHasMore || ticketAttachmentsHasMore || paymentRecordsHasMore
+
     return {
       changes,
-      timestamp: Date.now()
+      timestamp: snapshotAt,
+      hasMore,
+      nextCursor: hasMore
+        ? {
+            snapshotAt,
+            ticketsOffset: offsets.tickets + tickets.length,
+            ticketCommentsOffset: offsets.ticketComments + ticketComments.length,
+            ticketAttachmentsOffset: offsets.ticketAttachments + ticketAttachments.length,
+            paymentRecordsOffset: offsets.paymentRecords + paymentRecords.length
+          }
+        : null
     }
   }
 

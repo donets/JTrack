@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia'
-import { syncPullResponseSchema, syncPushResponseSchema, type SyncChanges } from '@jtrack/shared'
+import {
+  syncPullResponseSchema,
+  syncPushResponseSchema,
+  type SyncChanges,
+  type SyncPullCursor
+} from '@jtrack/shared'
 
 interface SyncState {
   syncing: boolean
@@ -140,29 +145,44 @@ export const useSyncStore = defineStore('sync', {
           }
         }
 
-        const pullResponseRaw = await api.post('/sync/pull', {
-          locationId,
-          lastPulledAt
-        })
+        let pullHasMore = true
+        let pullCursor: SyncPullCursor | null = null
+        let pullTimestamp = lastPulledAt ?? Date.now()
 
-        const pullResponse = syncPullResponseSchema.parse(pullResponseRaw)
+        while (pullHasMore) {
+          const pullResponseRaw = await api.post('/sync/pull', {
+            locationId,
+            lastPulledAt,
+            limit: 100,
+            cursor: pullCursor
+          })
 
-        await this.applyIncomingChanges(db, pullResponse.changes)
+          const pullResponse = syncPullResponseSchema.parse(pullResponseRaw)
+
+          await this.applyIncomingChanges(db, pullResponse.changes)
+          pullTimestamp = pullResponse.timestamp
+          pullHasMore = pullResponse.hasMore
+          pullCursor = pullResponse.nextCursor
+
+          if (pullHasMore && !pullCursor) {
+            throw new Error('Sync pull cursor is missing for paginated response')
+          }
+        }
 
         if (syncStateDoc) {
           await syncStateDoc.incrementalPatch({
-            lastPulledAt: pullResponse.timestamp,
+            lastPulledAt: pullTimestamp,
             updatedAt: Date.now()
           })
         } else {
           await db.collections.syncState.insert({
             id: syncStateId,
-            lastPulledAt: pullResponse.timestamp,
+            lastPulledAt: pullTimestamp,
             updatedAt: Date.now()
           })
         }
 
-        this.lastSyncedAt = pullResponse.timestamp
+        this.lastSyncedAt = pullTimestamp
       } catch (error: any) {
         this.error = error?.data?.message ?? error?.message ?? 'Sync failed'
       } finally {
