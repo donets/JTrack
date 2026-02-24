@@ -6,8 +6,10 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
   UsePipes
 } from '@nestjs/common'
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 import type { Request, Response } from 'express'
 import { loginInputSchema } from '@jtrack/shared'
 import { CurrentUser } from '@/common/current-user.decorator'
@@ -24,6 +26,13 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({
+    default: {
+      ttl: 60_000,
+      limit: 10
+    }
+  })
   @UsePipes(new ZodValidationPipe(loginInputSchema))
   async login(
     @Body() body: { email: string; password: string },
@@ -45,6 +54,13 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({
+    default: {
+      ttl: 60_000,
+      limit: 10
+    }
+  })
   async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,

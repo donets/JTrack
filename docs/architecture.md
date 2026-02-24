@@ -93,6 +93,7 @@ sequenceDiagram
   - short-lived JWT access token in Authorization header.
   - refresh token in HttpOnly cookie (`/auth` path).
   - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`).
+  - auth brute-force mitigation is enforced via throttling on `/auth/login` and `/auth/refresh`.
 - Authorization:
   - location scoping for tenant separation.
   - privilege-based endpoint checks.

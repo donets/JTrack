@@ -48,6 +48,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many auth attempts, try again later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /auth/refresh:
     post:
@@ -76,6 +82,12 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
           description: Missing/invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many refresh attempts, try again later
           content:
             application/json:
               schema:
