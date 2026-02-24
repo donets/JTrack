@@ -12,7 +12,7 @@
     "lint": "eslint src prisma/seed.ts --ext .ts",
     "typecheck": "pnpm --filter @jtrack/shared build && tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed"
   },

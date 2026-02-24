@@ -100,6 +100,7 @@
   - API/Web images are built via multi-stage Dockerfiles to keep runtime layers lean.
   - Docker build context excludes heavy local artifacts via `.dockerignore`.
   - Single-command monorepo dev workflow via Turbo.
+  - Local DB migration workflow uses `pnpm db:migrate` without hardcoded migration names (optional explicit name via `pnpm db:migrate -- --name <migration_name>`).
   - CI quality gate runs `pnpm test` on every `pull_request` and on `push` to `main`/`develop` via GitHub Actions (`.github/workflows/tests.yml`).
   - Repository hygiene: local IDE metadata (`.idea`) is excluded from VCS via `.gitignore`.
 
