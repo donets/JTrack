@@ -294,6 +294,7 @@ export interface SyncChanges {
 export interface SyncPullRequest {
   locationId: UUID
   lastPulledAt: UnixMs | null
+  clientId?: string
   limit?: number
   cursor?: SyncPullCursor | null
 }

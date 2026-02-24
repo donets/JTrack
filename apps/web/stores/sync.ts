@@ -94,6 +94,7 @@ export const useSyncStore = defineStore('sync', {
         const syncStateId = `sync:${locationId}`
         const syncStateDoc = await db.collections.syncState.findOne(syncStateId).exec()
         const lastPulledAt = syncStateDoc?.toJSON().lastPulledAt ?? null
+        let pullLastPulledAt = lastPulledAt
 
         const outboxDocs = await db.collections.outbox
           .find({
@@ -131,14 +132,15 @@ export const useSyncStore = defineStore('sync', {
         }
 
         if (outboxDocs.length > 0) {
-          const pushResponse = await api.post('/sync/push', {
+          const pushResponseRaw = await api.post('/sync/push', {
             locationId,
             lastPulledAt,
             changes: outgoingChanges,
             clientId: this.clientId
           })
 
-          syncPushResponseSchema.parse(pushResponse)
+          const pushResponse = syncPushResponseSchema.parse(pushResponseRaw)
+          pullLastPulledAt = pushResponse.newTimestamp
 
           for (const outboxDoc of outboxDocs) {
             await outboxDoc.remove()
@@ -147,12 +149,13 @@ export const useSyncStore = defineStore('sync', {
 
         let pullHasMore = true
         let pullCursor: SyncPullCursor | null = null
-        let pullTimestamp = lastPulledAt ?? Date.now()
+        let pullTimestamp = pullLastPulledAt ?? Date.now()
 
         while (pullHasMore) {
           const pullResponseRaw = await api.post('/sync/pull', {
             locationId,
-            lastPulledAt,
+            lastPulledAt: pullLastPulledAt,
+            clientId: this.clientId,
             limit: 100,
             cursor: pullCursor
           })

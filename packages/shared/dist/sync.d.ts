@@ -830,6 +830,7 @@ export declare const syncPullCursorSchema: z.ZodObject<{
 export declare const syncPullRequestSchema: z.ZodObject<{
     locationId: z.ZodString;
     lastPulledAt: z.ZodNullable<z.ZodNumber>;
+    clientId: z.ZodOptional<z.ZodString>;
     limit: z.ZodDefault<z.ZodNumber>;
     cursor: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodObject<{
         snapshotAt: z.ZodNumber;
@@ -861,10 +862,12 @@ export declare const syncPullRequestSchema: z.ZodObject<{
         ticketAttachmentsOffset: number;
         paymentRecordsOffset: number;
     } | null;
+    clientId?: string | undefined;
 }, {
     locationId: string;
     lastPulledAt: number | null;
     limit?: number | undefined;
+    clientId?: string | undefined;
     cursor?: {
         snapshotAt: number;
         ticketsOffset: number;
@@ -2759,6 +2762,7 @@ export declare const syncPushRequestSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     locationId: string;
     lastPulledAt: number | null;
+    clientId: string;
     changes: {
         tickets: {
             created: {
@@ -2881,10 +2885,10 @@ export declare const syncPushRequestSchema: z.ZodObject<{
             deleted: string[];
         };
     };
-    clientId: string;
 }, {
     locationId: string;
     lastPulledAt: number | null;
+    clientId: string;
     changes: {
         tickets: {
             created: {
@@ -3007,7 +3011,6 @@ export declare const syncPushRequestSchema: z.ZodObject<{
             deleted: string[];
         };
     };
-    clientId: string;
 }>;
 export declare const syncPushResponseSchema: z.ZodObject<{
     ok: z.ZodLiteral<true>;

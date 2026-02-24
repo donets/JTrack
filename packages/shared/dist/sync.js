@@ -22,6 +22,7 @@ export const syncPullCursorSchema = z.object({
 export const syncPullRequestSchema = z.object({
     locationId: idSchema,
     lastPulledAt: z.number().int().nullable(),
+    clientId: z.string().min(1).optional(),
     limit: syncPullLimitSchema.default(100),
     cursor: syncPullCursorSchema.nullable().optional().default(null)
 });

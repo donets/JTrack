@@ -175,7 +175,8 @@ describe('sync store', () => {
     )
     expect(post).toHaveBeenNthCalledWith(2, '/sync/pull', {
       locationId: 'loc-1',
-      lastPulledAt: 1_700_000_000_000,
+      lastPulledAt: 1_700_000_001_000,
+      clientId: syncStore.clientId,
       limit: 100,
       cursor: null
     })
@@ -305,12 +306,14 @@ describe('sync store', () => {
     expect(post).toHaveBeenNthCalledWith(1, '/sync/pull', {
       locationId: 'loc-1',
       lastPulledAt: 1_700_000_000_000,
+      clientId: syncStore.clientId,
       limit: 100,
       cursor: null
     })
     expect(post).toHaveBeenNthCalledWith(2, '/sync/pull', {
       locationId: 'loc-1',
       lastPulledAt: 1_700_000_000_000,
+      clientId: syncStore.clientId,
       limit: 100,
       cursor: paginationCursor
     })
