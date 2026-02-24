@@ -33,6 +33,7 @@
   - `Ticket.deletedAt`
   - `TicketComment.deletedAt`
   - `TicketAttachment.deletedAt`
+- User removal is hard-delete, but in-transaction it first clears `refreshTokenHash` for session invalidation, then reassigns historical references (`Ticket.createdByUserId`, `Ticket.assignedToUserId`, `TicketComment.authorUserId`, `TicketAttachment.uploadedByUserId`) to a reserved non-admin system account before delete.
 - Strong indexing by location and update time to optimize pull windows.
 - Role privileges persisted in DB but defined in code and seeded.
 

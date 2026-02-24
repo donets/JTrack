@@ -1,7 +1,12 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { hash } from 'bcryptjs'
+import { randomUUID } from 'node:crypto'
+import { type Prisma } from '@prisma/client'
 import { createUserSchema, updateUserSchema, type RoleKey } from '@jtrack/shared'
 import { PrismaService } from '@/prisma/prisma.service'
+
+const DELETED_USER_SYSTEM_EMAIL = 'system+deleted-user@jtrack.local'
+const DELETED_USER_SYSTEM_NAME = 'System Deleted User'
 
 @Injectable()
 export class UsersService {
@@ -176,8 +181,75 @@ export class UsersService {
   }
 
   async remove(userId: string) {
-    await this.prisma.userLocation.deleteMany({ where: { userId } })
-    await this.prisma.user.delete({ where: { id: userId } })
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true }
+      })
+
+      if (!user) {
+        throw new NotFoundException('User not found')
+      }
+
+      if (user.email === DELETED_USER_SYSTEM_EMAIL) {
+        throw new BadRequestException('System deleted-user account cannot be removed')
+      }
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { refreshTokenHash: null }
+      })
+
+      const replacementUserId = await this.getOrCreateDeletedUserSystemAccount(tx)
+
+      await tx.ticket.updateMany({
+        where: { createdByUserId: userId },
+        data: { createdByUserId: replacementUserId }
+      })
+
+      await tx.ticket.updateMany({
+        where: { assignedToUserId: userId },
+        data: { assignedToUserId: replacementUserId }
+      })
+
+      await tx.ticketComment.updateMany({
+        where: { authorUserId: userId },
+        data: { authorUserId: replacementUserId }
+      })
+
+      await tx.ticketAttachment.updateMany({
+        where: { uploadedByUserId: userId },
+        data: { uploadedByUserId: replacementUserId }
+      })
+
+      await tx.userLocation.deleteMany({ where: { userId } })
+      await tx.user.delete({ where: { id: userId } })
+    })
+
     return { ok: true }
+  }
+
+  private async getOrCreateDeletedUserSystemAccount(tx: Prisma.TransactionClient) {
+    const existingSystemUser = await tx.user.findUnique({
+      where: { email: DELETED_USER_SYSTEM_EMAIL },
+      select: { id: true }
+    })
+
+    if (existingSystemUser) {
+      return existingSystemUser.id
+    }
+
+    const passwordHash = await hash(randomUUID(), 12)
+    const systemUser = await tx.user.create({
+      data: {
+        email: DELETED_USER_SYSTEM_EMAIL,
+        name: DELETED_USER_SYSTEM_NAME,
+        passwordHash,
+        isAdmin: false
+      },
+      select: { id: true }
+    })
+
+    return systemUser.id
   }
 }

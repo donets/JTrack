@@ -301,6 +301,7 @@ paths:
     delete:
       tags: [Users]
       summary: Delete user and memberships
+      description: Clears target user refresh token hash, then reassigns historical ticket creator/assignee/comment author/attachment uploader references to reserved system deleted-user account before removing user.
       parameters:
         - $ref: '#/components/parameters/XLocationId'
         - $ref: '#/components/parameters/PathId'
@@ -311,6 +312,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Attempt to delete reserved system user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /tickets:
     get:
