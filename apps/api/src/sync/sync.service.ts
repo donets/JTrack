@@ -188,9 +188,22 @@ export class SyncService {
     lastPulledAt: Date,
     now: Date
   ) {
-    for (const record of [...changes.tickets.created, ...changes.tickets.updated]) {
-      const existing = await tx.ticket.findUnique({ where: { id: record.id } })
+    const upsertRecords = [...changes.tickets.created, ...changes.tickets.updated]
+    const existingUpsertById = await this.loadExistingById(
+      upsertRecords.map((record) => record.id),
+      (ids: string[]) =>
+        tx.ticket.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            locationId: true,
+            updatedAt: true
+          }
+        })
+    )
 
+    for (const record of upsertRecords) {
+      const existing = existingUpsertById.get(record.id)
       if (existing && (existing.locationId !== locationId || existing.updatedAt > lastPulledAt)) {
         continue
       }
@@ -234,8 +247,19 @@ export class SyncService {
       }
     }
 
+    const existingDeletedById = await this.loadExistingById(changes.tickets.deleted, (ids: string[]) =>
+      tx.ticket.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          locationId: true,
+          updatedAt: true
+        }
+      })
+    )
+
     for (const deletedId of changes.tickets.deleted) {
-      const existing = await tx.ticket.findUnique({ where: { id: deletedId } })
+      const existing = existingDeletedById.get(deletedId)
 
       if (!existing || existing.locationId !== locationId || existing.updatedAt > lastPulledAt) {
         continue
@@ -258,9 +282,22 @@ export class SyncService {
     lastPulledAt: Date,
     now: Date
   ) {
-    for (const record of [...changes.ticketComments.created, ...changes.ticketComments.updated]) {
-      const existing = await tx.ticketComment.findUnique({ where: { id: record.id } })
+    const upsertRecords = [...changes.ticketComments.created, ...changes.ticketComments.updated]
+    const existingUpsertById = await this.loadExistingById(
+      upsertRecords.map((record) => record.id),
+      (ids: string[]) =>
+        tx.ticketComment.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            locationId: true,
+            updatedAt: true
+          }
+        })
+    )
 
+    for (const record of upsertRecords) {
+      const existing = existingUpsertById.get(record.id)
       if (existing && (existing.locationId !== locationId || existing.updatedAt > lastPulledAt)) {
         continue
       }
@@ -289,8 +326,21 @@ export class SyncService {
       }
     }
 
+    const existingDeletedById = await this.loadExistingById(
+      changes.ticketComments.deleted,
+      (ids: string[]) =>
+        tx.ticketComment.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            locationId: true,
+            updatedAt: true
+          }
+        })
+    )
+
     for (const deletedId of changes.ticketComments.deleted) {
-      const existing = await tx.ticketComment.findUnique({ where: { id: deletedId } })
+      const existing = existingDeletedById.get(deletedId)
 
       if (!existing || existing.locationId !== locationId || existing.updatedAt > lastPulledAt) {
         continue
@@ -313,9 +363,22 @@ export class SyncService {
     lastPulledAt: Date,
     now: Date
   ) {
-    for (const record of [...changes.ticketAttachments.created, ...changes.ticketAttachments.updated]) {
-      const existing = await tx.ticketAttachment.findUnique({ where: { id: record.id } })
+    const upsertRecords = [...changes.ticketAttachments.created, ...changes.ticketAttachments.updated]
+    const existingUpsertById = await this.loadExistingById(
+      upsertRecords.map((record) => record.id),
+      (ids: string[]) =>
+        tx.ticketAttachment.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            locationId: true,
+            updatedAt: true
+          }
+        })
+    )
 
+    for (const record of upsertRecords) {
+      const existing = existingUpsertById.get(record.id)
       if (existing && (existing.locationId !== locationId || existing.updatedAt > lastPulledAt)) {
         continue
       }
@@ -356,8 +419,21 @@ export class SyncService {
       }
     }
 
+    const existingDeletedById = await this.loadExistingById(
+      changes.ticketAttachments.deleted,
+      (ids: string[]) =>
+        tx.ticketAttachment.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            locationId: true,
+            updatedAt: true
+          }
+        })
+    )
+
     for (const deletedId of changes.ticketAttachments.deleted) {
-      const existing = await tx.ticketAttachment.findUnique({ where: { id: deletedId } })
+      const existing = existingDeletedById.get(deletedId)
 
       if (!existing || existing.locationId !== locationId || existing.updatedAt > lastPulledAt) {
         continue
@@ -380,9 +456,22 @@ export class SyncService {
     lastPulledAt: Date,
     now: Date
   ) {
-    for (const record of [...changes.paymentRecords.created, ...changes.paymentRecords.updated]) {
-      const existing = await tx.paymentRecord.findUnique({ where: { id: record.id } })
+    const upsertRecords = [...changes.paymentRecords.created, ...changes.paymentRecords.updated]
+    const existingUpsertById = await this.loadExistingById(
+      upsertRecords.map((record) => record.id),
+      (ids: string[]) =>
+        tx.paymentRecord.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            locationId: true,
+            updatedAt: true
+          }
+        })
+    )
 
+    for (const record of upsertRecords) {
+      const existing = existingUpsertById.get(record.id)
       if (existing && (existing.locationId !== locationId || existing.updatedAt > lastPulledAt)) {
         continue
       }
@@ -414,6 +503,24 @@ export class SyncService {
         })
       }
     }
+  }
+
+  private async loadExistingById<T extends { id: string; locationId: string; updatedAt: Date }>(
+    ids: string[],
+    loader: (ids: string[]) => Promise<T[]>
+  ): Promise<Map<string, T>> {
+    const uniqueIds = this.uniqueIds(ids)
+
+    if (uniqueIds.length === 0) {
+      return new Map()
+    }
+
+    const records = await loader(uniqueIds)
+    return new Map(records.map((record) => [record.id, record]))
+  }
+
+  private uniqueIds(ids: string[]) {
+    return Array.from(new Set(ids))
   }
 
   private serializeTicket(ticket: {

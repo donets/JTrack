@@ -90,6 +90,7 @@ sequenceDiagram
 
 - `GET /tickets` uses offset pagination (`limit`, `offset`) and returns `{ items, page }`.
 - `POST /sync/pull` uses cursor pagination with per-entity offsets and a fixed `snapshotAt` timestamp to keep multipage pulls consistent.
+- `POST /sync/push` preloads existing records by batched `findMany(where: { id: { in: [...] } })` per entity to avoid N+1 lookups inside mutation loops.
 
 ## 8. Security Architecture
 - Access:
