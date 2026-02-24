@@ -35,6 +35,10 @@ docker/
 6. `pnpm db:seed`
 7. `pnpm dev`
 
+Migration naming:
+- default: `pnpm db:migrate` (Prisma prompts for a migration name when needed)
+- explicit: `pnpm db:migrate -- --name your_migration_name`
+
 Default services:
 - Web: `http://localhost:3000`
 - API: `http://localhost:3001`
