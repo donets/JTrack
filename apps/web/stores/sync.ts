@@ -36,6 +36,19 @@ type EchoSuppressionState = Record<
   }
 >
 
+interface PendingAttachmentUpload {
+  id: string
+  attachmentId: string
+  ticketId: string
+  locationId: string
+  fileName: string
+  mimeType: string
+  base64: string
+  width: number | null
+  height: number | null
+  createdAt: number
+}
+
 function createEmptyChanges(): SyncChanges {
   return {
     tickets: { created: [], updated: [], deleted: [] },
@@ -202,6 +215,7 @@ export const useSyncStore = defineStore('sync', {
         const lastPulledAt = syncStateDoc?.toJSON().lastPulledAt ?? null
         let pushTimestamp: number | null = null
         let echoedState: EchoSuppressionState | null = null
+        await this.flushPendingAttachmentUploads(db, api, locationId)
 
         const outboxDocs = await db.collections.outbox
           .find({
@@ -302,6 +316,100 @@ export const useSyncStore = defineStore('sync', {
         this.error = error?.data?.message ?? error?.message ?? 'Sync failed'
       } finally {
         this.syncing = false
+      }
+    },
+
+    async flushPendingAttachmentUploads(db: any, api: any, locationId: string) {
+      const pendingCollection = db.collections.pendingAttachmentUploads
+
+      if (!pendingCollection) {
+        return
+      }
+
+      const pendingDocs = await pendingCollection
+        .find({
+          selector: { locationId }
+        })
+        .exec()
+
+      pendingDocs.sort((left: any, right: any) => left.toJSON().createdAt - right.toJSON().createdAt)
+
+      for (const pendingDoc of pendingDocs) {
+        const pending = pendingDoc.toJSON() as PendingAttachmentUpload
+        try {
+          const attachmentDoc = await db.collections.ticketAttachments.findOne(pending.attachmentId).exec()
+
+          if (!attachmentDoc) {
+            await pendingDoc.remove()
+            continue
+          }
+
+          const attachment = attachmentDoc.toJSON()
+          const now = new Date().toISOString()
+          const kind = pending.mimeType.startsWith('image/') ? 'Photo' : 'File'
+          const needsUpload = String(attachment.storageKey).startsWith('pending/')
+
+          let finalizedAttachment = attachment
+
+          if (needsUpload) {
+            const presign = (await api.post('/attachments/presign', {
+              fileName: pending.fileName,
+              mimeType: pending.mimeType
+            })) as {
+              storageKey: string
+              uploadUrl: string
+              headers: Record<string, string>
+            }
+
+            const uploadResult = (await api.put(presign.uploadUrl, {
+              base64: pending.base64
+            })) as { url: string; size: number }
+
+            finalizedAttachment = {
+              id: attachment.id,
+              ticketId: attachment.ticketId,
+              locationId: attachment.locationId,
+              uploadedByUserId: attachment.uploadedByUserId,
+              kind,
+              storageKey: presign.storageKey,
+              url: uploadResult.url,
+              mimeType: pending.mimeType,
+              size: uploadResult.size,
+              width: pending.width ?? null,
+              height: pending.height ?? null,
+              createdAt: attachment.createdAt,
+              updatedAt: now,
+              deletedAt: attachment.deletedAt
+            }
+
+            await attachmentDoc.incrementalPatch({
+              kind,
+              storageKey: presign.storageKey,
+              url: uploadResult.url,
+              mimeType: pending.mimeType,
+              size: uploadResult.size,
+              width: pending.width ?? null,
+              height: pending.height ?? null,
+              updatedAt: now
+            })
+          }
+
+          await db.collections.outbox.upsert({
+            id: `pending-attachment:${pending.id}`,
+            locationId,
+            entity: 'ticketAttachments',
+            operation: 'create',
+            payload: finalizedAttachment,
+            createdAt: Date.now(),
+            processed: false,
+            error: null
+          })
+
+          await pendingDoc.remove()
+        } catch (error) {
+          console.warn('[sync] failed to flush pending attachment upload, will retry', error)
+          continue
+        }
       }
     },
 

@@ -10,6 +10,19 @@ interface AttachmentPayload {
   height?: number
 }
 
+function isLikelyOfflineError(error: unknown) {
+  if (import.meta.client && !navigator.onLine) {
+    return true
+  }
+
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  const message = error.message.toLowerCase()
+  return message.includes('network') || message.includes('fetch')
+}
+
 async function blobToBase64(blob: Blob): Promise<string> {
   const arrayBuffer = await blob.arrayBuffer()
   const bytes = new Uint8Array(arrayBuffer)
@@ -66,31 +79,59 @@ export const useAttachmentAdapter = () => {
   }
 
   const uploadAttachment = async (ticketId: string, payload: AttachmentPayload) => {
-    const presign = await api.post<{
-      storageKey: string
-      uploadUrl: string
-      headers: Record<string, string>
-    }>('/attachments/presign', {
-      fileName: payload.fileName,
-      mimeType: payload.mimeType
-    })
+    if (import.meta.client && !navigator.onLine) {
+      await repository.stageAttachmentUpload({
+        ticketId,
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+        base64: payload.base64,
+        width: payload.width,
+        height: payload.height
+      })
+      return
+    }
 
-    const uploadResult = await api.put<{ url: string; size: number }>(presign.uploadUrl, {
-      base64: payload.base64
-    })
+    try {
+      const presign = await api.post<{
+        storageKey: string
+        uploadUrl: string
+        headers: Record<string, string>
+      }>('/attachments/presign', {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType
+      })
 
-    const kind = payload.mimeType.startsWith('image/') ? 'Photo' : 'File'
+      const uploadResult = await api.put<{ url: string; size: number }>(presign.uploadUrl, {
+        base64: payload.base64
+      })
 
-    await repository.addAttachmentMetadata({
-      ticketId,
-      kind,
-      storageKey: presign.storageKey,
-      url: uploadResult.url,
-      mimeType: payload.mimeType,
-      size: uploadResult.size,
-      width: payload.width ?? null,
-      height: payload.height ?? null
-    })
+      const kind = payload.mimeType.startsWith('image/') ? 'Photo' : 'File'
+
+      await repository.addAttachmentMetadata({
+        ticketId,
+        kind,
+        storageKey: presign.storageKey,
+        url: uploadResult.url,
+        mimeType: payload.mimeType,
+        size: uploadResult.size,
+        width: payload.width ?? null,
+        height: payload.height ?? null
+      })
+    } catch (error) {
+      if (isLikelyOfflineError(error)) {
+        await repository.stageAttachmentUpload({
+          ticketId,
+          fileName: payload.fileName,
+          mimeType: payload.mimeType,
+          base64: payload.base64,
+          width: payload.width,
+          height: payload.height
+        })
+        return
+      }
+
+      throw error
+    }
   }
 
   return {

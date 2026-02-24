@@ -69,6 +69,7 @@
 ### 6.3 Client Storage Implementation Note
 - RxDB v16 document updates must use `incrementalPatch`/`incrementalModify`.
 - `atomicPatch` is not supported in this version and causes runtime method errors.
+- Offline attachment files are staged in local `pendingAttachmentUploads` collection and uploaded during the next online sync cycle before outbox push.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 
 ## 7. Consistency and Conflict Rules

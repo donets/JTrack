@@ -10,6 +10,15 @@ type OutboxEntity = 'tickets' | 'ticketComments' | 'ticketAttachments' | 'paymen
 
 type OutboxOperation = 'create' | 'update' | 'delete'
 
+interface PendingAttachmentUploadInput {
+  ticketId: string
+  fileName: string
+  mimeType: string
+  base64: string
+  width?: number
+  height?: number
+}
+
 export const useOfflineRepository = () => {
   const db = useRxdb()
   const authStore = useAuthStore()
@@ -140,6 +149,47 @@ export const useOfflineRepository = () => {
     return attachment
   }
 
+  const stageAttachmentUpload = async (input: PendingAttachmentUploadInput) => {
+    const { userId, locationId } = requireContext()
+    const now = new Date().toISOString()
+    const attachmentId = crypto.randomUUID()
+    const approximateSize = Math.max(1, Math.floor((input.base64.length * 3) / 4))
+    const kind = input.mimeType.startsWith('image/') ? 'Photo' : 'File'
+
+    const attachment = {
+      id: attachmentId,
+      ticketId: input.ticketId,
+      locationId,
+      uploadedByUserId: userId,
+      kind,
+      storageKey: `pending/${input.fileName}`,
+      url: `data:${input.mimeType};base64,${input.base64}`,
+      mimeType: input.mimeType,
+      size: approximateSize,
+      width: input.width ?? null,
+      height: input.height ?? null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null
+    }
+
+    await db.collections.ticketAttachments.insert(attachment)
+    await db.collections.pendingAttachmentUploads.insert({
+      id: crypto.randomUUID(),
+      attachmentId,
+      ticketId: input.ticketId,
+      locationId,
+      fileName: input.fileName,
+      mimeType: input.mimeType,
+      base64: input.base64,
+      width: input.width ?? null,
+      height: input.height ?? null,
+      createdAt: Date.now()
+    })
+
+    return attachment
+  }
+
   const addPaymentRecord = async (input: CreatePaymentRecordInput) => {
     const { locationId } = requireContext()
     const now = new Date().toISOString()
@@ -167,6 +217,7 @@ export const useOfflineRepository = () => {
     deleteTicket,
     addComment,
     addAttachmentMetadata,
+    stageAttachmentUpload,
     addPaymentRecord
   }
 }
