@@ -56,6 +56,7 @@ flowchart LR
   - indexes tuned for location-scoped queries and sync windows.
 - Soft-delete only where sync tombstones are required.
 - User deletion is hard-delete with transactional session invalidation (`refreshTokenHash` reset) and reassignment of historical `createdBy`/`assignedTo`/`author`/`uploadedBy` references to a reserved non-admin system user to satisfy FK constraints.
+- Location deletion is guarded by application checks: if any location-scoped business records exist, API returns conflict instead of attempting FK-breaking hard delete.
 
 ## 6. Client Architecture
 ### 6.1 Web App
