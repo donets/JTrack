@@ -49,6 +49,7 @@ export class LocationGuard implements CanActivate {
     request.locationId = locationId
 
     if (request.user.isAdmin) {
+      request.locationRole = 'Owner'
       return true
     }
 

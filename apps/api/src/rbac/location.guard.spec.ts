@@ -75,7 +75,7 @@ describe('LocationGuard', () => {
     ).rejects.toBeInstanceOf(BadRequestException)
   })
 
-  it('allows admins without membership lookup', async () => {
+  it('allows admins without membership lookup and sets synthetic role', async () => {
     const request = {
       user: {
         sub: 'admin-1',
@@ -89,6 +89,7 @@ describe('LocationGuard', () => {
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true)
     expect(request.locationId).toBe('loc-1')
+    expect(request.locationRole).toBe('Owner')
     expect(prisma.userLocation.findUnique).not.toHaveBeenCalled()
   })
 
