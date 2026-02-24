@@ -1,0 +1,21 @@
+# Archive: 2026-02
+
+- 2026-02-24: JTR-9 completed: added pagination for `GET /tickets` (`limit`/`offset`) and paginated `POST /sync/pull` with `limit` + `cursor` (`hasMore`/`nextCursor`), updated API/Web/Shared contracts and tests.
+- 2026-02-24: JTR-8 in progress: added `@nestjs/throttler`, configured auth endpoint rate limits for `/auth/login` and `/auth/refresh`, and updated OpenAPI/system docs for 429/security behavior.
+- 2026-02-24: Fixed CI web test failure for missing `.nuxt/tsconfig.json`: `apps/web` test script now runs `nuxt prepare` before `vitest`.
+- 2026-02-24: CI test workflow trigger scope adjusted: `pnpm test` now runs on all pull requests and on pushes to `main`/`develop`.
+- 2026-02-24: Fixed API typecheck baseline errors: removed direct Prisma enum imports from `prisma/seed.ts`, added explicit service callback/transaction typing across API modules, and aligned docs for type-safety quality gate.
+- 2026-02-24: JTR-7 completed: Vitest infrastructure added for API/Web/Shared, initial critical-path tests added (auth/sync/guards + Pinia auth/sync stores + shared sync/RBAC contracts), docs updated.
+- 2026-02-24: JTR-11 completed: API/Web Dockerfiles migrated to multi-stage builds, `docker/.dockerignore` added, and Render docker command aligned with lean runtime image startup.
+- 2026-02-24: Fixed P0 security follow-up: cookie `secure` flag now supports explicit `COOKIE_SECURE`, logout now recreates clean RxDB instance for same-tab re-login, sync clientId reset behavior tightened; docs and Render env updated.
+- 2026-02-23: Added `.idea` to repository `.gitignore`; documented VCS hygiene in system design docs.
+- 2026-02-23: Frontend RxDB mutation API fixed for v16 compatibility (`atomicPatch` -> `incrementalPatch`) in sync/offline flows; docs updated.
+- 2026-02-23: Added separate Docker images/containers for frontend (`jtrack-web`) and backend (`jtrack-api`), updated compose runtime and docs.
+- 2026-02-23: Fixed API container entrypoint to run compiled Nest output from `/app/packages/tsconfig/dist/src/main.js` after migrations.
+- 2026-02-23: Compose image names standardized from `docker-*` to `jtrack-*`.
+- 2026-02-23: DB network alias standardized to `jtrack`; API DATABASE_URL now targets `@jtrack:5432`.
+- 2026-02-23: Marked migration `20260223082027_init` as legacy no-op to prevent `prisma migrate deploy` failure on clean DB.
+- 2026-02-23: Fixed API build output path by setting `apps/api/tsconfig.json` `outDir: dist`; Docker API start now uses package script again.
+- 2026-02-23: Updated API start script to `node dist/src/main.js` to match Nest build output layout.
+- 2026-02-23: Added cloud deploy configs: backend on Render (`render.yaml`), frontend on Vercel (`vercel.json`).
+- 2026-02-23: Render DB resource finalized as `jtrack-db` and linked to backend `DATABASE_URL`.
