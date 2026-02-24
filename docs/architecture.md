@@ -71,6 +71,7 @@ flowchart LR
   - local mutation first,
   - enqueue operation,
   - background push + pull convergence.
+- On active location switch, client prunes location-scoped RxDB records for non-active locations to prevent cross-tenant accumulation/leakage.
 - Offline attachments are staged in RxDB (`pendingAttachmentUploads`) and converted to regular attachment outbox records after deferred upload when connectivity returns; base64 file payload is stored only in staging collection (attachment placeholder keeps pending metadata without duplicating file bytes).
 
 ### 6.2 Mobile App

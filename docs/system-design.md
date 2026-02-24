@@ -73,6 +73,7 @@
   - Staged file payload is stored once (in `pendingAttachmentUploads`), while `ticketAttachments` keeps a lightweight pending placeholder.
   - Offline staging is bounded by max file size (25MB) to reduce IndexedDB quota pressure.
   - Pending uploads are flushed with per-item retry semantics: one failed file does not block subsequent files in the same sync run.
+- On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 
 ## 7. Consistency and Conflict Rules

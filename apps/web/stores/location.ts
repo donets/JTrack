@@ -17,6 +17,8 @@ interface LocationState {
   loaded: boolean
 }
 
+const hasClientStorage = () => typeof window !== 'undefined' && typeof localStorage !== 'undefined'
+
 export const useLocationStore = defineStore('location', {
   state: (): LocationState => ({
     memberships: [],
@@ -29,7 +31,7 @@ export const useLocationStore = defineStore('location', {
   },
   actions: {
     restoreActiveLocation() {
-      if (!import.meta.client) {
+      if (!hasClientStorage()) {
         return
       }
 
@@ -38,14 +40,19 @@ export const useLocationStore = defineStore('location', {
     },
 
     setActiveLocation(locationId: string | null) {
+      const previousLocationId = this.activeLocationId
       this.activeLocationId = locationId
 
-      if (import.meta.client) {
+      if (hasClientStorage()) {
         if (locationId) {
           localStorage.setItem('jtrack.activeLocationId', locationId)
         } else {
           localStorage.removeItem('jtrack.activeLocationId')
         }
+      }
+
+      if (previousLocationId !== locationId) {
+        void this.cleanupLocationScopedData(locationId)
       }
     },
 
@@ -70,6 +77,48 @@ export const useLocationStore = defineStore('location', {
       this.memberships = []
       this.loaded = false
       this.setActiveLocation(null)
+    },
+
+    async cleanupLocationScopedData(locationId: string | null) {
+      if (typeof window === 'undefined') {
+        return
+      }
+
+      let db: any
+      try {
+        db = useRxdb()
+      } catch {
+        return
+      }
+
+      const removeBySelector = async (collection: any, selector?: Record<string, unknown>) => {
+        const query = selector ? collection.find({ selector }) : collection.find()
+        const docs = await query.exec()
+
+        for (const doc of docs) {
+          await doc.remove()
+        }
+      }
+
+      const locationScopedCollections = [
+        db.collections.tickets,
+        db.collections.ticketComments,
+        db.collections.ticketAttachments,
+        db.collections.paymentRecords,
+        db.collections.outbox,
+        db.collections.pendingAttachmentUploads
+      ].filter(Boolean)
+
+      await Promise.all(
+        locationScopedCollections.map((collection: any) =>
+          removeBySelector(collection, locationId ? { locationId: { $ne: locationId } } : undefined)
+        )
+      )
+
+      await removeBySelector(
+        db.collections.syncState,
+        locationId ? { id: { $ne: `sync:${locationId}` } } : undefined
+      )
     }
   }
 })

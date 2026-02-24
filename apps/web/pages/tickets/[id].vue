@@ -73,6 +73,7 @@
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
+const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
 const adapter = useAttachmentAdapter()
@@ -90,14 +91,34 @@ let commentsSub: any = null
 let attachmentsSub: any = null
 
 const bindStreams = () => {
-  ticketSub = db.collections.tickets.findOne(ticketId).$.subscribe((doc: any) => {
-    ticket.value = doc?.toJSON() ?? null
-  })
+  ticketSub?.unsubscribe()
+  commentsSub?.unsubscribe()
+  attachmentsSub?.unsubscribe()
+
+  if (!locationStore.activeLocationId) {
+    ticket.value = null
+    comments.value = []
+    attachments.value = []
+    return
+  }
+
+  ticketSub = db.collections.tickets
+    .find({
+      selector: {
+        id: ticketId,
+        locationId: locationStore.activeLocationId
+      }
+    })
+    .$
+    .subscribe((docs: any[]) => {
+      ticket.value = docs[0]?.toJSON() ?? null
+    })
 
   commentsSub = db.collections.ticketComments
     .find({
       selector: {
-        ticketId
+        ticketId,
+        locationId: locationStore.activeLocationId
       }
     })
     .$
@@ -111,7 +132,8 @@ const bindStreams = () => {
   attachmentsSub = db.collections.ticketAttachments
     .find({
       selector: {
-        ticketId
+        ticketId,
+        locationId: locationStore.activeLocationId
       }
     })
     .$
@@ -123,7 +145,7 @@ const bindStreams = () => {
     })
 }
 
-onMounted(bindStreams)
+watch(() => locationStore.activeLocationId, bindStreams, { immediate: true })
 
 onUnmounted(() => {
   ticketSub?.unsubscribe()
