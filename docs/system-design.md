@@ -25,7 +25,7 @@
 - For location-scoped endpoints, `x-location-id` header is mandatory.
 - `LocationGuard` validates location membership for non-admin users.
 - `PrivilegesGuard` validates endpoint privileges resolved from role.
-- Internal admins (`isAdmin = true`) bypass membership and privilege constraints.
+- Internal admins (`isAdmin = true`) bypass membership and privilege constraints, and request context receives synthetic `locationRole=Owner` for downstream consistency.
 
 ## 5. Data Model Strategy
 - Relational core with explicit foreign keys.

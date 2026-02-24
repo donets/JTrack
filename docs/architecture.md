@@ -45,7 +45,7 @@ flowchart LR
 
 ### 4.2 Cross-Cutting Guards
 - `JwtAuthGuard`: validates bearer access token.
-- `LocationGuard`: enforces `x-location-id` + active membership.
+- `LocationGuard`: enforces `x-location-id` + active membership; for admin bypass, writes synthetic `locationRole=Owner` into request context.
 - `PrivilegesGuard`: validates endpoint privilege set against role.
 
 ## 5. Data Architecture
