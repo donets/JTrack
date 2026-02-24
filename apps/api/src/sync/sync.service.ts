@@ -11,6 +11,7 @@ import {
   type TicketComment,
   type PaymentRecord
 } from '@jtrack/shared'
+import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
@@ -536,22 +537,11 @@ export class SyncService {
     updatedAt: Date
     deletedAt: Date | null
   }): Ticket {
+    const serialized = serializeDates(ticket)
+
     return {
-      id: ticket.id,
-      locationId: ticket.locationId,
-      createdByUserId: ticket.createdByUserId,
-      assignedToUserId: ticket.assignedToUserId,
-      title: ticket.title,
-      description: ticket.description,
-      status: ticket.status as Ticket['status'],
-      scheduledStartAt: ticket.scheduledStartAt?.toISOString() ?? null,
-      scheduledEndAt: ticket.scheduledEndAt?.toISOString() ?? null,
-      priority: ticket.priority,
-      totalAmountCents: ticket.totalAmountCents,
-      currency: ticket.currency,
-      createdAt: ticket.createdAt.toISOString(),
-      updatedAt: ticket.updatedAt.toISOString(),
-      deletedAt: ticket.deletedAt?.toISOString() ?? null
+      ...serialized,
+      status: ticket.status as Ticket['status']
     }
   }
 
@@ -565,16 +555,7 @@ export class SyncService {
     updatedAt: Date
     deletedAt: Date | null
   }): TicketComment {
-    return {
-      id: comment.id,
-      ticketId: comment.ticketId,
-      locationId: comment.locationId,
-      authorUserId: comment.authorUserId,
-      body: comment.body,
-      createdAt: comment.createdAt.toISOString(),
-      updatedAt: comment.updatedAt.toISOString(),
-      deletedAt: comment.deletedAt?.toISOString() ?? null
-    }
+    return serializeDates(comment) as TicketComment
   }
 
   private serializeAttachment(attachment: {
@@ -593,21 +574,11 @@ export class SyncService {
     updatedAt: Date
     deletedAt: Date | null
   }): TicketAttachment {
+    const serialized = serializeDates(attachment)
+
     return {
-      id: attachment.id,
-      ticketId: attachment.ticketId,
-      locationId: attachment.locationId,
-      uploadedByUserId: attachment.uploadedByUserId,
-      kind: attachment.kind as TicketAttachment['kind'],
-      storageKey: attachment.storageKey,
-      url: attachment.url,
-      mimeType: attachment.mimeType,
-      size: attachment.size,
-      width: attachment.width,
-      height: attachment.height,
-      createdAt: attachment.createdAt.toISOString(),
-      updatedAt: attachment.updatedAt.toISOString(),
-      deletedAt: attachment.deletedAt?.toISOString() ?? null
+      ...serialized,
+      kind: attachment.kind as TicketAttachment['kind']
     }
   }
 
@@ -622,16 +593,12 @@ export class SyncService {
     createdAt: Date
     updatedAt: Date
   }): PaymentRecord {
+    const serialized = serializeDates(payment)
+
     return {
-      id: payment.id,
-      ticketId: payment.ticketId,
-      locationId: payment.locationId,
+      ...serialized,
       provider: payment.provider as PaymentRecord['provider'],
-      amountCents: payment.amountCents,
-      currency: payment.currency,
-      status: payment.status as PaymentRecord['status'],
-      createdAt: payment.createdAt.toISOString(),
-      updatedAt: payment.updatedAt.toISOString()
+      status: payment.status as PaymentRecord['status']
     }
   }
 }

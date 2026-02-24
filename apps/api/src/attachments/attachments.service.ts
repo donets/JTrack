@@ -4,6 +4,7 @@ import type {
   PresignInput,
   UploadInput
 } from '@jtrack/shared'
+import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
 import { STORAGE_PROVIDER, type StorageProvider } from './storage/storage-provider.interface'
 
@@ -59,12 +60,7 @@ export class AttachmentsService {
       }
     })
 
-    return {
-      ...attachment,
-      createdAt: attachment.createdAt.toISOString(),
-      updatedAt: attachment.updatedAt.toISOString(),
-      deletedAt: attachment.deletedAt?.toISOString() ?? null
-    }
+    return serializeDates(attachment)
   }
 
   async list(locationId: string, ticketId: string) {
@@ -79,12 +75,7 @@ export class AttachmentsService {
       }
     })
 
-    return attachments.map((attachment: (typeof attachments)[number]) => ({
-      ...attachment,
-      createdAt: attachment.createdAt.toISOString(),
-      updatedAt: attachment.updatedAt.toISOString(),
-      deletedAt: attachment.deletedAt?.toISOString() ?? null
-    }))
+    return attachments.map((attachment: (typeof attachments)[number]) => serializeDates(attachment))
   }
 
   async remove(locationId: string, attachmentId: string) {

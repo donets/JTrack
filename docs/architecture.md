@@ -48,6 +48,7 @@ flowchart LR
 - `LocationGuard`: enforces `x-location-id` + active membership; for admin bypass, writes synthetic `locationRole=Owner` into request context.
 - `PrivilegesGuard`: validates endpoint privilege set against role.
 - `ZodValidationPipe`: validates request payloads at controller boundary using shared schema contracts.
+- `serializeDates` helper (`apps/api/src/common/date-serializer.ts`): centralizes `Date -> ISO string` conversion for API response mapping in service layer.
 
 ## 5. Data Architecture
 - PostgreSQL as source of truth.

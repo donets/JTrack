@@ -83,6 +83,7 @@
 - Location delete with dependent business records: `409 Conflict`.
 - Invalid or already-used invite token: `401 Unauthorized`.
 - Validation is schema-based (Zod) and fails fast at controller boundary via `ZodValidationPipe`; service layer consumes already-validated typed inputs.
+- API response date serialization is centralized in `apps/api/src/common/date-serializer.ts` to keep all date fields consistently ISO formatted.
 
 ## 9. Non-Functional Requirements
 - Security:
