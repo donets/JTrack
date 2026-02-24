@@ -69,6 +69,7 @@
 
 ## 8. Error Handling
 - Auth failures: `401 Unauthorized`.
+- Auth rate-limit exceeded: `429 Too Many Requests`.
 - Missing location context: `400 Bad Request` (`x-location-id` absent).
 - Permission and membership violations: `403 Forbidden`.
 - Missing domain object: `404 Not Found`.
@@ -79,6 +80,7 @@
   - bcrypt hash for passwords and stored refresh tokens.
   - refresh token cookie is `httpOnly`, `sameSite=lax`, path-scoped to `/auth`.
   - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`).
+  - auth endpoints `/auth/login` and `/auth/refresh` are protected by request throttling.
 - Performance:
   - location/update-time indexes for sync and listing patterns.
   - bounded payloads by incremental timestamp windows.
