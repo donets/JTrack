@@ -55,6 +55,7 @@
 ### 6.2 Push (`POST /sync/push`)
 - Input: `{ locationId, lastPulledAt, changes, clientId }`.
 - Server applies each entity batch inside one DB transaction.
+- Existing rows for each entity batch are preloaded with `findMany(id in [...])` to avoid N+1 per-record lookups.
 - Conflict policy: server-wins (last-write-wins by server timeline).
   - If existing row was updated after client `lastPulledAt`, incoming mutation is skipped.
 - On success returns `{ ok: true, newTimestamp }`.
@@ -88,6 +89,7 @@
 - Performance:
   - location/update-time indexes for sync and listing patterns.
   - bounded payloads via `GET /tickets` offset pagination and `POST /sync/pull` cursor pagination.
+  - push-side mutation checks use batched `findMany` preloads instead of per-record `findUnique`.
 - Operability:
   - Dockerized local stack with separate containers for web/api/postgres.
   - API/Web images are built via multi-stage Dockerfiles to keep runtime layers lean.

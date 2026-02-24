@@ -259,38 +259,39 @@ describe('SyncService', () => {
   it('push writes create/update/delete operations in a single transaction', async () => {
     const lastPulledAt = new Date('2026-02-24T08:00:00.000Z').getTime()
 
+    const existingTickets = [
+      {
+        id: 'ticket-updated',
+        locationId: LOCATION_ID,
+        updatedAt: new Date(lastPulledAt - 5000)
+      },
+      {
+        id: 'ticket-deleted',
+        locationId: LOCATION_ID,
+        updatedAt: new Date(lastPulledAt - 5000)
+      }
+    ]
+
     const tx = {
       ticket: {
-        findUnique: vi.fn(async ({ where: { id } }: { where: { id: string } }) => {
-          if (id === 'ticket-created') {
-            return null
-          }
-
-          if (id === 'ticket-updated' || id === 'ticket-deleted') {
-            return {
-              id,
-              locationId: LOCATION_ID,
-              updatedAt: new Date(lastPulledAt - 5000)
-            }
-          }
-
-          return null
-        }),
+        findMany: vi.fn(async ({ where: { id: { in: ids } } }: { where: { id: { in: string[] } } }) =>
+          existingTickets.filter((ticket) => ids.includes(ticket.id))
+        ),
         create: vi.fn(),
         update: vi.fn()
       },
       ticketComment: {
-        findUnique: vi.fn(),
+        findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn()
       },
       ticketAttachment: {
-        findUnique: vi.fn(),
+        findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn()
       },
       paymentRecord: {
-        findUnique: vi.fn(async () => null),
+        findMany: vi.fn(async () => []),
         create: vi.fn(),
         update: vi.fn()
       }
@@ -384,6 +385,18 @@ describe('SyncService', () => {
         deletedAt: expect.any(Date)
       })
     })
+    expect(tx.ticket.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        where: { id: { in: ['ticket-created', 'ticket-updated'] } }
+      })
+    )
+    expect(tx.ticket.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: { id: { in: ['ticket-deleted'] } }
+      })
+    )
 
     expect(tx.paymentRecord.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -399,26 +412,28 @@ describe('SyncService', () => {
 
     const tx = {
       ticket: {
-        findUnique: vi.fn(async () => ({
-          id: 'ticket-updated',
-          locationId: LOCATION_ID,
-          updatedAt: new Date(lastPulledAt + 60_000)
-        })),
+        findMany: vi.fn(async () => [
+          {
+            id: 'ticket-updated',
+            locationId: LOCATION_ID,
+            updatedAt: new Date(lastPulledAt + 60_000)
+          }
+        ]),
         create: vi.fn(),
         update: vi.fn()
       },
       ticketComment: {
-        findUnique: vi.fn(),
+        findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn()
       },
       ticketAttachment: {
-        findUnique: vi.fn(),
+        findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn()
       },
       paymentRecord: {
-        findUnique: vi.fn(),
+        findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn()
       }
