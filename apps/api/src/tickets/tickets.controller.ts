@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import { ticketListQuerySchema } from '@jtrack/shared'
 import { CurrentLocation } from '@/common/current-location.decorator'
 import { CurrentUser } from '@/common/current-user.decorator'
 import type { JwtUser } from '@/common/types'
@@ -11,21 +12,8 @@ export class TicketsController {
 
   @Get()
   @RequirePrivileges(['tickets.read'])
-  async list(
-    @CurrentLocation() locationId: string,
-    @Query('status') status?: string,
-    @Query('assignedToUserId') assignedToUserId?: string
-  ) {
-    const filters: { status?: string; assignedToUserId?: string } = {}
-
-    if (status) {
-      filters.status = status
-    }
-
-    if (assignedToUserId) {
-      filters.assignedToUserId = assignedToUserId
-    }
-
+  async list(@CurrentLocation() locationId: string, @Query() query: Record<string, unknown>) {
+    const filters = ticketListQuerySchema.parse(query)
     return this.ticketsService.list(locationId, filters)
   }
 

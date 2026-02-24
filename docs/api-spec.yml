@@ -326,15 +326,26 @@ paths:
           name: assignedToUserId
           schema:
             type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         '200':
-          description: Ticket list
+          description: Ticket list page
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Ticket'
+                $ref: '#/components/schemas/TicketListResponse'
     post:
       tags: [Tickets]
       summary: Create ticket
@@ -695,7 +706,7 @@ paths:
     post:
       tags: [Sync]
       summary: Pull changes since last client timestamp
-      description: Body `locationId` must match `x-location-id`.
+      description: Body `locationId` must match `x-location-id`. Supports cursor-based pagination with fixed snapshot timestamp.
       parameters:
         - $ref: '#/components/parameters/XLocationId'
       requestBody:
@@ -1182,6 +1193,34 @@ components:
                 $ref: '#/components/schemas/PaymentRecord'
           required: [comments, attachments, paymentRecords]
 
+    OffsetPage:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+        offset:
+          type: integer
+          minimum: 0
+        nextOffset:
+          type: integer
+          minimum: 0
+          nullable: true
+        hasMore:
+          type: boolean
+      required: [limit, offset, nextOffset, hasMore]
+
+    TicketListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+        page:
+          $ref: '#/components/schemas/OffsetPage'
+      required: [items, page]
+
     CreateTicketInput:
       type: object
       properties:
@@ -1412,7 +1451,37 @@ components:
           type: integer
           format: int64
           nullable: true
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 100
+        cursor:
+          allOf:
+            - $ref: '#/components/schemas/SyncPullCursor'
+          nullable: true
       required: [locationId, lastPulledAt]
+
+    SyncPullCursor:
+      type: object
+      properties:
+        snapshotAt:
+          type: integer
+          format: int64
+        ticketsOffset:
+          type: integer
+          minimum: 0
+        ticketCommentsOffset:
+          type: integer
+          minimum: 0
+        ticketAttachmentsOffset:
+          type: integer
+          minimum: 0
+        paymentRecordsOffset:
+          type: integer
+          minimum: 0
+      required:
+        [snapshotAt, ticketsOffset, ticketCommentsOffset, ticketAttachmentsOffset, paymentRecordsOffset]
 
     SyncPullResponse:
       type: object
@@ -1422,7 +1491,13 @@ components:
         timestamp:
           type: integer
           format: int64
-      required: [changes, timestamp]
+        hasMore:
+          type: boolean
+        nextCursor:
+          allOf:
+            - $ref: '#/components/schemas/SyncPullCursor'
+          nullable: true
+      required: [changes, timestamp, hasMore, nextCursor]
 
     SyncPushRequest:
       type: object

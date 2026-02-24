@@ -1,0 +1,93 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { TicketsService } from './tickets.service'
+
+const LOCATION_ID = 'loc-1'
+
+const createTicketRecord = (id: string) => ({
+  id,
+  locationId: LOCATION_ID,
+  createdByUserId: 'user-1',
+  assignedToUserId: null,
+  title: `Ticket ${id}`,
+  description: null,
+  status: 'New',
+  scheduledStartAt: null,
+  scheduledEndAt: null,
+  priority: null,
+  totalAmountCents: null,
+  currency: 'EUR',
+  createdAt: new Date('2026-02-24T12:00:00.000Z'),
+  updatedAt: new Date('2026-02-24T12:05:00.000Z'),
+  deletedAt: null
+})
+
+describe('TicketsService', () => {
+  let service: TicketsService
+  let prisma: {
+    ticket: {
+      findMany: ReturnType<typeof vi.fn>
+    }
+  }
+
+  beforeEach(() => {
+    prisma = {
+      ticket: {
+        findMany: vi.fn()
+      }
+    }
+
+    service = new TicketsService(prisma as never)
+  })
+
+  it('list applies filters and returns page metadata', async () => {
+    prisma.ticket.findMany.mockResolvedValue([
+      createTicketRecord('ticket-3'),
+      createTicketRecord('ticket-2'),
+      createTicketRecord('ticket-1')
+    ])
+
+    const response = await service.list(LOCATION_ID, {
+      status: 'New',
+      assignedToUserId: 'user-2',
+      limit: 2,
+      offset: 4
+    })
+
+    expect(prisma.ticket.findMany).toHaveBeenCalledWith({
+      where: {
+        locationId: LOCATION_ID,
+        deletedAt: null,
+        status: 'New',
+        assignedToUserId: 'user-2'
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      skip: 4,
+      take: 3
+    })
+    expect(response.items.map((item) => item.id)).toEqual(['ticket-3', 'ticket-2'])
+    expect(response.page).toEqual({
+      limit: 2,
+      offset: 4,
+      nextOffset: 6,
+      hasMore: true
+    })
+    expect(response.items[0]?.updatedAt).toBe('2026-02-24T12:05:00.000Z')
+  })
+
+  it('list returns null nextOffset when page is fully consumed', async () => {
+    prisma.ticket.findMany.mockResolvedValue([createTicketRecord('ticket-1')])
+
+    const response = await service.list(LOCATION_ID, {
+      limit: 2,
+      offset: 0
+    })
+
+    expect(response.items.map((item) => item.id)).toEqual(['ticket-1'])
+    expect(response.page).toEqual({
+      limit: 2,
+      offset: 0,
+      nextOffset: null,
+      hasMore: false
+    })
+  })
+})

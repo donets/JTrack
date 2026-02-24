@@ -88,6 +88,9 @@ sequenceDiagram
   S-->>C: { changes, timestamp }
 ```
 
+- `GET /tickets` uses offset pagination (`limit`, `offset`) and returns `{ items, page }`.
+- `POST /sync/pull` uses cursor pagination with per-entity offsets and a fixed `snapshotAt` timestamp to keep multipage pulls consistent.
+
 ## 8. Security Architecture
 - Access:
   - short-lived JWT access token in Authorization header.

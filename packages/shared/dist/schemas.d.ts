@@ -395,6 +395,137 @@ export declare const updateTicketSchema: z.ZodObject<{
     totalAmountCents?: number | undefined;
     currency?: string | undefined;
 }>;
+export declare const ticketListQuerySchema: z.ZodObject<{
+    status: z.ZodOptional<z.ZodEnum<["New", "Scheduled", "InProgress", "Done", "Invoiced", "Paid", "Canceled"]>>;
+    assignedToUserId: z.ZodOptional<z.ZodString>;
+    limit: z.ZodDefault<z.ZodNumber>;
+    offset: z.ZodDefault<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    limit: number;
+    offset: number;
+    status?: "New" | "Scheduled" | "InProgress" | "Done" | "Invoiced" | "Paid" | "Canceled" | undefined;
+    assignedToUserId?: string | undefined;
+}, {
+    status?: "New" | "Scheduled" | "InProgress" | "Done" | "Invoiced" | "Paid" | "Canceled" | undefined;
+    assignedToUserId?: string | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+}>;
+export declare const ticketListResponseSchema: z.ZodObject<{
+    items: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        locationId: z.ZodString;
+        createdByUserId: z.ZodString;
+        assignedToUserId: z.ZodNullable<z.ZodString>;
+        title: z.ZodString;
+        description: z.ZodNullable<z.ZodString>;
+        status: z.ZodEnum<["New", "Scheduled", "InProgress", "Done", "Invoiced", "Paid", "Canceled"]>;
+        scheduledStartAt: z.ZodNullable<z.ZodString>;
+        scheduledEndAt: z.ZodNullable<z.ZodString>;
+        priority: z.ZodNullable<z.ZodString>;
+        totalAmountCents: z.ZodNullable<z.ZodNumber>;
+        currency: z.ZodDefault<z.ZodString>;
+        createdAt: z.ZodString;
+        updatedAt: z.ZodString;
+        deletedAt: z.ZodNullable<z.ZodString>;
+    }, "strip", z.ZodTypeAny, {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        status: "New" | "Scheduled" | "InProgress" | "Done" | "Invoiced" | "Paid" | "Canceled";
+        locationId: string;
+        createdByUserId: string;
+        assignedToUserId: string | null;
+        title: string;
+        description: string | null;
+        scheduledStartAt: string | null;
+        scheduledEndAt: string | null;
+        priority: string | null;
+        totalAmountCents: number | null;
+        currency: string;
+        deletedAt: string | null;
+    }, {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        status: "New" | "Scheduled" | "InProgress" | "Done" | "Invoiced" | "Paid" | "Canceled";
+        locationId: string;
+        createdByUserId: string;
+        assignedToUserId: string | null;
+        title: string;
+        description: string | null;
+        scheduledStartAt: string | null;
+        scheduledEndAt: string | null;
+        priority: string | null;
+        totalAmountCents: number | null;
+        deletedAt: string | null;
+        currency?: string | undefined;
+    }>, "many">;
+    page: z.ZodObject<{
+        limit: z.ZodNumber;
+        offset: z.ZodNumber;
+        nextOffset: z.ZodNullable<z.ZodNumber>;
+        hasMore: z.ZodBoolean;
+    }, "strip", z.ZodTypeAny, {
+        limit: number;
+        offset: number;
+        nextOffset: number | null;
+        hasMore: boolean;
+    }, {
+        limit: number;
+        offset: number;
+        nextOffset: number | null;
+        hasMore: boolean;
+    }>;
+}, "strip", z.ZodTypeAny, {
+    items: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        status: "New" | "Scheduled" | "InProgress" | "Done" | "Invoiced" | "Paid" | "Canceled";
+        locationId: string;
+        createdByUserId: string;
+        assignedToUserId: string | null;
+        title: string;
+        description: string | null;
+        scheduledStartAt: string | null;
+        scheduledEndAt: string | null;
+        priority: string | null;
+        totalAmountCents: number | null;
+        currency: string;
+        deletedAt: string | null;
+    }[];
+    page: {
+        limit: number;
+        offset: number;
+        nextOffset: number | null;
+        hasMore: boolean;
+    };
+}, {
+    items: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        status: "New" | "Scheduled" | "InProgress" | "Done" | "Invoiced" | "Paid" | "Canceled";
+        locationId: string;
+        createdByUserId: string;
+        assignedToUserId: string | null;
+        title: string;
+        description: string | null;
+        scheduledStartAt: string | null;
+        scheduledEndAt: string | null;
+        priority: string | null;
+        totalAmountCents: number | null;
+        deletedAt: string | null;
+        currency?: string | undefined;
+    }[];
+    page: {
+        limit: number;
+        offset: number;
+        nextOffset: number | null;
+        hasMore: boolean;
+    };
+}>;
 export declare const createCommentSchema: z.ZodObject<{
     ticketId: z.ZodString;
     body: z.ZodString;
@@ -472,6 +603,8 @@ export type CreateLocationInput = z.infer<typeof createLocationSchema>;
 export type UpdateLocationInput = z.infer<typeof updateLocationSchema>;
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
 export type UpdateTicketInput = z.infer<typeof updateTicketSchema>;
+export type TicketListQuery = z.infer<typeof ticketListQuerySchema>;
+export type TicketListResponse = z.infer<typeof ticketListResponseSchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type CreateAttachmentMetadataInput = z.infer<typeof createAttachmentMetadataSchema>;
 export type CreatePaymentRecordInput = z.infer<typeof createPaymentRecordSchema>;
