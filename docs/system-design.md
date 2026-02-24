@@ -8,6 +8,7 @@
 
 ## 2. Functional Scope
 - Authentication: email/password + JWT access token + refresh token.
+- Invite onboarding: signed invite token + first-time password setup endpoint.
 - Multi-location tenancy: each domain record belongs to a `locationId`.
 - RBAC: role/privilege model with guards on each protected endpoint.
 - Core entities: tickets, comments, attachments, payment records.
@@ -80,11 +81,13 @@
 - Permission and membership violations: `403 Forbidden`.
 - Missing domain object: `404 Not Found`.
 - Location delete with dependent business records: `409 Conflict`.
+- Invalid or already-used invite token: `401 Unauthorized`.
 - Validation is schema-based (Zod) and fails fast at controller boundary.
 
 ## 9. Non-Functional Requirements
 - Security:
   - bcrypt hash for passwords and stored refresh tokens.
+  - invited users do not rely on hardcoded password; onboarding is completed through signed invite token and one-time membership activation.
   - refresh token cookie is `httpOnly`, `sameSite=lax`, path-scoped to `/auth`.
   - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`).
   - auth endpoints `/auth/login` and `/auth/refresh` are protected by request throttling.

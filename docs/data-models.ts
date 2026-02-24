@@ -148,6 +148,11 @@ export interface AuthResponse {
   user: User
 }
 
+export interface InviteCompleteInput {
+  token: string
+  password: string
+}
+
 export interface CreateUserInput {
   email: string
   name: string
@@ -165,6 +170,8 @@ export interface InviteResponse {
   ok: true
   userId: UUID
   status: 'invited'
+  onboardingToken: string
+  onboardingUrl: string
 }
 
 export interface CreateLocationInput {

@@ -18,6 +18,10 @@ describe('AuthService', () => {
       findUnique: ReturnType<typeof vi.fn>
       update: ReturnType<typeof vi.fn>
     }
+    userLocation: {
+      findUnique: ReturnType<typeof vi.fn>
+    }
+    $transaction: ReturnType<typeof vi.fn>
   }
   let jwtService: {
     signAsync: ReturnType<typeof vi.fn>
@@ -33,7 +37,11 @@ describe('AuthService', () => {
       user: {
         findUnique: vi.fn(),
         update: vi.fn()
-      }
+      },
+      userLocation: {
+        findUnique: vi.fn()
+      },
+      $transaction: vi.fn()
     }
 
     jwtService = {
@@ -50,6 +58,23 @@ describe('AuthService', () => {
     hashMock.mockReset()
 
     service = new AuthService(prisma as never, jwtService as never, configService as never)
+
+    prisma.$transaction.mockImplementation(
+      async (
+        callback: (tx: {
+          user: { update: typeof prisma.user.update }
+          userLocation: { update: ReturnType<typeof vi.fn> }
+        }) => Promise<unknown>
+      ) =>
+        callback({
+          user: {
+            update: prisma.user.update
+          },
+          userLocation: {
+            update: vi.fn()
+          }
+        })
+    )
   })
 
   it('throws when login user does not exist', async () => {
@@ -154,6 +179,120 @@ describe('AuthService', () => {
         updatedAt: now.toISOString()
       }
     })
+  })
+
+  it('completeInvite activates invited membership and returns token pair', async () => {
+    const now = new Date('2026-02-24T09:00:00.000Z')
+    const userLocationUpdate = vi.fn()
+    prisma.$transaction.mockImplementation(
+      async (
+        callback: (tx: {
+          user: { update: typeof prisma.user.update }
+          userLocation: { update: typeof userLocationUpdate }
+        }) => Promise<unknown>
+      ) =>
+        callback({
+          user: { update: prisma.user.update },
+          userLocation: { update: userLocationUpdate }
+        })
+    )
+
+    jwtService.verifyAsync.mockResolvedValue({
+      sub: 'user-1',
+      locationId: 'loc-1',
+      type: 'invite'
+    })
+    prisma.userLocation.findUnique.mockResolvedValue({
+      userId: 'user-1',
+      locationId: 'loc-1',
+      status: 'invited',
+      user: {
+        id: 'user-1',
+        email: 'invitee@jtrack.local',
+        name: 'Invitee',
+        isAdmin: false,
+        createdAt: now,
+        updatedAt: now
+      }
+    })
+    hashMock.mockResolvedValueOnce('new-password-hash').mockResolvedValueOnce('refresh-hash-3')
+    prisma.user.update.mockResolvedValue({
+      id: 'user-1',
+      email: 'invitee@jtrack.local',
+      name: 'Invitee',
+      isAdmin: false,
+      createdAt: now,
+      updatedAt: now
+    })
+    jwtService.signAsync.mockResolvedValueOnce('access-3').mockResolvedValueOnce('refresh-3')
+
+    const result = await service.completeInvite({
+      token: 'invite-token',
+      password: 'StrongPass123!'
+    })
+
+    expect(result).toEqual({
+      accessToken: 'access-3',
+      refreshToken: 'refresh-3',
+      user: {
+        id: 'user-1',
+        email: 'invitee@jtrack.local',
+        name: 'Invitee',
+        isAdmin: false,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
+      }
+    })
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { passwordHash: 'new-password-hash', refreshTokenHash: null },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isAdmin: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    })
+    expect(userLocationUpdate).toHaveBeenCalledWith({
+      where: {
+        userId_locationId: {
+          userId: 'user-1',
+          locationId: 'loc-1'
+        }
+      },
+      data: { status: 'active' }
+    })
+  })
+
+  it('completeInvite rejects invalid or already-used invites', async () => {
+    jwtService.verifyAsync.mockRejectedValue(new Error('bad token'))
+
+    await expect(
+      service.completeInvite({
+        token: 'invalid',
+        password: 'StrongPass123!'
+      })
+    ).rejects.toBeInstanceOf(UnauthorizedException)
+
+    jwtService.verifyAsync.mockResolvedValue({
+      sub: 'user-1',
+      locationId: 'loc-1',
+      type: 'invite'
+    })
+    prisma.userLocation.findUnique.mockResolvedValue({
+      userId: 'user-1',
+      locationId: 'loc-1',
+      status: 'active'
+    })
+
+    await expect(
+      service.completeInvite({
+        token: 'invite-token',
+        password: 'StrongPass123!'
+      })
+    ).rejects.toBeInstanceOf(UnauthorizedException)
   })
 
   it('me returns serialized user and throws for unknown users', async () => {

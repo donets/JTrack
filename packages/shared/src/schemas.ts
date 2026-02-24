@@ -118,6 +118,11 @@ export const authResponseSchema = z.object({
   user: userSchema
 })
 
+export const inviteCompleteInputSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8)
+})
+
 export const createUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
@@ -129,6 +134,14 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
   isAdmin: z.boolean().optional()
+})
+
+export const inviteResponseSchema = z.object({
+  ok: z.literal(true),
+  userId: idSchema,
+  status: z.literal('invited'),
+  onboardingToken: z.string().min(1),
+  onboardingUrl: z.string().min(1)
 })
 
 export const createLocationSchema = z.object({
@@ -218,8 +231,10 @@ export type PaymentStatus = z.infer<typeof paymentStatusSchema>
 export type PaymentRecord = z.infer<typeof paymentRecordSchema>
 export type LoginInput = z.infer<typeof loginInputSchema>
 export type AuthResponse = z.infer<typeof authResponseSchema>
+export type InviteCompleteInput = z.infer<typeof inviteCompleteInputSchema>
 export type CreateUserInput = z.infer<typeof createUserSchema>
 export type UpdateUserInput = z.infer<typeof updateUserSchema>
+export type InviteResponse = z.infer<typeof inviteResponseSchema>
 export type CreateLocationInput = z.infer<typeof createLocationSchema>
 export type UpdateLocationInput = z.infer<typeof updateLocationSchema>
 export type CreateTicketInput = z.infer<typeof createTicketSchema>

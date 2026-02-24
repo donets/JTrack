@@ -280,6 +280,16 @@ export declare const authResponseSchema: z.ZodObject<{
         updatedAt: string;
     };
 }>;
+export declare const inviteCompleteInputSchema: z.ZodObject<{
+    token: z.ZodString;
+    password: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    password: string;
+    token: string;
+}, {
+    password: string;
+    token: string;
+}>;
 export declare const createUserSchema: z.ZodObject<{
     email: z.ZodString;
     name: z.ZodString;
@@ -308,6 +318,25 @@ export declare const updateUserSchema: z.ZodObject<{
 }, {
     name?: string | undefined;
     isAdmin?: boolean | undefined;
+}>;
+export declare const inviteResponseSchema: z.ZodObject<{
+    ok: z.ZodLiteral<true>;
+    userId: z.ZodString;
+    status: z.ZodLiteral<"invited">;
+    onboardingToken: z.ZodString;
+    onboardingUrl: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    status: "invited";
+    userId: string;
+    ok: true;
+    onboardingToken: string;
+    onboardingUrl: string;
+}, {
+    status: "invited";
+    userId: string;
+    ok: true;
+    onboardingToken: string;
+    onboardingUrl: string;
 }>;
 export declare const createLocationSchema: z.ZodObject<{
     name: z.ZodString;
@@ -597,8 +626,10 @@ export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
 export type PaymentRecord = z.infer<typeof paymentRecordSchema>;
 export type LoginInput = z.infer<typeof loginInputSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
+export type InviteCompleteInput = z.infer<typeof inviteCompleteInputSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type InviteResponse = z.infer<typeof inviteResponseSchema>;
 export type CreateLocationInput = z.infer<typeof createLocationSchema>;
 export type UpdateLocationInput = z.infer<typeof updateLocationSchema>;
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;

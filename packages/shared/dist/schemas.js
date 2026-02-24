@@ -102,6 +102,10 @@ export const authResponseSchema = z.object({
     accessToken: z.string().min(1),
     user: userSchema
 });
+export const inviteCompleteInputSchema = z.object({
+    token: z.string().min(1),
+    password: z.string().min(8)
+});
 export const createUserSchema = z.object({
     email: z.string().email(),
     name: z.string().min(1),
@@ -112,6 +116,13 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
     name: z.string().min(1).optional(),
     isAdmin: z.boolean().optional()
+});
+export const inviteResponseSchema = z.object({
+    ok: z.literal(true),
+    userId: idSchema,
+    status: z.literal('invited'),
+    onboardingToken: z.string().min(1),
+    onboardingUrl: z.string().min(1)
 });
 export const createLocationSchema = z.object({
     name: z.string().min(1),
