@@ -45,6 +45,8 @@
 </template>
 
 <script setup lang="ts">
+import { destroyDatabase } from '~/plugins/rxdb.client'
+
 const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const syncStore = useSyncStore()
@@ -56,6 +58,8 @@ const syncNow = async () => {
 const logout = async () => {
   await authStore.logout()
   locationStore.clear()
+  syncStore.clearSyncData()
+  await destroyDatabase()
   await navigateTo('/login')
 }
 </script>

@@ -151,6 +151,14 @@ async function createDatabase() {
   return database
 }
 
+export async function destroyDatabase() {
+  if (rxdbPromise) {
+    const db = await rxdbPromise
+    await db.remove()
+    rxdbPromise = null
+  }
+}
+
 export default defineNuxtPlugin(async () => {
   if (!rxdbPromise) {
     rxdbPromise = createDatabase()

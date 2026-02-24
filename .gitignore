@@ -18,3 +18,5 @@ apps/api/node_modules
 apps/api/uploads
 
 coverage
+
+.claude/

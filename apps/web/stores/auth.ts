@@ -135,8 +135,7 @@ export const useAuthStore = defineStore('auth', {
       }
 
       try {
-        const parsed = JSON.parse(raw) as { accessToken: string | null; user: User | null }
-        this.accessToken = parsed.accessToken
+        const parsed = JSON.parse(raw) as { user: User | null }
         this.user = parsed.user
       } catch {
         this.clearState()
@@ -151,7 +150,6 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem(
         'jtrack.auth',
         JSON.stringify({
-          accessToken: this.accessToken,
           user: this.user
         })
       )

@@ -158,6 +158,14 @@ export const useSyncStore = defineStore('sync', {
       }
     },
 
+    clearSyncData() {
+      this.lastSyncedAt = null
+      this.error = null
+      if (import.meta.client) {
+        localStorage.removeItem('jtrack.sync.clientId')
+      }
+    },
+
     async applyIncomingChanges(db: any, changes: SyncChanges) {
       await this.applyEntityChanges(db, 'tickets', changes.tickets)
       await this.applyEntityChanges(db, 'ticketComments', changes.ticketComments)
