@@ -99,6 +99,7 @@
 - Test infrastructure:
   - `Vitest` is configured for `apps/api`, `apps/web`, and `packages/shared`.
   - Workspace command `pnpm test` runs package-level tests through Turbo.
+  - Web tests run `nuxt prepare` before `vitest` so CI does not depend on pre-existing `.nuxt/tsconfig.json`.
 - Critical path coverage:
   - API: auth service, sync service, location/privilege guards.
   - Web: Pinia auth/sync stores.

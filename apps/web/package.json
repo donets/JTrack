@@ -10,7 +10,7 @@
     "build": "nuxt build",
     "build:mobile": "nuxt generate",
     "preview": "nuxt preview",
-    "test": "vitest run --config vitest.config.ts",
+    "test": "nuxt prepare && vitest run --config vitest.config.ts",
     "lint": "eslint . --ext .ts,.vue",
     "typecheck": "nuxt prepare && vue-tsc --noEmit -p .nuxt/tsconfig.json"
   },
