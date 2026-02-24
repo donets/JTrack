@@ -33,6 +33,7 @@
   - `Ticket.deletedAt`
   - `TicketComment.deletedAt`
   - `TicketAttachment.deletedAt`
+- User removal is hard-delete, but historical references (`Ticket.createdByUserId`, `TicketComment.authorUserId`, `TicketAttachment.uploadedByUserId`) are reassigned in-transaction to a reserved system account before delete.
 - Strong indexing by location and update time to optimize pull windows.
 - Role privileges persisted in DB but defined in code and seeded.
 
