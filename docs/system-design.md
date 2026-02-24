@@ -84,6 +84,8 @@
   - bounded payloads by incremental timestamp windows.
 - Operability:
   - Dockerized local stack with separate containers for web/api/postgres.
+  - API/Web images are built via multi-stage Dockerfiles to keep runtime layers lean.
+  - Docker build context excludes heavy local artifacts via `.dockerignore`.
   - Single-command monorepo dev workflow via Turbo.
   - Repository hygiene: local IDE metadata (`.idea`) is excluded from VCS via `.gitignore`.
 
