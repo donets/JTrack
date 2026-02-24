@@ -193,6 +193,7 @@ paths:
     delete:
       tags: [Locations]
       summary: Delete location
+      description: Location deletion is blocked when related business records exist.
       parameters:
         - $ref: '#/components/parameters/PathId'
       responses:
@@ -204,6 +205,18 @@ paths:
                 $ref: '#/components/schemas/OkResponse'
         '403':
           description: Only owner/admin can delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Location has related business records and cannot be deleted
           content:
             application/json:
               schema:

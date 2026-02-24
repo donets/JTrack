@@ -79,6 +79,7 @@
 - Missing location context: `400 Bad Request` (`x-location-id` absent).
 - Permission and membership violations: `403 Forbidden`.
 - Missing domain object: `404 Not Found`.
+- Location delete with dependent business records: `409 Conflict`.
 - Validation is schema-based (Zod) and fails fast at controller boundary.
 
 ## 9. Non-Functional Requirements

@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { type Prisma } from '@prisma/client'
 import { createLocationSchema, updateLocationSchema } from '@jtrack/shared'
 import type { JwtUser } from '@/common/types'
@@ -137,6 +137,26 @@ export class LocationsService {
       if (!membership || membership.role !== 'Owner') {
         throw new ForbiddenException('Only location owners can delete this location')
       }
+    }
+
+    const location = await this.prisma.location.findUnique({
+      where: { id: locationId },
+      select: { id: true }
+    })
+
+    if (!location) {
+      throw new NotFoundException('Location not found')
+    }
+
+    const [ticketCount, commentCount, attachmentCount, paymentCount] = await Promise.all([
+      this.prisma.ticket.count({ where: { locationId } }),
+      this.prisma.ticketComment.count({ where: { locationId } }),
+      this.prisma.ticketAttachment.count({ where: { locationId } }),
+      this.prisma.paymentRecord.count({ where: { locationId } })
+    ])
+
+    if (ticketCount + commentCount + attachmentCount + paymentCount > 0) {
+      throw new ConflictException('Cannot delete location with related business records')
     }
 
     await this.prisma.location.delete({ where: { id: locationId } })
