@@ -98,7 +98,7 @@ sequenceDiagram
 - Access:
   - short-lived JWT access token in Authorization header.
   - refresh token in HttpOnly cookie (`/auth` path).
-  - invite onboarding uses signed short-lived invite token (`/auth/invite/complete`) and activates membership on first successful password set.
+  - invite onboarding uses signed short-lived invite token (`/auth/invite/complete`) and atomically claims membership (`invited` -> `active`) in the same transaction as initial password set.
   - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`).
   - auth brute-force mitigation is enforced via throttling on `/auth/login` and `/auth/refresh`.
 - Authorization:

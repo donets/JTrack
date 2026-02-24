@@ -87,7 +87,7 @@
 ## 9. Non-Functional Requirements
 - Security:
   - bcrypt hash for passwords and stored refresh tokens.
-  - invited users do not rely on hardcoded password; onboarding is completed through signed invite token and one-time membership activation.
+  - invited users do not rely on hardcoded password; onboarding is completed through signed invite token and one-time membership activation that is atomically claimed in the same transaction as password update (prevents parallel token reuse race).
   - refresh token cookie is `httpOnly`, `sameSite=lax`, path-scoped to `/auth`.
   - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`).
   - auth endpoints `/auth/login` and `/auth/refresh` are protected by request throttling.

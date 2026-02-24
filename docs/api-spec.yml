@@ -97,6 +97,7 @@ paths:
     post:
       tags: [Auth]
       summary: Complete invite onboarding and set password
+      description: Invite activation is atomic; membership is claimed from `invited` to `active` in the same transaction as password update.
       security: []
       requestBody:
         required: true

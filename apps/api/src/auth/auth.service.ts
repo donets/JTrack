@@ -78,28 +78,26 @@ export class AuthService {
 
   async completeInvite(input: InviteCompleteInput) {
     const payload = await this.verifyInviteToken(input.token)
-
-    const membership = await this.prisma.userLocation.findUnique({
-      where: {
-        userId_locationId: {
-          userId: payload.sub,
-          locationId: payload.locationId
-        }
-      },
-      include: {
-        user: true
-      }
-    })
-
-    if (!membership || membership.status !== 'invited') {
-      throw new UnauthorizedException('Invite is invalid or already used')
-    }
-
     const passwordHash = await hash(input.password, 12)
 
     const user = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const activation = await tx.userLocation.updateMany({
+        where: {
+          userId: payload.sub,
+          locationId: payload.locationId,
+          status: 'invited'
+        },
+        data: {
+          status: 'active'
+        }
+      })
+
+      if (activation.count !== 1) {
+        throw new UnauthorizedException('Invite is invalid or already used')
+      }
+
       const updatedUser = await tx.user.update({
-        where: { id: membership.userId },
+        where: { id: payload.sub },
         data: {
           passwordHash,
           refreshTokenHash: null
@@ -111,18 +109,6 @@ export class AuthService {
           isAdmin: true,
           createdAt: true,
           updatedAt: true
-        }
-      })
-
-      await tx.userLocation.update({
-        where: {
-          userId_locationId: {
-            userId: membership.userId,
-            locationId: membership.locationId
-          }
-        },
-        data: {
-          status: 'active'
         }
       })
 

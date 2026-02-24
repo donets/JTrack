@@ -19,7 +19,7 @@ describe('AuthService', () => {
       update: ReturnType<typeof vi.fn>
     }
     userLocation: {
-      findUnique: ReturnType<typeof vi.fn>
+      updateMany: ReturnType<typeof vi.fn>
     }
     $transaction: ReturnType<typeof vi.fn>
   }
@@ -39,7 +39,7 @@ describe('AuthService', () => {
         update: vi.fn()
       },
       userLocation: {
-        findUnique: vi.fn()
+        updateMany: vi.fn()
       },
       $transaction: vi.fn()
     }
@@ -63,7 +63,7 @@ describe('AuthService', () => {
       async (
         callback: (tx: {
           user: { update: typeof prisma.user.update }
-          userLocation: { update: ReturnType<typeof vi.fn> }
+          userLocation: { updateMany: typeof prisma.userLocation.updateMany }
         }) => Promise<unknown>
       ) =>
         callback({
@@ -71,7 +71,7 @@ describe('AuthService', () => {
             update: prisma.user.update
           },
           userLocation: {
-            update: vi.fn()
+            updateMany: prisma.userLocation.updateMany
           }
         })
     )
@@ -183,17 +183,16 @@ describe('AuthService', () => {
 
   it('completeInvite activates invited membership and returns token pair', async () => {
     const now = new Date('2026-02-24T09:00:00.000Z')
-    const userLocationUpdate = vi.fn()
     prisma.$transaction.mockImplementation(
       async (
         callback: (tx: {
           user: { update: typeof prisma.user.update }
-          userLocation: { update: typeof userLocationUpdate }
+          userLocation: { updateMany: typeof prisma.userLocation.updateMany }
         }) => Promise<unknown>
       ) =>
         callback({
           user: { update: prisma.user.update },
-          userLocation: { update: userLocationUpdate }
+          userLocation: { updateMany: prisma.userLocation.updateMany }
         })
     )
 
@@ -202,19 +201,7 @@ describe('AuthService', () => {
       locationId: 'loc-1',
       type: 'invite'
     })
-    prisma.userLocation.findUnique.mockResolvedValue({
-      userId: 'user-1',
-      locationId: 'loc-1',
-      status: 'invited',
-      user: {
-        id: 'user-1',
-        email: 'invitee@jtrack.local',
-        name: 'Invitee',
-        isAdmin: false,
-        createdAt: now,
-        updatedAt: now
-      }
-    })
+    prisma.userLocation.updateMany.mockResolvedValue({ count: 1 })
     hashMock.mockResolvedValueOnce('new-password-hash').mockResolvedValueOnce('refresh-hash-3')
     prisma.user.update.mockResolvedValue({
       id: 'user-1',
@@ -255,12 +242,11 @@ describe('AuthService', () => {
         updatedAt: true
       }
     })
-    expect(userLocationUpdate).toHaveBeenCalledWith({
+    expect(prisma.userLocation.updateMany).toHaveBeenCalledWith({
       where: {
-        userId_locationId: {
-          userId: 'user-1',
-          locationId: 'loc-1'
-        }
+        userId: 'user-1',
+        locationId: 'loc-1',
+        status: 'invited'
       },
       data: { status: 'active' }
     })
@@ -281,11 +267,7 @@ describe('AuthService', () => {
       locationId: 'loc-1',
       type: 'invite'
     })
-    prisma.userLocation.findUnique.mockResolvedValue({
-      userId: 'user-1',
-      locationId: 'loc-1',
-      status: 'active'
-    })
+    prisma.userLocation.updateMany.mockResolvedValue({ count: 0 })
 
     await expect(
       service.completeInvite({
@@ -293,6 +275,7 @@ describe('AuthService', () => {
         password: 'StrongPass123!'
       })
     ).rejects.toBeInstanceOf(UnauthorizedException)
+    expect(prisma.user.update).not.toHaveBeenCalled()
   })
 
   it('me returns serialized user and throws for unknown users', async () => {
