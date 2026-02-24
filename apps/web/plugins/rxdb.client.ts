@@ -131,6 +131,7 @@ const syncStateSchema = {
 }
 
 let rxdbPromise: Promise<RxDatabase> | null = null
+let rxdbInstance: RxDatabase | null = null
 
 async function createDatabase() {
   const database = await createRxDatabase({
@@ -151,20 +152,42 @@ async function createDatabase() {
   return database
 }
 
-export async function destroyDatabase() {
-  if (rxdbPromise) {
-    const db = await rxdbPromise
-    await db.remove()
-    rxdbPromise = null
-  }
-}
-
-export default defineNuxtPlugin(async () => {
+async function getOrCreateDatabase() {
   if (!rxdbPromise) {
-    rxdbPromise = createDatabase()
+    rxdbPromise = createDatabase().then((database) => {
+      rxdbInstance = database
+      return database
+    })
   }
 
   const database = await rxdbPromise
+  rxdbInstance = database
+  return database
+}
+
+export function getActiveDatabase() {
+  if (!rxdbInstance) {
+    throw new Error('RxDB is not initialized')
+  }
+
+  return rxdbInstance
+}
+
+export async function destroyDatabase() {
+  if (rxdbPromise || rxdbInstance) {
+    const db = rxdbInstance ?? (await rxdbPromise!)
+    await db.remove()
+  }
+
+  rxdbPromise = null
+  rxdbInstance = null
+
+  // Recreate a clean database so current SPA instance can keep operating after logout/login.
+  await getOrCreateDatabase()
+}
+
+export default defineNuxtPlugin(async () => {
+  const database = await getOrCreateDatabase()
 
   return {
     provide: {

@@ -61,6 +61,7 @@ flowchart LR
 - Nuxt 4 (Vue 3) for UI and routing.
 - RxDB/Dexie as local reactive storage.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
+- Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
 - Outbox pattern:
   - local mutation first,
   - enqueue operation,
@@ -91,6 +92,7 @@ sequenceDiagram
 - Access:
   - short-lived JWT access token in Authorization header.
   - refresh token in HttpOnly cookie (`/auth` path).
+  - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`).
 - Authorization:
   - location scoping for tenant separation.
   - privilege-based endpoint checks.

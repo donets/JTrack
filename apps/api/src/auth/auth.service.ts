@@ -104,10 +104,21 @@ export class AuthService {
     return {
       httpOnly: true,
       sameSite: 'lax' as const,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.isSecureCookieEnabled(),
       path: '/auth',
       maxAge: 1000 * 60 * 60 * 24 * 30
     }
+  }
+
+  private isSecureCookieEnabled() {
+    const raw = this.configService.get<string>('COOKIE_SECURE')
+
+    if (raw !== undefined) {
+      const normalized = raw.trim().toLowerCase()
+      return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on'
+    }
+
+    return this.configService.get<string>('NODE_ENV') === 'production'
   }
 
   private async createTokens(payload: { sub: string; email: string; isAdmin: boolean }) {

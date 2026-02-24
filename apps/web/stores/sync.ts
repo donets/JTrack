@@ -25,6 +25,14 @@ function createEmptyChanges(): SyncChanges {
   }
 }
 
+function generateClientId() {
+  if (!import.meta.client) {
+    return 'server-client'
+  }
+
+  return crypto.randomUUID()
+}
+
 function getOrCreateClientId() {
   if (!import.meta.client) {
     return 'server-client'
@@ -36,7 +44,7 @@ function getOrCreateClientId() {
     return existing
   }
 
-  const generated = crypto.randomUUID()
+  const generated = generateClientId()
   localStorage.setItem('jtrack.sync.clientId', generated)
   return generated
 }
@@ -68,6 +76,10 @@ export const useSyncStore = defineStore('sync', {
 
       this.syncing = true
       this.error = null
+
+      if (import.meta.client && !localStorage.getItem('jtrack.sync.clientId')) {
+        localStorage.setItem('jtrack.sync.clientId', this.clientId)
+      }
 
       try {
         const locationId = locationStore.activeLocationId
@@ -161,6 +173,7 @@ export const useSyncStore = defineStore('sync', {
     clearSyncData() {
       this.lastSyncedAt = null
       this.error = null
+      this.clientId = generateClientId()
       if (import.meta.client) {
         localStorage.removeItem('jtrack.sync.clientId')
       }

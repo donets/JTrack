@@ -118,6 +118,7 @@ Always include references to updated docs under `/Users/vlad/Projects/JTrack/doc
 
 ## 9) Change Log
 
+- 2026-02-24: Fixed P0 security follow-up: cookie `secure` flag now supports explicit `COOKIE_SECURE`, logout now recreates clean RxDB instance for same-tab re-login, sync clientId reset behavior tightened; docs and Render env updated.
 - 2026-02-23: Added `.idea` to repository `.gitignore`; documented VCS hygiene in system design docs.
 - 2026-02-23: Frontend RxDB mutation API fixed for v16 compatibility (`atomicPatch` -> `incrementalPatch`) in sync/offline flows; docs updated.
 - 2026-02-23: Added separate Docker images/containers for frontend (`jtrack-web`) and backend (`jtrack-api`), updated compose runtime and docs.

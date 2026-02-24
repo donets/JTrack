@@ -58,6 +58,7 @@
 ### 6.3 Client Storage Implementation Note
 - RxDB v16 document updates must use `incrementalPatch`/`incrementalModify`.
 - `atomicPatch` is not supported in this version and causes runtime method errors.
+- Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 
 ## 7. Consistency and Conflict Rules
 - Canonical state is always server DB.
@@ -77,6 +78,7 @@
 - Security:
   - bcrypt hash for passwords and stored refresh tokens.
   - refresh token cookie is `httpOnly`, `sameSite=lax`, path-scoped to `/auth`.
+  - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`).
 - Performance:
   - location/update-time indexes for sync and listing patterns.
   - bounded payloads by incremental timestamp windows.
