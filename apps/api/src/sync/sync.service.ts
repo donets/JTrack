@@ -119,7 +119,7 @@ export class SyncService {
     const lastPulledAt = new Date(body.lastPulledAt ?? 0)
     const now = new Date()
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await this.applyTicketChanges(tx, body.locationId, body.changes, lastPulledAt, now)
       await this.applyCommentChanges(tx, body.locationId, body.changes, lastPulledAt, now)
       await this.applyAttachmentChanges(tx, body.locationId, body.changes, lastPulledAt, now)

@@ -4,7 +4,7 @@ services:
     runtime: docker
     dockerContext: .
     dockerfilePath: ./docker/Dockerfile.api
-    dockerCommand: sh -c "API_PORT=${PORT} pnpm --filter @jtrack/api prisma:deploy && pnpm --filter @jtrack/api start"
+    dockerCommand: sh -c "export API_PORT=${PORT}; PRISMA_BIN=$(find ./node_modules/.pnpm -maxdepth 2 -path '*/node_modules/prisma/build/index.js' | head -n 1); node \"$PRISMA_BIN\" migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"
     plan: free
     autoDeploy: true
     envVars:
@@ -20,6 +20,8 @@ services:
         value: 15m
       - key: JWT_REFRESH_TTL
         value: 30d
+      - key: COOKIE_SECURE
+        value: "true"
       - key: WEB_ORIGIN
         sync: false
       - key: UPLOAD_DIR

@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
+import { type Prisma } from '@prisma/client'
 import { createLocationSchema, updateLocationSchema } from '@jtrack/shared'
 import type { JwtUser } from '@/common/types'
 import { PrismaService } from '@/prisma/prisma.service'
@@ -13,7 +14,7 @@ export class LocationsService {
         orderBy: { createdAt: 'desc' }
       })
 
-      return locations.map((location) => ({
+      return locations.map((location: (typeof locations)[number]) => ({
         id: location.id,
         name: location.name,
         timezone: location.timezone,
@@ -35,7 +36,7 @@ export class LocationsService {
       }
     })
 
-    return memberships.map((membership) => ({
+    return memberships.map((membership: (typeof memberships)[number]) => ({
       id: membership.location.id,
       name: membership.location.name,
       timezone: membership.location.timezone,
@@ -50,7 +51,7 @@ export class LocationsService {
   async create(user: JwtUser, data: unknown) {
     const input = createLocationSchema.parse(data)
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const location = await tx.location.create({
         data: {
           name: input.name,

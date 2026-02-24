@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -7,13 +7,33 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
-COPY . .
+FROM base AS deps
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/tsconfig/package.json packages/tsconfig/package.json
+COPY packages/eslint-config/package.json packages/eslint-config/package.json
 
 RUN pnpm install --frozen-lockfile
+
+FROM base AS builder
+
+COPY . .
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+
 RUN pnpm --filter @jtrack/shared build
 RUN pnpm --filter @jtrack/web build
 
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=builder /app/apps/web/.output ./.output
+
 EXPOSE 3000
 
-CMD ["node", "apps/web/.output/server/index.mjs"]
-
+CMD ["node", ".output/server/index.mjs"]

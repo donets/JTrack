@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -7,13 +7,40 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
-COPY . .
+FROM base AS deps
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/tsconfig/package.json packages/tsconfig/package.json
+COPY packages/eslint-config/package.json packages/eslint-config/package.json
 
 RUN pnpm install --frozen-lockfile
+
+FROM base AS builder
+
+COPY . .
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+
 RUN pnpm --filter @jtrack/shared build
 RUN pnpm --filter @jtrack/api prisma:generate
 RUN pnpm --filter @jtrack/api build
 
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder /app/packages/shared ./packages/shared
+COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_modules
+
 EXPOSE 3001
 
-CMD ["sh", "-c", "pnpm --filter @jtrack/api prisma:deploy && pnpm --filter @jtrack/api start"]
+CMD ["sh", "-c", "PRISMA_BIN=$(find ./node_modules/.pnpm -maxdepth 2 -path '*/node_modules/prisma/build/index.js' | head -n 1) && node \"$PRISMA_BIN\" migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"]

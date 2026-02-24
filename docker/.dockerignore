@@ -1,0 +1,11 @@
+.git
+.turbo
+node_modules
+**/node_modules
+**/.nuxt
+**/.output
+**/dist
+coverage
+pnpm-debug.log*
+npm-debug.log*
+yarn-error.log*

@@ -58,6 +58,7 @@
 ### 6.3 Client Storage Implementation Note
 - RxDB v16 document updates must use `incrementalPatch`/`incrementalModify`.
 - `atomicPatch` is not supported in this version and causes runtime method errors.
+- Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 
 ## 7. Consistency and Conflict Rules
 - Canonical state is always server DB.
@@ -77,15 +78,35 @@
 - Security:
   - bcrypt hash for passwords and stored refresh tokens.
   - refresh token cookie is `httpOnly`, `sameSite=lax`, path-scoped to `/auth`.
+  - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`).
 - Performance:
   - location/update-time indexes for sync and listing patterns.
   - bounded payloads by incremental timestamp windows.
 - Operability:
   - Dockerized local stack with separate containers for web/api/postgres.
+  - API/Web images are built via multi-stage Dockerfiles to keep runtime layers lean.
+  - Docker build context excludes heavy local artifacts via `.dockerignore`.
   - Single-command monorepo dev workflow via Turbo.
+  - CI quality gate runs `pnpm test` on every `pull_request` and on `push` to `main`/`develop` via GitHub Actions (`.github/workflows/tests.yml`).
   - Repository hygiene: local IDE metadata (`.idea`) is excluded from VCS via `.gitignore`.
 
 ## 10. Tradeoffs
 - `isAdmin` bypass simplifies internal operations but centralizes trust.
 - Soft-delete increases query complexity but is required for sync tombstones.
 - Server-wins conflict policy is simple and predictable, but may overwrite unsynced local intent.
+
+## 11. Test Strategy and Quality Gates
+- Test infrastructure:
+  - `Vitest` is configured for `apps/api`, `apps/web`, and `packages/shared`.
+  - Workspace command `pnpm test` runs package-level tests through Turbo.
+  - Web tests run `nuxt prepare` before `vitest` so CI does not depend on pre-existing `.nuxt/tsconfig.json`.
+- Critical path coverage:
+  - API: auth service, sync service, location/privilege guards.
+  - Web: Pinia auth/sync stores.
+  - Shared: sync contract schema validation and RBAC privilege mapping.
+- Verification commands used in delivery flow:
+  - `pnpm lint`
+  - `pnpm typecheck`
+  - `pnpm test`
+- API type-safety note:
+  - Service-layer mappings and transaction callbacks are explicitly typed to keep `noImplicitAny` checks stable even when Prisma enum exports are unavailable during static analysis.

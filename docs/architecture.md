@@ -61,6 +61,7 @@ flowchart LR
 - Nuxt 4 (Vue 3) for UI and routing.
 - RxDB/Dexie as local reactive storage.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
+- Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
 - Outbox pattern:
   - local mutation first,
   - enqueue operation,
@@ -91,6 +92,7 @@ sequenceDiagram
 - Access:
   - short-lived JWT access token in Authorization header.
   - refresh token in HttpOnly cookie (`/auth` path).
+  - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`).
 - Authorization:
   - location scoping for tenant separation.
   - privilege-based endpoint checks.
@@ -102,8 +104,10 @@ sequenceDiagram
     - `docker/Dockerfile.web` -> image `jtrack-web`, container `jtrack-web`
     - `docker/Dockerfile.api` -> image `jtrack-api`, container `jtrack-api`
     - `postgres:16` -> `jtrack-postgres`
+  - API/Web Dockerfiles use multi-stage builds (`deps` -> `builder` -> `runner`) to reduce runtime image size.
+  - Docker build context filtering uses repository `.dockerignore`; docker-local mirror rules are stored in `docker/.dockerignore`.
   - Startup via `docker/docker-compose.yml` (`docker-compose up -d --build`).
-  - API container startup runs `prisma migrate deploy` before starting Nest runtime.
+  - API container startup runs `prisma migrate deploy --schema apps/api/prisma/schema.prisma` before `node apps/api/dist/src/main.js`.
   - DB service has network alias `jtrack`; API uses `postgresql://...@jtrack:5432/...`.
   - Legacy Prisma migration `20260223082027_init` is a no-op placeholder to keep migration chain valid in clean environments.
   - API TypeScript output is fixed to `apps/api/dist` (`apps/api/tsconfig.json` with explicit `outDir`).
@@ -112,7 +116,7 @@ sequenceDiagram
   - Backend (Render): `/Users/vlad/Projects/JTrack/render.yaml`
     - Deploys `jtrack-api` from `docker/Dockerfile.api`.
     - Uses Render Postgres `jtrack-db`.
-    - Uses `dockerCommand` to map `API_PORT` to Render `PORT`.
+    - Uses `dockerCommand` to export `API_PORT` from Render `PORT`, apply Prisma migrations, and start `node apps/api/dist/src/main.js`.
   - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
     - Publishes `apps/web/.output/public`.
@@ -130,3 +134,17 @@ sequenceDiagram
   - Mitigation: mandatory `x-location-id` guard and role checks.
 - Risk: stale refresh tokens.
   - Mitigation: refresh token hashing + rotation on refresh/login.
+
+## 11. Testing Architecture
+- Test runner:
+  - `Vitest` is configured per package (`apps/api`, `apps/web`, `packages/shared`).
+  - Monorepo test entrypoint is `pnpm test` (`turbo run test`).
+- API unit coverage:
+  - `AuthService` token/cookie/auth failure paths.
+  - `SyncService` pull/push conflict handling (server-wins).
+  - RBAC guards (`LocationGuard`, `PrivilegesGuard`).
+- Web unit coverage:
+  - Pinia `auth` store flows (login/refresh/bootstrap/me).
+  - Pinia `sync` store flows (push+pull orchestration, incoming changes application, error handling).
+- Shared package coverage:
+  - Sync schema contracts and RBAC role-privilege matrix invariants.

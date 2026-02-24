@@ -86,7 +86,7 @@ export class AttachmentsService {
       }
     })
 
-    return attachments.map((attachment) => ({
+    return attachments.map((attachment: (typeof attachments)[number]) => ({
       ...attachment,
       createdAt: attachment.createdAt.toISOString(),
       updatedAt: attachment.updatedAt.toISOString(),

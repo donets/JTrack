@@ -22,7 +22,7 @@ export class TicketsService {
       orderBy: { updatedAt: 'desc' }
     })
 
-    return tickets.map((ticket) => this.serialize(ticket))
+    return tickets.map((ticket: (typeof tickets)[number]) => this.serialize(ticket))
   }
 
   async getById(locationId: string, ticketId: string) {
@@ -53,19 +53,19 @@ export class TicketsService {
 
     return {
       ...this.serialize(ticket),
-      comments: ticket.comments.map((comment) => ({
+      comments: ticket.comments.map((comment: (typeof ticket.comments)[number]) => ({
         ...comment,
         createdAt: comment.createdAt.toISOString(),
         updatedAt: comment.updatedAt.toISOString(),
         deletedAt: comment.deletedAt?.toISOString() ?? null
       })),
-      attachments: ticket.attachments.map((attachment) => ({
+      attachments: ticket.attachments.map((attachment: (typeof ticket.attachments)[number]) => ({
         ...attachment,
         createdAt: attachment.createdAt.toISOString(),
         updatedAt: attachment.updatedAt.toISOString(),
         deletedAt: attachment.deletedAt?.toISOString() ?? null
       })),
-      paymentRecords: ticket.paymentRecords.map((payment) => ({
+      paymentRecords: ticket.paymentRecords.map((payment: (typeof ticket.paymentRecords)[number]) => ({
         ...payment,
         createdAt: payment.createdAt.toISOString(),
         updatedAt: payment.updatedAt.toISOString()
