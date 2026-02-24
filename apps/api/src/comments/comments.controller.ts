@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Query, UsePipes } from '@nestjs/common'
+import { createCommentSchema, type CreateCommentInput } from '@jtrack/shared'
 import { CurrentLocation } from '@/common/current-location.decorator'
 import { CurrentUser } from '@/common/current-user.decorator'
 import type { JwtUser } from '@/common/types'
+import { ZodValidationPipe } from '@/common/zod-validation.pipe'
 import { RequirePrivileges } from '@/rbac/require-privileges.decorator'
 import { CommentsService } from './comments.service'
 
@@ -17,10 +19,11 @@ export class CommentsController {
 
   @Post()
   @RequirePrivileges(['comments.write'])
+  @UsePipes(new ZodValidationPipe(createCommentSchema))
   async create(
     @CurrentLocation() locationId: string,
     @CurrentUser() user: JwtUser,
-    @Body() body: unknown
+    @Body() body: CreateCommentInput
   ) {
     return this.commentsService.create(locationId, user.sub, body)
   }

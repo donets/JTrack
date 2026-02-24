@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { createCommentSchema } from '@jtrack/shared'
+import type { CreateCommentInput } from '@jtrack/shared'
 import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
@@ -24,9 +24,7 @@ export class CommentsService {
     }))
   }
 
-  async create(locationId: string, authorUserId: string, data: unknown) {
-    const input = createCommentSchema.parse(data)
-
+  async create(locationId: string, authorUserId: string, input: CreateCommentInput) {
     const ticket = await this.prisma.ticket.findFirst({
       where: {
         id: input.ticketId,

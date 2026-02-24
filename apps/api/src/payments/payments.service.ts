@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { createPaymentRecordSchema, paymentStatusSchema } from '@jtrack/shared'
+import type { CreatePaymentRecordInput, PaymentStatus } from '@jtrack/shared'
 import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
@@ -24,9 +24,7 @@ export class PaymentsService {
     }))
   }
 
-  async create(locationId: string, data: unknown) {
-    const input = createPaymentRecordSchema.parse(data)
-
+  async create(locationId: string, input: CreatePaymentRecordInput) {
     const ticket = await this.prisma.ticket.findFirst({
       where: {
         id: input.ticketId,
@@ -58,16 +56,14 @@ export class PaymentsService {
     }
   }
 
-  async updateStatus(locationId: string, paymentId: string, status: string) {
-    const nextStatus = paymentStatusSchema.parse(status)
-
+  async updateStatus(locationId: string, paymentId: string, status: PaymentStatus) {
     const payment = await this.prisma.paymentRecord.updateMany({
       where: {
         id: paymentId,
         locationId
       },
       data: {
-        status: nextStatus
+        status
       }
     })
 

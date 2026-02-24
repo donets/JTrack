@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { type Prisma } from '@prisma/client'
-import { createLocationSchema, updateLocationSchema } from '@jtrack/shared'
+import type { CreateLocationInput, UpdateLocationInput } from '@jtrack/shared'
 import type { JwtUser } from '@/common/types'
 import { PrismaService } from '@/prisma/prisma.service'
 
@@ -48,9 +48,7 @@ export class LocationsService {
     }))
   }
 
-  async create(user: JwtUser, data: unknown) {
-    const input = createLocationSchema.parse(data)
-
+  async create(user: JwtUser, input: CreateLocationInput) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const location = await tx.location.create({
         data: {
@@ -90,9 +88,7 @@ export class LocationsService {
     })
   }
 
-  async update(user: JwtUser, locationId: string, data: unknown) {
-    const input = updateLocationSchema.parse(data)
-
+  async update(user: JwtUser, locationId: string, input: UpdateLocationInput) {
     if (!user.isAdmin) {
       const membership = await this.prisma.userLocation.findUnique({
         where: {

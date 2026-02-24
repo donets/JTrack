@@ -1,11 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import {
-  createTicketSchema,
+  type CreateTicketInput,
   type TicketListQuery,
   type TicketListResponse,
-  ticketStatusSchema,
-  updateTicketSchema,
-  type TicketStatus
+  type TicketStatus,
+  type UpdateTicketInput
 } from '@jtrack/shared'
 import { PrismaService } from '@/prisma/prisma.service'
 
@@ -90,9 +89,7 @@ export class TicketsService {
     }
   }
 
-  async create(locationId: string, createdByUserId: string, data: unknown) {
-    const input = createTicketSchema.parse(data)
-
+  async create(locationId: string, createdByUserId: string, input: CreateTicketInput) {
     const ticket = await this.prisma.ticket.create({
       data: {
         locationId,
@@ -111,9 +108,7 @@ export class TicketsService {
     return this.serialize(ticket)
   }
 
-  async update(locationId: string, ticketId: string, data: unknown) {
-    const input = updateTicketSchema.parse(data)
-
+  async update(locationId: string, ticketId: string, input: UpdateTicketInput) {
     const ticket = await this.prisma.ticket.updateMany({
       where: {
         id: ticketId,
@@ -140,9 +135,7 @@ export class TicketsService {
     return this.getById(locationId, ticketId)
   }
 
-  async transitionStatus(locationId: string, ticketId: string, status: string) {
-    const nextStatus = ticketStatusSchema.parse(status)
-
+  async transitionStatus(locationId: string, ticketId: string, status: TicketStatus) {
     const updated = await this.prisma.ticket.updateMany({
       where: {
         id: ticketId,
@@ -150,7 +143,7 @@ export class TicketsService {
         deletedAt: null
       },
       data: {
-        status: nextStatus
+        status
       }
     })
 

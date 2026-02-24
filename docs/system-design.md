@@ -82,7 +82,7 @@
 - Missing domain object: `404 Not Found`.
 - Location delete with dependent business records: `409 Conflict`.
 - Invalid or already-used invite token: `401 Unauthorized`.
-- Validation is schema-based (Zod) and fails fast at controller boundary.
+- Validation is schema-based (Zod) and fails fast at controller boundary via `ZodValidationPipe`; service layer consumes already-validated typed inputs.
 
 ## 9. Non-Functional Requirements
 - Security:

@@ -5,10 +5,10 @@ import { hash } from 'bcryptjs'
 import { randomUUID } from 'node:crypto'
 import { type Prisma } from '@prisma/client'
 import {
-  createUserSchema,
-  updateUserSchema,
+  type CreateUserInput,
   type InviteResponse,
-  type RoleKey
+  type RoleKey,
+  type UpdateUserInput
 } from '@jtrack/shared'
 import { PrismaService } from '@/prisma/prisma.service'
 
@@ -53,8 +53,7 @@ export class UsersService {
     }))
   }
 
-  async create(data: unknown, locationId?: string) {
-    const input = createUserSchema.parse(data)
+  async create(input: CreateUserInput, locationId?: string) {
     const passwordHash = await hash(input.password ?? 'ChangeMe123!', 12)
 
     const user = await this.prisma.user.upsert({
@@ -103,8 +102,7 @@ export class UsersService {
     }
   }
 
-  async invite(data: unknown, locationId: string): Promise<InviteResponse> {
-    const input = createUserSchema.parse(data)
+  async invite(input: CreateUserInput, locationId: string): Promise<InviteResponse> {
     const passwordHash = await hash(randomUUID(), 12)
 
     const user = await this.prisma.user.upsert({
@@ -165,9 +163,7 @@ export class UsersService {
     }
   }
 
-  async update(userId: string, data: unknown) {
-    const input = updateUserSchema.parse(data)
-
+  async update(userId: string, input: UpdateUserInput) {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: input,

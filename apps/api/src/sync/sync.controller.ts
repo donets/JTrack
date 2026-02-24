@@ -1,5 +1,12 @@
-import { Body, Controller, Post } from '@nestjs/common'
+import { Body, Controller, Post, UsePipes } from '@nestjs/common'
+import {
+  syncPullRequestSchema,
+  type SyncPullRequest,
+  syncPushRequestSchema,
+  type SyncPushRequest
+} from '@jtrack/shared'
 import { CurrentLocation } from '@/common/current-location.decorator'
+import { ZodValidationPipe } from '@/common/zod-validation.pipe'
 import { RequirePrivileges } from '@/rbac/require-privileges.decorator'
 import { SyncService } from './sync.service'
 
@@ -9,13 +16,15 @@ export class SyncController {
 
   @Post('pull')
   @RequirePrivileges(['sync.run'])
-  async pull(@CurrentLocation() locationId: string, @Body() body: unknown) {
+  @UsePipes(new ZodValidationPipe(syncPullRequestSchema))
+  async pull(@CurrentLocation() locationId: string, @Body() body: SyncPullRequest) {
     return this.syncService.pull(body, locationId)
   }
 
   @Post('push')
   @RequirePrivileges(['sync.run'])
-  async push(@CurrentLocation() locationId: string, @Body() body: unknown) {
+  @UsePipes(new ZodValidationPipe(syncPushRequestSchema))
+  async push(@CurrentLocation() locationId: string, @Body() body: SyncPushRequest) {
     return this.syncService.push(body, locationId)
   }
 }
