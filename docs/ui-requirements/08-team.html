@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08 — Team & RBAC | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>08 — Team & RBAC</h1>
+  <span class="badge badge-partial">Partial</span>
+  <span class="spacer"></span>
+  <a href="09-extras.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Team Member List</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Team — Members List</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Team</span>
+      <div class="spacer"></div>
+      <span class="wf-btn wf-btn-primary">+ Invite Member</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab active">Members (6)</div>
+        <div class="wf-tab">Invitations (2)</div>
+        <div class="wf-tab">Roles</div>
+      </div>
+    </div>
+    <div style="background:var(--white)">
+      <table class="wf-table">
+        <thead>
+          <tr><th>Member</th><th>Role</th><th>Status</th><th>Jobs (MTD)</th><th>Joined</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar">JD</div>
+                <div>
+                  <div style="font-weight:600">John Doe</div>
+                  <div style="font-size:11px;color:var(--gray)">john@jtrack.io</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="wf-tag wf-tag-owner">Owner</span></td>
+            <td><span style="color:var(--mint)">● Active</span></td>
+            <td style="text-align:center">—</td>
+            <td style="font-size:12px;color:var(--gray)">Jan 2025</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--sky-light);color:var(--sky)">LB</div>
+                <div>
+                  <div style="font-weight:600">Lisa Brown</div>
+                  <div style="font-size:11px;color:var(--gray)">lisa@jtrack.io</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="wf-tag wf-tag-manager">Manager</span></td>
+            <td><span style="color:var(--mint)">● Active</span></td>
+            <td style="text-align:center">—</td>
+            <td style="font-size:12px;color:var(--gray)">Feb 2025</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">Edit</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--mint-light);color:var(--mint)">MR</div>
+                <div>
+                  <div style="font-weight:600">Mike Rodriguez</div>
+                  <div style="font-size:11px;color:var(--gray)">mike@jtrack.io</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="wf-tag wf-tag-tech">Technician</span></td>
+            <td><span style="color:var(--mint)">● Active</span></td>
+            <td style="text-align:center;font-weight:600">18</td>
+            <td style="font-size:12px;color:var(--gray)">Mar 2025</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">Edit</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--sky-light);color:var(--sky)">SK</div>
+                <div>
+                  <div style="font-weight:600">Sarah Kim</div>
+                  <div style="font-size:11px;color:var(--gray)">sarah@jtrack.io</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="wf-tag wf-tag-tech">Technician</span></td>
+            <td><span style="color:var(--mint)">● Active</span></td>
+            <td style="text-align:center;font-weight:600">14</td>
+            <td style="font-size:12px;color:var(--gray)">Apr 2025</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">Edit</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--violet-light);color:var(--violet)">AW</div>
+                <div>
+                  <div style="font-weight:600">Alex Wilson</div>
+                  <div style="font-size:11px;color:var(--gray)">alex@jtrack.io</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="wf-tag wf-tag-tech">Technician</span></td>
+            <td><span style="color:var(--mint)">● Active</span></td>
+            <td style="text-align:center;font-weight:600">10</td>
+            <td style="font-size:12px;color:var(--gray)">Jun 2025</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">Edit</span></td>
+          </tr>
+          <tr style="opacity:.6">
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--mist-dark);color:var(--gray)">TC</div>
+                <div>
+                  <div style="font-weight:600">Tom Clark</div>
+                  <div style="font-size:11px;color:var(--gray)">tom@jtrack.io</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="wf-tag wf-tag-tech">Technician</span></td>
+            <td><span style="color:var(--flame)">● Suspended</span></td>
+            <td style="text-align:center">2</td>
+            <td style="font-size:12px;color:var(--gray)">Aug 2025</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">Edit</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Invite Member Modal</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Invite Team Member</div>
+  <div class="wireframe-body" style="position:relative;min-height:360px;background:var(--mist)">
+    <div class="wf-modal-overlay">
+      <div class="wf-modal" style="width:440px">
+        <div class="wf-modal-header">Invite Team Member <span style="color:var(--gray);cursor:pointer">✕</span></div>
+        <div class="wf-modal-body wf-col wf-gap-4">
+          <div class="wf-form-group">
+            <label class="wf-form-label">Email address *</label>
+            <input class="wf-input" style="width:100%" placeholder="colleague@email.com">
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Name</label>
+            <input class="wf-input" style="width:100%" placeholder="Full name">
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Role *</label>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <div style="flex:1;padding:12px;border:2px solid var(--mist-dark);border-radius:var(--radius);text-align:center;cursor:pointer">
+                <div style="font-weight:700;font-size:14px">Manager</div>
+                <div style="font-size:11px;color:var(--gray);margin-top:2px">Full access, no billing</div>
+              </div>
+              <div style="flex:1;padding:12px;border:2px solid var(--mint);border-radius:var(--radius);text-align:center;cursor:pointer;background:var(--mint-light)">
+                <div style="font-weight:700;font-size:14px;color:var(--mint)">Technician</div>
+                <div style="font-size:11px;color:var(--gray);margin-top:2px">Field work only</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:var(--mist);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--ink-light);margin-top:4px">
+            An invitation email will be sent with a link to set their password and join this location.
+          </div>
+        </div>
+        <div class="wf-modal-footer">
+          <span class="wf-btn wf-btn-secondary">Cancel</span>
+          <span class="wf-btn wf-btn-primary">Send Invite</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>RBAC Matrix</h2>
+<p class="note">Matches <code>packages/shared/src/rbac.ts</code> — 3 roles, 17 privileges.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>SPEC</span> Role-Based Access Control Matrix</div>
+  <div class="wireframe-body">
+    <table class="wf-table wf-rbac-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;width:220px">Privilege</th>
+          <th style="width:100px"><span class="wf-tag wf-tag-owner">Owner</span></th>
+          <th style="width:100px"><span class="wf-tag wf-tag-manager">Manager</span></th>
+          <th style="width:100px"><span class="wf-tag wf-tag-tech">Technician</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>tickets.read</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td></tr>
+        <tr><td>tickets.write</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>tickets.assign</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>tickets.status.update</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td></tr>
+        <tr><td>dispatch.manage</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>users.read</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>users.manage</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>locations.read</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>locations.manage</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>comments.read</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td></tr>
+        <tr><td>comments.write</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td></tr>
+        <tr><td>attachments.read</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td></tr>
+        <tr><td>attachments.write</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td></tr>
+        <tr><td>payments.read</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>payments.write</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>billing.manage</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-cross">—</td><td class="wf-rbac-cross">—</td></tr>
+        <tr><td>sync.run</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td><td class="wf-rbac-check">&#10003;</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Member Detail / Edit</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Team Member Detail — Mike Rodriguez</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="breadcrumb">Team /</span>
+      <span class="title">Mike Rodriguez</span>
+      <div class="spacer"></div>
+      <span class="wf-btn wf-btn-secondary wf-btn-sm">Suspend</span>
+      <span class="wf-btn wf-btn-danger wf-btn-sm">Remove</span>
+    </div>
+    <div class="wf-content wf-row wf-p-20 wf-gap-20" style="align-items:flex-start">
+      <!-- Left -->
+      <div class="wf-col wf-gap-16" style="flex:2;min-width:360px">
+        <div class="wf-card">
+          <div style="padding:0 16px">
+            <div class="wf-tabs">
+              <div class="wf-tab active">Jobs (18)</div>
+              <div class="wf-tab">Schedule</div>
+              <div class="wf-tab">Time Log</div>
+            </div>
+          </div>
+          <table class="wf-table">
+            <thead><tr><th>#</th><th>Title</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600">#1048</td>
+                <td>AC unit not cooling</td>
+                <td><span class="wf-tag wf-tag-scheduled">Scheduled</span></td>
+                <td style="font-size:12px;color:var(--gray)">Feb 23, 10:30AM</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600">#1044</td>
+                <td>Water heater install</td>
+                <td><span class="wf-tag wf-tag-scheduled">Scheduled</span></td>
+                <td style="font-size:12px;color:var(--gray)">Feb 23, 1PM</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600">#1042</td>
+                <td>Furnace inspection</td>
+                <td><span class="wf-tag wf-tag-done">Done</span></td>
+                <td style="font-size:12px;color:var(--gray)">Feb 23, 8AM</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Right -->
+      <div class="wf-col wf-gap-16" style="flex:1;min-width:240px;max-width:280px">
+        <div class="wf-card">
+          <div class="wf-card-body" style="text-align:center;padding:24px">
+            <div class="wf-avatar" style="width:64px;height:64px;font-size:24px;margin:0 auto 12px;background:var(--mint-light);color:var(--mint)">MR</div>
+            <div style="font-weight:700;font-size:16px">Mike Rodriguez</div>
+            <div style="font-size:13px;color:var(--gray)">mike@jtrack.io</div>
+            <div style="margin-top:8px"><span class="wf-tag wf-tag-tech">Technician</span></div>
+          </div>
+        </div>
+        <div class="wf-card">
+          <div class="wf-card-header">Stats (MTD)</div>
+          <div class="wf-card-body wf-col wf-gap-8" style="font-size:13px">
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Jobs completed</span><span style="font-weight:600">18</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Avg completion</span><span>1.8h</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Revenue generated</span><span style="font-weight:600">€4,210</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Customer rating</span><span>⭐ 4.8</span></div>
+          </div>
+        </div>
+        <div class="wf-card">
+          <div class="wf-card-header">Settings</div>
+          <div class="wf-card-body wf-col wf-gap-8" style="font-size:13px">
+            <div class="wf-form-group">
+              <label class="wf-form-label">Role</label>
+              <select class="wf-select" style="width:100%"><option>Technician</option></select>
+            </div>
+            <div class="wf-form-group">
+              <label class="wf-form-label">Status</label>
+              <select class="wf-select" style="width:100%"><option>Active</option></select>
+            </div>
+            <span class="wf-btn wf-btn-primary wf-btn-sm" style="width:100%;justify-content:center">Save Changes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="07-financials.html">&larr; 07 — Financials</a>
+  <a href="09-extras.html">09 — Extras &rarr;</a>
+</div>
+</div>
+</body>
+</html>

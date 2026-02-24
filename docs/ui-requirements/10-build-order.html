@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 — Build Order & Data Notes | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .build-step {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--mist-dark);
+    align-items: flex-start;
+  }
+  .build-step:last-child { border-bottom: none; }
+  .step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .step-built { background: var(--mint-light); color: #065f46; }
+  .step-partial { background: var(--flame-light); color: #9a3412; }
+  .step-next { background: var(--sky-light); color: #1e40af; }
+  .step-later { background: var(--mist-dark); color: var(--ink-light); }
+  .step-content { flex: 1; }
+  .step-content h4 { margin: 0 0 4px; font-size: 14px; }
+  .step-content p { margin: 0; font-size: 13px; color: var(--ink-light); }
+  .step-content .deps { font-size: 11px; color: var(--gray); margin-top: 4px; }
+  .data-note {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--mist-dark);
+    font-size: 13px;
+  }
+  .data-note:last-child { border-bottom: none; }
+  .data-note .entity { font-weight: 600; min-width: 140px; }
+  .data-note .status-tag { min-width: 80px; }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>10 — Build Order & Data Notes</h1>
+  <span class="spacer"></span>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Recommended Build Order</h2>
+<p class="note">14-step implementation sequence. Steps marked with current status. Dependencies shown below each step.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>SPEC</span> Implementation Sequence</div>
+  <div class="wireframe-body" style="padding:20px 24px">
+
+    <div class="build-step">
+      <div class="step-num step-built">1</div>
+      <div class="step-content">
+        <h4>Authentication & Session <span class="badge badge-built">Built</span></h4>
+        <p>Login page, JWT tokens, refresh flow, auth middleware, logout.</p>
+        <div class="deps">Backend: AuthModule ✓ &bull; Frontend: login.vue, auth store, auth middleware ✓</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-built">2</div>
+      <div class="step-content">
+        <h4>Location Selection & Multi-tenancy <span class="badge badge-built">Built</span></h4>
+        <p>Location list, active location switching, location-scoped API calls.</p>
+        <div class="deps">Backend: LocationsModule ✓ &bull; Frontend: locations.vue, location store ✓</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-partial">3</div>
+      <div class="step-content">
+        <h4>App Shell & Navigation <span class="badge badge-partial">Partial</span></h4>
+        <p>Replace current top-bar with collapsible sidebar, add bottom nav for mobile, breadcrumbs, notification bell, location switcher in header.</p>
+        <div class="deps">Depends on: #1, #2 &bull; Needed by: all subsequent features &bull; Existing: AppShell.vue (header-only)</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-partial">4</div>
+      <div class="step-content">
+        <h4>Ticket List & Filters <span class="badge badge-partial">Partial</span></h4>
+        <p>Enhance existing ticket list with status/priority/assignee filters, search, pagination, sortable columns.</p>
+        <div class="deps">Depends on: #3 &bull; Existing: tickets/index.vue (basic list)</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-partial">5</div>
+      <div class="step-content">
+        <h4>Ticket Detail & Activity <span class="badge badge-partial">Partial</span></h4>
+        <p>Two-column layout: activity timeline (comments, attachments, status changes) + sidebar (details, financial, checklist cards).</p>
+        <div class="deps">Depends on: #4 &bull; Existing: tickets/[id].vue (basic detail with comments)</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-next">6</div>
+      <div class="step-content">
+        <h4>Dashboard <span class="badge badge-planned">Planned</span></h4>
+        <p>Owner/Manager: stat cards, status chart, unassigned jobs, team availability, activity feed. Technician: my-day view with next job card.</p>
+        <div class="deps">Depends on: #3, #4 &bull; Backend: aggregate queries (new endpoints or computed client-side)</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-next">7</div>
+      <div class="step-content">
+        <h4>Team Management <span class="badge badge-planned">Planned</span></h4>
+        <p>Member list, invite flow, role assignment, member detail with job history and stats. Suspend/remove members.</p>
+        <div class="deps">Depends on: #3 &bull; Backend: UsersModule ✓ (invite endpoint may need additions)</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-next">8</div>
+      <div class="step-content">
+        <h4>Ticket Board (Kanban) <span class="badge badge-planned">Planned</span></h4>
+        <p>Drag-and-drop kanban with columns per status. Cards show title, assignee, priority.</p>
+        <div class="deps">Depends on: #4 &bull; Library: vue-draggable or similar</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-next">9</div>
+      <div class="step-content">
+        <h4>Dispatch Board <span class="badge badge-planned">Planned</span></h4>
+        <p>Technician rows × time columns. Drag unassigned jobs to schedule. Daily/weekly toggle.</p>
+        <div class="deps">Depends on: #4, #7 &bull; Existing: dispatch.vue (stub) &bull; Backend: TicketsModule ✓</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-next">10</div>
+      <div class="step-content">
+        <h4>Invoicing & Payments <span class="badge badge-planned">Planned</span></h4>
+        <p>Invoice list with tabs (pending/overdue/paid), invoice detail, record payment modal. Summary stats.</p>
+        <div class="deps">Depends on: #5 &bull; Backend: PaymentsModule ✓ (invoice entity may need creation)</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-next">11</div>
+      <div class="step-content">
+        <h4>Calendar & Map Views <span class="badge badge-planned">Planned</span></h4>
+        <p>Ticket calendar (week view with events), map view with job pins. Dispatch timeline (Gantt).</p>
+        <div class="deps">Depends on: #8, #9 &bull; Libraries: FullCalendar or custom, Leaflet/Mapbox</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-later">12</div>
+      <div class="step-content">
+        <h4>Customers & Sites <span class="badge badge-future">Future</span></h4>
+        <p>Customer entity (separate from Location), sites per customer, customer detail with job history & revenue.</p>
+        <div class="deps">Depends on: #4 &bull; Backend: NEW Customer + Site entities needed</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-later">13</div>
+      <div class="step-content">
+        <h4>Quoting <span class="badge badge-future">Future</span></h4>
+        <p>Quote form with line items, quote lifecycle (Draft → Sent → Accepted), convert to ticket.</p>
+        <div class="deps">Depends on: #12 &bull; Backend: NEW Quote + QuoteLineItem entities</div>
+      </div>
+    </div>
+
+    <div class="build-step">
+      <div class="step-num step-later">14</div>
+      <div class="step-content">
+        <h4>Analytics & Reporting <span class="badge badge-planned">Planned</span></h4>
+        <p>Overview dashboard with charts, job/revenue/team reports, CSV export.</p>
+        <div class="deps">Depends on: #6, #10 &bull; Backend: aggregate query endpoints &bull; Library: Chart.js or similar</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Data Model Notes</h2>
+<p class="note">Which UI sections need new backend entities vs. can use existing ones.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>SPEC</span> Entity Requirements by Feature</div>
+  <div class="wireframe-body" style="padding:16px 24px">
+
+    <div class="data-note">
+      <div class="entity">Authentication</div>
+      <div class="status-tag"><span class="badge badge-built">Exists</span></div>
+      <div>User, refresh tokens — fully implemented</div>
+    </div>
+    <div class="data-note">
+      <div class="entity">Locations</div>
+      <div class="status-tag"><span class="badge badge-built">Exists</span></div>
+      <div>Location, UserLocation — fully implemented</div>
+    </div>
+    <div class="data-note">
+      <div class="entity">Tickets / Jobs</div>
+      <div class="status-tag"><span class="badge badge-built">Exists</span></div>
+      <div>Ticket (7 statuses, soft delete, scheduling, amounts) — fully implemented</div>
+    </div>
+    <div class="data-note">
+      <div class="entity">Comments</div>
+      <div class="status-tag"><span class="badge badge-built">Exists</span></div>
+      <div>TicketComment — fully implemented with soft delete</div>
+    </div>
+    <div class="data-note">
+      <div class="entity">Attachments</div>
+      <div class="status-tag"><span class="badge badge-built">Exists</span></div>
+      <div>TicketAttachment (Photo/File kinds, storage) — fully implemented</div>
+    </div>
+    <div class="data-note">
+      <div class="entity">Payments</div>
+      <div class="status-tag"><span class="badge badge-built">Exists</span></div>
+      <div>PaymentRecord (manual/stripe, 4 statuses) — fully implemented</div>
+    </div>
+    <div class="data-note">
+      <div class="entity">RBAC</div>
+      <div class="status-tag"><span class="badge badge-built">Exists</span></div>
+      <div>Role, Privilege, RolePrivilege — 3 roles, 17 privileges. Seeded.</div>
+    </div>
+    <div class="data-note">
+      <div class="entity">Team / Users</div>
+      <div class="status-tag"><span class="badge badge-built">Exists</span></div>
+      <div>User + UserLocation (role, membership status) — needs invite email integration</div>
+    </div>
+    <div class="data-note" style="background:var(--sky-light);margin:0 -24px;padding:12px 24px">
+      <div class="entity">Invoices</div>
+      <div class="status-tag"><span class="badge badge-planned">New</span></div>
+      <div><b>Invoice</b> + <b>InvoiceLineItem</b> entities needed. Link to Ticket + PaymentRecord. Fields: number, customer, status (Draft/Sent/Paid/Overdue), line items, tax, totals, due date.</div>
+    </div>
+    <div class="data-note" style="background:var(--sky-light);margin:0 -24px;padding:12px 24px">
+      <div class="entity">Customers</div>
+      <div class="status-tag"><span class="badge badge-planned">New</span></div>
+      <div><b>Customer</b> entity — separate from Location. Fields: name, type (commercial/residential), contact info, notes. Linked to Sites and Tickets.</div>
+    </div>
+    <div class="data-note" style="background:var(--sky-light);margin:0 -24px;padding:12px 24px">
+      <div class="entity">Sites</div>
+      <div class="status-tag"><span class="badge badge-planned">New</span></div>
+      <div><b>Site</b> entity — physical address belonging to a Customer. Tickets are assigned to a Site. Could extend or wrap existing Location concept.</div>
+    </div>
+    <div class="data-note" style="background:var(--sky-light);margin:0 -24px;padding:12px 24px">
+      <div class="entity">Quotes</div>
+      <div class="status-tag"><span class="badge badge-planned">New</span></div>
+      <div><b>Quote</b> + <b>QuoteLineItem</b> entities. Status lifecycle (Draft/Sent/Accepted/Declined/Expired). Convert-to-ticket action.</div>
+    </div>
+    <div class="data-note" style="background:var(--sky-light);margin:0 -24px;padding:12px 24px">
+      <div class="entity">Inventory</div>
+      <div class="status-tag"><span class="badge badge-planned">New</span></div>
+      <div><b>Part</b> + <b>TicketPart</b> (parts used on a job). Fields: SKU, name, category, stock qty, unit cost, reorder threshold.</div>
+    </div>
+    <div class="data-note" style="background:var(--sky-light);margin:0 -24px;padding:12px 24px">
+      <div class="entity">Time Tracking</div>
+      <div class="status-tag"><span class="badge badge-planned">New</span></div>
+      <div><b>TimeEntry</b> — userId, ticketId (optional), clockIn, clockOut, type (work/travel/break). Auto-stop on new entry.</div>
+    </div>
+    <div class="data-note" style="background:var(--sky-light);margin:0 -24px;padding:12px 24px">
+      <div class="entity">Forms</div>
+      <div class="status-tag"><span class="badge badge-planned">New</span></div>
+      <div><b>FormTemplate</b> + <b>FormField</b> + <b>FormSubmission</b> + <b>FormFieldValue</b>. JSON schema for field definitions. Linked to tickets.</div>
+    </div>
+    <div class="data-note" style="background:var(--sky-light);margin:0 -24px;padding:12px 24px">
+      <div class="entity">Notifications</div>
+      <div class="status-tag"><span class="badge badge-planned">New</span></div>
+      <div><b>Notification</b> — userId, type, title, body, read, entityType, entityId, createdAt. Push via web-push/FCM.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Ticket Statuses Reference</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>SPEC</span> Ticket Status Flow</div>
+  <div class="wireframe-body" style="padding:24px;text-align:center">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-size:13px">
+      <span class="wf-tag wf-tag-new" style="padding:6px 14px;font-size:13px">New</span>
+      <span style="color:var(--gray)">→</span>
+      <span class="wf-tag wf-tag-scheduled" style="padding:6px 14px;font-size:13px">Scheduled</span>
+      <span style="color:var(--gray)">→</span>
+      <span class="wf-tag wf-tag-inprogress" style="padding:6px 14px;font-size:13px">InProgress</span>
+      <span style="color:var(--gray)">→</span>
+      <span class="wf-tag wf-tag-done" style="padding:6px 14px;font-size:13px">Done</span>
+      <span style="color:var(--gray)">→</span>
+      <span class="wf-tag wf-tag-invoiced" style="padding:6px 14px;font-size:13px">Invoiced</span>
+      <span style="color:var(--gray)">→</span>
+      <span class="wf-tag wf-tag-paid" style="padding:6px 14px;font-size:13px">Paid</span>
+    </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--gray)">
+      Any status → <span class="wf-tag wf-tag-canceled" style="font-size:12px">Canceled</span> (except Paid)
+    </div>
+    <div style="margin-top:24px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+      <div style="text-align:left;font-size:12px;border:1px solid var(--mist-dark);border-radius:6px;padding:12px 16px">
+        <div style="font-weight:600;margin-bottom:4px">Technician can:</div>
+        <div style="color:var(--gray)">New → InProgress<br>InProgress → Done<br>Scheduled → InProgress</div>
+      </div>
+      <div style="text-align:left;font-size:12px;border:1px solid var(--mist-dark);border-radius:6px;padding:12px 16px">
+        <div style="font-weight:600;margin-bottom:4px">Manager can:</div>
+        <div style="color:var(--gray)">All transitions<br>except: any → Paid<br>(requires payment)</div>
+      </div>
+      <div style="text-align:left;font-size:12px;border:1px solid var(--mist-dark);border-radius:6px;padding:12px 16px">
+        <div style="font-weight:600;margin-bottom:4px">Owner can:</div>
+        <div style="color:var(--gray)">All transitions<br>Including billing<br>and cancellation</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Enums Reference</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>SPEC</span> Backend Enum Values</div>
+  <div class="wireframe-body" style="padding:16px 24px">
+    <table class="wf-table">
+      <thead><tr><th>Enum</th><th>Values</th><th>Used By</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600">TicketStatus</td><td><span class="wf-tag wf-tag-new">New</span> <span class="wf-tag wf-tag-scheduled">Scheduled</span> <span class="wf-tag wf-tag-inprogress">InProgress</span> <span class="wf-tag wf-tag-done">Done</span> <span class="wf-tag wf-tag-invoiced">Invoiced</span> <span class="wf-tag wf-tag-paid">Paid</span> <span class="wf-tag wf-tag-canceled">Canceled</span></td><td>Ticket</td></tr>
+        <tr><td style="font-weight:600">RoleKey</td><td><span class="wf-tag wf-tag-owner">Owner</span> <span class="wf-tag wf-tag-manager">Manager</span> <span class="wf-tag wf-tag-tech">Technician</span></td><td>UserLocation, RBAC</td></tr>
+        <tr><td style="font-weight:600">MembershipStatus</td><td><span class="wf-tag" style="background:var(--sky-light);color:#1e40af">invited</span> <span class="wf-tag wf-tag-done">active</span> <span class="wf-tag" style="background:var(--rose-light);color:#991b1b">suspended</span></td><td>UserLocation</td></tr>
+        <tr><td style="font-weight:600">AttachmentKind</td><td>Photo, File</td><td>TicketAttachment</td></tr>
+        <tr><td style="font-weight:600">PaymentProvider</td><td>manual, stripe</td><td>PaymentRecord</td></tr>
+        <tr><td style="font-weight:600">PaymentStatus</td><td><span class="wf-tag" style="background:#fef3c7;color:#92400e">Pending</span> <span class="wf-tag wf-tag-done">Succeeded</span> <span class="wf-tag" style="background:var(--rose-light);color:#991b1b">Failed</span> <span class="wf-tag" style="background:var(--violet-light);color:#5b21b6">Refunded</span></td><td>PaymentRecord</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="09-extras.html">&larr; 09 — Extras & Future</a>
+  <a href="index.html">Back to Index &rarr;</a>
+</div>
+</div>
+</body>
+</html>

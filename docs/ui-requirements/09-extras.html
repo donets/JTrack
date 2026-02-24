@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 — Extras & Future | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>09 — Extras & Future Features</h1>
+  <span class="badge badge-future">Future</span>
+  <span class="spacer"></span>
+  <a href="10-build-order.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Reporting & Analytics <span class="badge badge-planned">Planned</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Analytics Dashboard</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Reports</span>
+      <div class="spacer"></div>
+      <select class="wf-select"><option>This month</option></select>
+      <span class="wf-btn wf-btn-secondary wf-btn-sm">Export CSV</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab active">Overview</div>
+        <div class="wf-tab">Jobs</div>
+        <div class="wf-tab">Revenue</div>
+        <div class="wf-tab">Team</div>
+        <div class="wf-tab">Custom</div>
+      </div>
+    </div>
+    <div class="wf-content wf-p-20 wf-col wf-gap-16">
+      <!-- Stat cards -->
+      <div class="wf-row wf-gap-12 wf-wrap">
+        <div class="wf-stat"><div class="label">Total Jobs</div><div class="value">72</div><div class="change up">↑ 15% vs last month</div></div>
+        <div class="wf-stat"><div class="label">Completion Rate</div><div class="value" style="color:var(--mint)">94%</div><div class="change up">↑ 3%</div></div>
+        <div class="wf-stat"><div class="label">Avg Job Value</div><div class="value">€485</div><div class="change up">↑ 8%</div></div>
+        <div class="wf-stat"><div class="label">Revenue</div><div class="value">€34.9k</div><div class="change up">↑ 12%</div></div>
+      </div>
+      <!-- Charts row -->
+      <div class="wf-row wf-gap-16 wf-wrap">
+        <div class="wf-card" style="flex:1;min-width:300px">
+          <div class="wf-card-header">Jobs by Status (MTD)</div>
+          <div class="wf-card-body" style="height:180px;display:flex;align-items:flex-end;justify-content:center;gap:16px;padding-bottom:24px">
+            <div style="text-align:center">
+              <div style="width:48px;background:var(--sky);border-radius:4px 4px 0 0;height:30px"></div>
+              <div style="font-size:11px;color:var(--gray);margin-top:4px">New<br><b>5</b></div>
+            </div>
+            <div style="text-align:center">
+              <div style="width:48px;background:var(--violet);border-radius:4px 4px 0 0;height:50px"></div>
+              <div style="font-size:11px;color:var(--gray);margin-top:4px">Sched<br><b>8</b></div>
+            </div>
+            <div style="text-align:center">
+              <div style="width:48px;background:var(--flame);border-radius:4px 4px 0 0;height:70px"></div>
+              <div style="font-size:11px;color:var(--gray);margin-top:4px">Active<br><b>11</b></div>
+            </div>
+            <div style="text-align:center">
+              <div style="width:48px;background:var(--mint);border-radius:4px 4px 0 0;height:140px"></div>
+              <div style="font-size:11px;color:var(--gray);margin-top:4px">Done<br><b>48</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="wf-card" style="flex:1;min-width:300px">
+          <div class="wf-card-header">Revenue Trend (6 months)</div>
+          <div class="wf-card-body" style="height:180px;display:flex;align-items:flex-end;gap:8px;padding-bottom:24px">
+            <div style="flex:1;text-align:center"><div style="background:var(--mint-light);border-radius:4px 4px 0 0;height:80px;border-top:3px solid var(--mint)"></div><div style="font-size:10px;color:var(--gray);margin-top:4px">Sep</div></div>
+            <div style="flex:1;text-align:center"><div style="background:var(--mint-light);border-radius:4px 4px 0 0;height:95px;border-top:3px solid var(--mint)"></div><div style="font-size:10px;color:var(--gray);margin-top:4px">Oct</div></div>
+            <div style="flex:1;text-align:center"><div style="background:var(--mint-light);border-radius:4px 4px 0 0;height:75px;border-top:3px solid var(--mint)"></div><div style="font-size:10px;color:var(--gray);margin-top:4px">Nov</div></div>
+            <div style="flex:1;text-align:center"><div style="background:var(--mint-light);border-radius:4px 4px 0 0;height:110px;border-top:3px solid var(--mint)"></div><div style="font-size:10px;color:var(--gray);margin-top:4px">Dec</div></div>
+            <div style="flex:1;text-align:center"><div style="background:var(--mint-light);border-radius:4px 4px 0 0;height:120px;border-top:3px solid var(--mint)"></div><div style="font-size:10px;color:var(--gray);margin-top:4px">Jan</div></div>
+            <div style="flex:1;text-align:center"><div style="background:var(--mint);border-radius:4px 4px 0 0;height:140px"></div><div style="font-size:10px;color:var(--gray);margin-top:4px"><b>Feb</b></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Team performance -->
+      <div class="wf-card">
+        <div class="wf-card-header">Team Performance</div>
+        <div class="wf-card-body" style="padding:0">
+          <table class="wf-table">
+            <thead><tr><th>Technician</th><th>Jobs Done</th><th>Revenue</th><th>Avg Time</th><th>Rating</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600">Mike Rodriguez</td><td>18</td><td>€4,210</td><td>1.8h</td><td>⭐ 4.8</td></tr>
+              <tr><td style="font-weight:600">Sarah Kim</td><td>14</td><td>€5,890</td><td>2.1h</td><td>⭐ 4.9</td></tr>
+              <tr><td style="font-weight:600">Alex Wilson</td><td>10</td><td>€3,420</td><td>1.6h</td><td>⭐ 4.7</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Settings <span class="badge badge-planned">Planned</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Settings — Company</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Settings</span>
+    </div>
+    <div class="wf-content wf-row" style="min-height:400px">
+      <!-- Settings sidebar -->
+      <div style="width:200px;min-width:200px;background:var(--white);border-right:1px solid var(--mist-dark);padding:16px 0">
+        <div style="padding:8px 20px;font-size:13px;font-weight:600;background:var(--mist);border-left:3px solid var(--mint);color:var(--mint)">Company</div>
+        <div style="padding:8px 20px;font-size:13px;color:var(--ink-light)">Profile</div>
+        <div style="padding:8px 20px;font-size:13px;color:var(--ink-light)">Notifications</div>
+        <div style="padding:8px 20px;font-size:13px;color:var(--ink-light)">Integrations</div>
+        <div style="padding:8px 20px;font-size:13px;color:var(--ink-light)">Data & Export</div>
+      </div>
+      <!-- Settings form -->
+      <div style="flex:1;padding:24px;max-width:600px">
+        <h3 style="margin-top:0;margin-bottom:16px">Company Settings</h3>
+        <div class="wf-form-group">
+          <label class="wf-form-label">Company name</label>
+          <input class="wf-input" style="width:100%" value="JTrack Field Services">
+        </div>
+        <div class="wf-row wf-gap-12">
+          <div class="wf-form-group" style="flex:1">
+            <label class="wf-form-label">Default timezone</label>
+            <select class="wf-select" style="width:100%"><option>Europe/Berlin (CET)</option></select>
+          </div>
+          <div class="wf-form-group" style="flex:1">
+            <label class="wf-form-label">Currency</label>
+            <select class="wf-select" style="width:100%"><option>EUR (€)</option></select>
+          </div>
+        </div>
+        <div class="wf-form-group">
+          <label class="wf-form-label">Address</label>
+          <input class="wf-input" style="width:100%" value="456 Business Ave, Berlin">
+        </div>
+        <div class="wf-row wf-gap-12">
+          <div class="wf-form-group" style="flex:1">
+            <label class="wf-form-label">Phone</label>
+            <input class="wf-input" style="width:100%" value="+49 30 12345678">
+          </div>
+          <div class="wf-form-group" style="flex:1">
+            <label class="wf-form-label">Email</label>
+            <input class="wf-input" style="width:100%" value="info@jtrack.io">
+          </div>
+        </div>
+        <div class="wf-form-group">
+          <label class="wf-form-label">Tax rate (%)</label>
+          <input class="wf-input" style="width:120px" value="21">
+        </div>
+        <div style="margin-top:20px">
+          <span class="wf-btn wf-btn-primary">Save Changes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Inventory & Parts <span class="badge badge-future">Future</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Inventory — Parts Catalog</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Inventory</span>
+      <div class="spacer"></div>
+      <input class="wf-input wf-input-search" placeholder="Search parts..." style="width:180px">
+      <span class="wf-btn wf-btn-primary">+ Add Part</span>
+    </div>
+    <div style="background:var(--white)">
+      <!-- Summary -->
+      <div style="padding:16px 20px;display:flex;gap:12px;border-bottom:1px solid var(--mist-dark)">
+        <div style="flex:1;padding:10px;border-radius:6px;background:var(--mist)">
+          <div style="font-size:11px;color:var(--gray)">Total SKUs</div>
+          <div style="font-size:20px;font-weight:700">142</div>
+        </div>
+        <div style="flex:1;padding:10px;border-radius:6px;background:var(--mist)">
+          <div style="font-size:11px;color:var(--gray)">Low Stock</div>
+          <div style="font-size:20px;font-weight:700;color:var(--flame)">8</div>
+        </div>
+        <div style="flex:1;padding:10px;border-radius:6px;background:var(--mist)">
+          <div style="font-size:11px;color:var(--gray)">Inventory Value</div>
+          <div style="font-size:20px;font-weight:700">€23.4k</div>
+        </div>
+      </div>
+      <table class="wf-table">
+        <thead><tr><th>Part</th><th>SKU</th><th>Category</th><th>In Stock</th><th>Unit Cost</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600">R-410A Refrigerant (kg)</td>
+            <td style="font-size:12px;color:var(--gray)">REF-410A</td>
+            <td>HVAC</td>
+            <td>24</td>
+            <td>€45.00</td>
+            <td><span class="wf-tag wf-tag-done">In Stock</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">Capacitor 45/5 MFD</td>
+            <td style="font-size:12px;color:var(--gray)">CAP-455</td>
+            <td>Electrical</td>
+            <td style="color:var(--flame);font-weight:600">2</td>
+            <td>€18.50</td>
+            <td><span class="wf-tag" style="background:var(--flame-light);color:#9a3412">Low Stock</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">200A Breaker Panel</td>
+            <td style="font-size:12px;color:var(--gray)">PNL-200A</td>
+            <td>Electrical</td>
+            <td>5</td>
+            <td>€320.00</td>
+            <td><span class="wf-tag wf-tag-done">In Stock</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">Copper Pipe 15mm (m)</td>
+            <td style="font-size:12px;color:var(--gray)">PIP-CU15</td>
+            <td>Plumbing</td>
+            <td>48</td>
+            <td>€8.50</td>
+            <td><span class="wf-tag wf-tag-done">In Stock</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Time Tracking <span class="badge badge-future">Future</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Time Tracking — Timer Widget + Timesheet</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Time Tracking</span>
+      <div class="spacer"></div>
+      <!-- Active timer -->
+      <div style="display:flex;align-items:center;gap:8px;background:var(--mint-light);padding:6px 14px;border-radius:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--mint);animation:none"></div>
+        <span style="font-size:13px;font-weight:600;color:var(--mint)">02:14:33</span>
+        <span style="font-size:12px;color:var(--ink-light)">#1043 Electrical panel</span>
+        <span class="wf-btn wf-btn-sm" style="background:var(--rose);color:white;padding:3px 8px">Stop</span>
+      </div>
+    </div>
+    <div class="wf-content wf-p-20 wf-col wf-gap-16">
+      <!-- Weekly timesheet -->
+      <div class="wf-card">
+        <div class="wf-card-header">
+          This Week
+          <span style="font-weight:400;color:var(--gray)">32h 15m / 40h</span>
+        </div>
+        <div class="wf-card-body" style="padding:0">
+          <table class="wf-table">
+            <thead>
+              <tr><th>Day</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Jobs</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="font-weight:600">Mon 23</td><td>7:45 AM</td><td style="color:var(--mint);font-weight:600">— Active —</td><td style="font-weight:600">6h 15m</td><td>3 jobs</td></tr>
+              <tr><td>Tue 24</td><td colspan="4" style="color:var(--gray);text-align:center">— Scheduled —</td></tr>
+              <tr><td>Wed 25</td><td colspan="4" style="color:var(--gray);text-align:center">— Scheduled —</td></tr>
+              <tr style="opacity:.6"><td>Thu 26</td><td colspan="4" style="color:var(--gray);text-align:center">—</td></tr>
+              <tr style="opacity:.6"><td>Fri 27</td><td colspan="4" style="color:var(--gray);text-align:center">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Today's entries -->
+      <div class="wf-card">
+        <div class="wf-card-header">Today's Entries</div>
+        <div class="wf-card-body" style="padding:0">
+          <table class="wf-table">
+            <thead><tr><th>Job</th><th>Start</th><th>End</th><th>Duration</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600">#1042 Furnace</td>
+                <td>8:00 AM</td>
+                <td>9:25 AM</td>
+                <td>1h 25m</td>
+                <td style="font-size:12px;color:var(--gray)">Routine inspection, all clear</td>
+              </tr>
+              <tr>
+                <td>Travel</td>
+                <td>9:25 AM</td>
+                <td>9:50 AM</td>
+                <td style="color:var(--gray)">25m</td>
+                <td style="font-size:12px;color:var(--gray)">To next site</td>
+              </tr>
+              <tr style="background:var(--mint-light)">
+                <td style="font-weight:600">#1043 Elec panel</td>
+                <td>9:50 AM</td>
+                <td style="color:var(--mint);font-weight:600">Running...</td>
+                <td style="font-weight:600;color:var(--mint)">2h 14m</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Forms & Checklists <span class="badge badge-future">Future</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Form Template Builder</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="breadcrumb">Forms /</span>
+      <span class="title">HVAC Inspection Checklist</span>
+      <div class="spacer"></div>
+      <span class="wf-btn wf-btn-secondary wf-btn-sm">Preview</span>
+      <span class="wf-btn wf-btn-primary wf-btn-sm">Save Template</span>
+    </div>
+    <div class="wf-content wf-p-20">
+      <div class="wf-card" style="max-width:600px;margin:0 auto">
+        <div class="wf-card-header">Form Fields</div>
+        <div class="wf-card-body wf-col wf-gap-12">
+          <!-- Field 1 -->
+          <div style="border:1px solid var(--mist-dark);border-radius:6px;padding:12px;display:flex;align-items:center;gap:12px;background:var(--gray-light)">
+            <span style="color:var(--gray);cursor:grab">⠿</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13px">Unit Model Number</div>
+              <div style="font-size:11px;color:var(--gray)">Text input &bull; Required</div>
+            </div>
+            <span style="color:var(--gray);font-size:12px;cursor:pointer">Edit</span>
+            <span style="color:var(--gray);cursor:pointer">✕</span>
+          </div>
+          <!-- Field 2 -->
+          <div style="border:1px solid var(--mist-dark);border-radius:6px;padding:12px;display:flex;align-items:center;gap:12px;background:var(--gray-light)">
+            <span style="color:var(--gray);cursor:grab">⠿</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13px">Filter Condition</div>
+              <div style="font-size:11px;color:var(--gray)">Select: Good / Fair / Poor / Replace &bull; Required</div>
+            </div>
+            <span style="color:var(--gray);font-size:12px;cursor:pointer">Edit</span>
+            <span style="color:var(--gray);cursor:pointer">✕</span>
+          </div>
+          <!-- Field 3 -->
+          <div style="border:1px solid var(--mist-dark);border-radius:6px;padding:12px;display:flex;align-items:center;gap:12px;background:var(--gray-light)">
+            <span style="color:var(--gray);cursor:grab">⠿</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13px">Refrigerant Level (PSI)</div>
+              <div style="font-size:11px;color:var(--gray)">Number &bull; Optional</div>
+            </div>
+            <span style="color:var(--gray);font-size:12px;cursor:pointer">Edit</span>
+            <span style="color:var(--gray);cursor:pointer">✕</span>
+          </div>
+          <!-- Field 4 -->
+          <div style="border:1px solid var(--mist-dark);border-radius:6px;padding:12px;display:flex;align-items:center;gap:12px;background:var(--gray-light)">
+            <span style="color:var(--gray);cursor:grab">⠿</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13px">Photo Evidence</div>
+              <div style="font-size:11px;color:var(--gray)">Photo capture &bull; Required</div>
+            </div>
+            <span style="color:var(--gray);font-size:12px;cursor:pointer">Edit</span>
+            <span style="color:var(--gray);cursor:pointer">✕</span>
+          </div>
+          <!-- Field 5 -->
+          <div style="border:1px solid var(--mist-dark);border-radius:6px;padding:12px;display:flex;align-items:center;gap:12px;background:var(--gray-light)">
+            <span style="color:var(--gray);cursor:grab">⠿</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13px">Customer Signature</div>
+              <div style="font-size:11px;color:var(--gray)">Signature pad &bull; Required</div>
+            </div>
+            <span style="color:var(--gray);font-size:12px;cursor:pointer">Edit</span>
+            <span style="color:var(--gray);cursor:pointer">✕</span>
+          </div>
+          <!-- Add field -->
+          <div style="border:2px dashed var(--mist-dark);border-radius:6px;padding:16px;text-align:center">
+            <span class="wf-btn wf-btn-secondary wf-btn-sm">+ Add Field</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Mobile & Offline <span class="badge badge-partial">Partial</span></h2>
+
+<div class="wf-duo">
+<div class="mobile-frame">
+  <div class="status-bar">9:41</div>
+  <div class="wireframe-label"><span>MOCKUP</span> Mobile — Offline State</div>
+  <!-- Offline banner -->
+  <div class="wf-offline-banner">⚠ You're offline — changes will sync when reconnected</div>
+  <div style="height:48px;background:var(--white);border-bottom:1px solid var(--mist-dark);display:flex;align-items:center;padding:0 12px;gap:10px">
+    <span style="font-size:20px">☰</span>
+    <span style="font-weight:700;font-size:15px">My Jobs</span>
+    <span style="flex:1"></span>
+    <div class="wf-sync-dot offline"></div>
+  </div>
+  <div style="height:334px;background:var(--mist);overflow:auto;padding:12px">
+    <div style="background:white;border-radius:8px;border-left:4px solid var(--flame);padding:14px;margin-bottom:10px">
+      <div style="font-weight:700;margin-bottom:4px">AC unit not cooling</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:8px">📍 123 Main St &bull; ⏰ 10:30 AM</div>
+      <div style="display:flex;gap:6px">
+        <span class="wf-btn wf-btn-primary wf-btn-sm">Start</span>
+        <span class="wf-btn wf-btn-secondary wf-btn-sm">📷 Photo</span>
+      </div>
+    </div>
+    <div style="background:white;border-radius:8px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:700;margin-bottom:4px">Water heater install</div>
+      <div style="font-size:12px;color:var(--gray)">📍 78 Pine Rd &bull; ⏰ 1:00 PM</div>
+    </div>
+    <!-- Pending sync indicator -->
+    <div style="background:var(--flame-light);border-radius:8px;padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">🔄</span>
+      <div>
+        <div style="font-weight:600;color:#9a3412">2 changes pending sync</div>
+        <div style="color:var(--gray)">1 comment, 1 photo</div>
+      </div>
+    </div>
+  </div>
+  <div class="wf-bottom-nav">
+    <div class="nav-btn"><span class="icon">📊</span><span>Home</span></div>
+    <div class="nav-btn active"><span class="icon">🎫</span><span>Jobs</span></div>
+    <div class="nav-btn"><span class="icon">📅</span><span>Schedule</span></div>
+    <div class="nav-btn"><span class="icon">👥</span><span>Clients</span></div>
+    <div class="nav-btn"><span class="icon">⋯</span><span>More</span></div>
+  </div>
+</div>
+
+<div class="mobile-frame">
+  <div class="status-bar">9:41</div>
+  <div class="wireframe-label"><span>MOCKUP</span> Mobile — Camera / Photo Capture</div>
+  <div style="height:48px;background:var(--white);border-bottom:1px solid var(--mist-dark);display:flex;align-items:center;padding:0 12px;gap:10px">
+    <span style="color:var(--sky)">← Back</span>
+    <span style="flex:1;font-weight:700;font-size:14px">Add Photo</span>
+    <span style="color:var(--sky);font-weight:600;font-size:14px">Done</span>
+  </div>
+  <div style="height:282px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;position:relative">
+    <div style="color:white;text-align:center;opacity:.5">
+      <div style="font-size:48px">📷</div>
+      <div style="font-size:13px;margin-top:8px">Camera viewfinder</div>
+    </div>
+    <!-- Camera controls -->
+    <div style="position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:center;gap:24px;align-items:center">
+      <div style="width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:white;font-size:16px">🖼</div>
+      <div style="width:56px;height:56px;border-radius:50%;background:white;border:3px solid rgba(255,255,255,.5)"></div>
+      <div style="width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:white;font-size:16px">🔄</div>
+    </div>
+  </div>
+  <!-- Photo thumbnails -->
+  <div style="padding:12px;background:var(--mist);height:100px">
+    <div style="font-size:11px;color:var(--gray);margin-bottom:6px">Attached (2)</div>
+    <div style="display:flex;gap:8px">
+      <div style="width:64px;height:64px;border-radius:6px;background:var(--mist-dark);display:flex;align-items:center;justify-content:center;font-size:24px;position:relative">🏠<div style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--rose);color:white;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center">✕</div></div>
+      <div style="width:64px;height:64px;border-radius:6px;background:var(--mist-dark);display:flex;align-items:center;justify-content:center;font-size:24px;position:relative">🔧<div style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--rose);color:white;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center">✕</div></div>
+    </div>
+  </div>
+  <div class="wf-bottom-nav">
+    <div class="nav-btn"><span class="icon">📊</span><span>Home</span></div>
+    <div class="nav-btn active"><span class="icon">🎫</span><span>Jobs</span></div>
+    <div class="nav-btn"><span class="icon">📅</span><span>Schedule</span></div>
+    <div class="nav-btn"><span class="icon">👥</span><span>Clients</span></div>
+    <div class="nav-btn"><span class="icon">⋯</span><span>More</span></div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Customer Portal <span class="badge badge-future">Future</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Customer Portal — Job Tracking</div>
+  <div class="wireframe-body wf-col">
+    <div style="height:56px;background:var(--white);border-bottom:1px solid var(--mist-dark);display:flex;align-items:center;padding:0 24px;gap:12px">
+      <span style="font-size:18px;font-weight:800">⚡ JTrack</span>
+      <span style="color:var(--gray);font-size:13px">Customer Portal</span>
+      <div style="flex:1"></div>
+      <span style="font-size:13px">Welcome, John (Acme Corp)</span>
+    </div>
+    <div style="background:var(--mist);padding:24px;min-height:320px">
+      <div style="max-width:700px;margin:0 auto">
+        <h3 style="margin-top:0">Your Jobs</h3>
+        <div class="wf-card" style="margin-bottom:16px">
+          <div class="wf-card-body" style="display:flex;align-items:center;gap:16px">
+            <div>
+              <div style="font-weight:700;font-size:15px">#1048 AC unit not cooling</div>
+              <div style="font-size:13px;color:var(--gray)">Main Office &bull; Scheduled: Feb 24, 10:30 AM</div>
+            </div>
+            <div style="margin-left:auto"><span class="wf-tag wf-tag-scheduled" style="font-size:12px;padding:4px 10px">Scheduled</span></div>
+          </div>
+          <!-- Progress -->
+          <div style="padding:0 16px 16px">
+            <div style="display:flex;gap:0;font-size:11px;text-align:center;margin-top:8px">
+              <div style="flex:1;padding:6px;background:var(--mint-light);border-radius:4px 0 0 4px;color:var(--mint);font-weight:600">Created ✓</div>
+              <div style="flex:1;padding:6px;background:var(--mint-light);color:var(--mint);font-weight:600">Scheduled ✓</div>
+              <div style="flex:1;padding:6px;background:var(--mist-dark);color:var(--gray)">In Progress</div>
+              <div style="flex:1;padding:6px;background:var(--mist-dark);color:var(--gray);border-radius:0 4px 4px 0">Completed</div>
+            </div>
+          </div>
+        </div>
+        <div class="wf-card">
+          <div class="wf-card-body" style="display:flex;align-items:center;gap:16px">
+            <div>
+              <div style="font-weight:700;font-size:15px">#1043 Electrical panel upgrade</div>
+              <div style="font-size:13px;color:var(--gray)">Warehouse &bull; Tech: Sarah Kim</div>
+            </div>
+            <div style="margin-left:auto"><span class="wf-tag wf-tag-inprogress" style="font-size:12px;padding:4px 10px">In Progress</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="08-team.html">&larr; 08 — Team & RBAC</a>
+  <a href="10-build-order.html">10 — Build Order &rarr;</a>
+</div>
+</div>
+</body>
+</html>

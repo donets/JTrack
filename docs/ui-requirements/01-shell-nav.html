@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 — App Shell & Navigation | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>01 — App Shell & Navigation</h1>
+  <span class="badge badge-partial">Partial</span>
+  <span class="spacer"></span>
+  <a href="02-auth.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Desktop — Sidebar Expanded (1280px+)</h2>
+<p class="note">240px sidebar + 56px top bar. Sidebar has logo, nav sections, and user area at bottom.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Desktop — Expanded Sidebar</div>
+  <div class="wireframe-body wf-row" style="height:560px">
+    <!-- Sidebar -->
+    <div class="wf-sidebar wf-col">
+      <div class="logo">⚡ JTrack</div>
+      <div class="nav-section">Main</div>
+      <div class="nav-item active"><span class="icon">📊</span><span>Dashboard</span></div>
+      <div class="nav-item"><span class="icon">🎫</span><span>Tickets</span></div>
+      <div class="nav-item"><span class="icon">📅</span><span>Dispatch</span></div>
+      <div class="nav-item"><span class="icon">👥</span><span>Customers</span></div>
+      <div class="nav-section">Finance</div>
+      <div class="nav-item"><span class="icon">📝</span><span>Quotes</span></div>
+      <div class="nav-item"><span class="icon">💰</span><span>Invoices</span></div>
+      <div class="nav-section">Manage</div>
+      <div class="nav-item"><span class="icon">👤</span><span>Team</span></div>
+      <div class="nav-item"><span class="icon">📦</span><span>Inventory</span></div>
+      <div class="nav-item"><span class="icon">📈</span><span>Reports</span></div>
+      <div class="nav-item"><span class="icon">⚙️</span><span>Settings</span></div>
+      <div style="flex:1"></div>
+      <div style="padding:12px 16px;border-top:1px solid #1e293b;display:flex;align-items:center;gap:10px">
+        <div class="wf-avatar" style="width:28px;height:28px;font-size:11px">JD</div>
+        <div style="font-size:12px">
+          <div style="color:white;font-weight:600">John Doe</div>
+          <div style="color:#64748b;font-size:11px">Owner</div>
+        </div>
+      </div>
+    </div>
+    <!-- Main area -->
+    <div class="wf-col wf-flex-1">
+      <!-- Top bar -->
+      <div class="wf-topbar">
+        <span class="breadcrumb">Home /</span>
+        <span class="title">Dashboard</span>
+        <div class="spacer"></div>
+        <div class="wf-sync-dot" title="Synced"></div>
+        <div style="font-size:12px;color:var(--gray);border:1px solid var(--mist-dark);padding:4px 10px;border-radius:6px">📍 Downtown Office</div>
+        <div class="wf-bell">🔔<div class="dot"></div></div>
+        <div class="wf-avatar" style="width:28px;height:28px;font-size:11px">JD</div>
+      </div>
+      <!-- Content placeholder -->
+      <div class="wf-content wf-p-20" style="display:flex;align-items:center;justify-content:center;color:var(--gray)">
+        <div style="text-align:center">
+          <div style="font-size:48px;margin-bottom:8px">📄</div>
+          <div>Page content renders here</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Desktop — Sidebar Collapsed</h2>
+<p class="note">64px icon-only sidebar on tablet or user toggle. Hover tooltip shows label.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Desktop — Collapsed Sidebar</div>
+  <div class="wireframe-body wf-row" style="height:480px">
+    <div class="wf-sidebar wf-sidebar-collapsed wf-col">
+      <div class="logo">⚡</div>
+      <div class="nav-item active"><span class="icon">📊</span></div>
+      <div class="nav-item"><span class="icon">🎫</span></div>
+      <div class="nav-item"><span class="icon">📅</span></div>
+      <div class="nav-item"><span class="icon">👥</span></div>
+      <div class="nav-item"><span class="icon">📝</span></div>
+      <div class="nav-item"><span class="icon">💰</span></div>
+      <div class="nav-item"><span class="icon">👤</span></div>
+      <div class="nav-item"><span class="icon">📦</span></div>
+      <div class="nav-item"><span class="icon">📈</span></div>
+      <div class="nav-item"><span class="icon">⚙️</span></div>
+      <div style="flex:1"></div>
+      <div style="padding:12px 0;text-align:center;border-top:1px solid #1e293b">
+        <div class="wf-avatar" style="width:28px;height:28px;font-size:11px;margin:0 auto">JD</div>
+      </div>
+    </div>
+    <div class="wf-col wf-flex-1">
+      <div class="wf-topbar">
+        <span class="title">Dashboard</span>
+        <div class="spacer"></div>
+        <div class="wf-sync-dot"></div>
+        <div style="font-size:12px;color:var(--gray);border:1px solid var(--mist-dark);padding:4px 10px;border-radius:6px">📍 Downtown</div>
+        <div class="wf-bell">🔔<div class="dot"></div></div>
+      </div>
+      <div class="wf-content wf-p-20" style="display:flex;align-items:center;justify-content:center;color:var(--gray)">
+        <div style="text-align:center">
+          <div style="font-size:48px;margin-bottom:8px">📄</div>
+          <div>More horizontal space for content</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Mobile — Closed (375px)</h2>
+<p class="note">No sidebar visible. Hamburger in top-left. Bottom navigation bar for primary routes.</p>
+
+<div class="wf-duo">
+<div class="mobile-frame">
+  <div class="status-bar">9:41</div>
+  <div class="wireframe-label"><span>MOCKUP</span> Mobile — Sidebar Hidden</div>
+  <!-- Top bar -->
+  <div style="height:48px;background:var(--white);border-bottom:1px solid var(--mist-dark);display:flex;align-items:center;padding:0 12px;gap:10px">
+    <span style="font-size:20px;cursor:pointer">☰</span>
+    <span style="font-weight:700;font-size:15px">Dashboard</span>
+    <span style="flex:1"></span>
+    <div class="wf-sync-dot"></div>
+    <div class="wf-bell" style="font-size:16px">🔔<div class="dot"></div></div>
+  </div>
+  <!-- Content -->
+  <div style="height:380px;background:var(--mist);display:flex;align-items:center;justify-content:center;color:var(--gray)">
+    Page content
+  </div>
+  <!-- Bottom nav -->
+  <div class="wf-bottom-nav">
+    <div class="nav-btn active"><span class="icon">📊</span><span>Home</span></div>
+    <div class="nav-btn"><span class="icon">🎫</span><span>Jobs</span></div>
+    <div class="nav-btn"><span class="icon">📅</span><span>Schedule</span></div>
+    <div class="nav-btn"><span class="icon">👥</span><span>Clients</span></div>
+    <div class="nav-btn"><span class="icon">⋯</span><span>More</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<div class="mobile-frame">
+  <div class="status-bar">9:41</div>
+  <div class="wireframe-label"><span>MOCKUP</span> Mobile — Sidebar Open (Overlay)</div>
+  <div style="position:relative;height:486px">
+    <!-- Overlay -->
+    <div style="position:absolute;inset:0;background:rgba(15,23,42,.4);z-index:5"></div>
+    <!-- Sidebar drawer -->
+    <div style="position:absolute;left:0;top:0;bottom:0;width:280px;background:#0f172a;color:#cbd5e1;z-index:10;font-size:13px;display:flex;flex-direction:column">
+      <div style="padding:16px;font-weight:700;font-size:15px;color:white;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between">
+        ⚡ JTrack <span style="cursor:pointer">✕</span>
+      </div>
+      <div style="padding:12px 16px;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:10px">
+        <div class="wf-avatar" style="width:36px;height:36px">JD</div>
+        <div><div style="color:white;font-weight:600">John Doe</div><div style="font-size:11px;color:#64748b">Downtown Office</div></div>
+      </div>
+      <div class="nav-item active"><span class="icon">📊</span><span>Dashboard</span></div>
+      <div class="nav-item"><span class="icon">🎫</span><span>Tickets</span></div>
+      <div class="nav-item"><span class="icon">📅</span><span>Dispatch</span></div>
+      <div class="nav-item"><span class="icon">👥</span><span>Customers</span></div>
+      <div class="nav-item"><span class="icon">📝</span><span>Quotes</span></div>
+      <div class="nav-item"><span class="icon">💰</span><span>Invoices</span></div>
+      <div class="nav-item"><span class="icon">👤</span><span>Team</span></div>
+      <div class="nav-item"><span class="icon">📈</span><span>Reports</span></div>
+      <div class="nav-item"><span class="icon">⚙️</span><span>Settings</span></div>
+      <div style="flex:1"></div>
+      <div style="padding:12px 16px;border-top:1px solid #1e293b;font-size:12px;color:#64748b">
+        Sync: 2 min ago &bull; v1.0.0
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Top Bar — Feature Tabs Pattern</h2>
+<p class="note">When a feature has sub-views (e.g. Tickets), the top bar includes tabs below the title.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Top Bar with Feature Tabs</div>
+  <div class="wireframe-body">
+    <div class="wf-topbar">
+      <span class="breadcrumb">Home /</span>
+      <span class="title">Tickets</span>
+      <div class="spacer"></div>
+      <input class="wf-input wf-input-search" placeholder="Search tickets..." style="width:220px">
+      <div class="wf-btn wf-btn-primary">+ New Ticket</div>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab active">All</div>
+        <div class="wf-tab">Board</div>
+        <div class="wf-tab">Calendar</div>
+        <div class="wf-tab">Map</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Notification Dropdown</h2>
+<p class="note">Drops down from bell icon. Grouped by time. Mark all read. Links to relevant entities.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Notification Dropdown</div>
+  <div class="wireframe-body" style="position:relative;min-height:380px;background:var(--mist)">
+    <!-- Top bar context -->
+    <div class="wf-topbar">
+      <span class="title">Dashboard</span>
+      <div class="spacer"></div>
+      <div class="wf-bell" style="font-size:20px">🔔<div class="dot"></div></div>
+    </div>
+    <!-- Dropdown -->
+    <div class="wf-notif-dropdown" style="top:52px;right:20px">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--mist-dark);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:14px">Notifications</span>
+        <span style="font-size:12px;color:var(--mint);cursor:pointer">Mark all read</span>
+      </div>
+      <div class="wf-notif-item unread">
+        <div class="wf-avatar-sm wf-avatar" style="background:var(--mint-light);color:var(--mint)">✓</div>
+        <div>
+          <div><b>Ticket #1042</b> marked as Done by Mike R.</div>
+          <div style="font-size:11px;color:var(--gray)">2 minutes ago</div>
+        </div>
+      </div>
+      <div class="wf-notif-item unread">
+        <div class="wf-avatar-sm wf-avatar" style="background:var(--flame-light);color:var(--flame)">💬</div>
+        <div>
+          <div><b>Sarah K.</b> commented on Ticket #1038</div>
+          <div style="font-size:11px;color:var(--gray)">15 minutes ago</div>
+        </div>
+      </div>
+      <div class="wf-notif-item">
+        <div class="wf-avatar-sm wf-avatar" style="background:var(--sky-light);color:var(--sky)">📎</div>
+        <div>
+          <div><b>Photo added</b> to Ticket #1035</div>
+          <div style="font-size:11px;color:var(--gray)">1 hour ago</div>
+        </div>
+      </div>
+      <div class="wf-notif-item">
+        <div class="wf-avatar-sm wf-avatar" style="background:var(--violet-light);color:var(--violet)">👤</div>
+        <div>
+          <div><b>New team member</b> Alex W. accepted invite</div>
+          <div style="font-size:11px;color:var(--gray)">3 hours ago</div>
+        </div>
+      </div>
+      <div style="padding:10px 16px;text-align:center;font-size:12px;color:var(--sky);cursor:pointer;border-top:1px solid var(--mist-dark)">
+        View all notifications
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Side Menu — Full Specification</h2>
+<div class="wireframe">
+  <div class="wireframe-label"><span>SPEC</span> Menu Items, Icons & Ordering</div>
+  <div class="wireframe-body">
+    <table class="wf-table">
+      <thead>
+        <tr><th>#</th><th>Label</th><th>Icon</th><th>Route</th><th>Section</th><th>RBAC</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Dashboard</td><td>📊</td><td>/dashboard</td><td>Main</td><td>All roles</td></tr>
+        <tr><td>2</td><td>Tickets</td><td>🎫</td><td>/tickets</td><td>Main</td><td>tickets.read</td></tr>
+        <tr><td>3</td><td>Dispatch</td><td>📅</td><td>/dispatch</td><td>Main</td><td>dispatch.manage</td></tr>
+        <tr><td>4</td><td>Customers</td><td>👥</td><td>/customers</td><td>Main</td><td>locations.read</td></tr>
+        <tr><td>5</td><td>Quotes</td><td>📝</td><td>/quotes</td><td>Finance</td><td>billing.manage</td></tr>
+        <tr><td>6</td><td>Invoices</td><td>💰</td><td>/invoices</td><td>Finance</td><td>payments.read</td></tr>
+        <tr><td>7</td><td>Team</td><td>👤</td><td>/team</td><td>Manage</td><td>users.read</td></tr>
+        <tr><td>8</td><td>Inventory</td><td>📦</td><td>/inventory</td><td>Manage</td><td>billing.manage</td></tr>
+        <tr><td>9</td><td>Reports</td><td>📈</td><td>/reports</td><td>Manage</td><td>Owner/Manager</td></tr>
+        <tr><td>10</td><td>Settings</td><td>⚙️</td><td>/settings</td><td>—</td><td>Owner/Manager</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="index.html">&larr; Index</a>
+  <a href="02-auth.html">02 — Authentication &rarr;</a>
+</div>
+</div>
+</body>
+</html>

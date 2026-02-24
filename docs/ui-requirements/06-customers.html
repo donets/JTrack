@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 — Customers & Sites | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>06 — Customers & Sites</h1>
+  <span class="badge badge-partial">Partial</span>
+  <span class="spacer"></span>
+  <a href="07-financials.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Customer List</h2>
+<p class="note">Currently "Locations" — future: Customers with multiple sites. Searchable, sortable table.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Customer List</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Customers</span>
+      <div class="spacer"></div>
+      <input class="wf-input wf-input-search" placeholder="Search customers..." style="width:200px">
+      <span class="wf-btn wf-btn-primary">+ New Customer</span>
+    </div>
+    <div style="background:var(--white)">
+      <table class="wf-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Sites</th>
+            <th>Open Jobs</th>
+            <th>Total Revenue</th>
+            <th>Last Job</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar">AC</div>
+                <div>
+                  <div style="font-weight:600">Acme Corp</div>
+                  <div style="font-size:11px;color:var(--gray)">Commercial</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-size:12px">john@acme.com<br><span style="color:var(--gray)">555-0101</span></td>
+            <td style="text-align:center">3</td>
+            <td><span class="wf-tag wf-tag-inprogress">4</span></td>
+            <td style="font-weight:600">€12,450</td>
+            <td style="font-size:12px;color:var(--gray)">Feb 23</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--mint-light);color:var(--mint)">RS</div>
+                <div>
+                  <div style="font-weight:600">River Stone Apartments</div>
+                  <div style="font-size:11px;color:var(--gray)">Residential</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-size:12px">mgr@riverstone.com<br><span style="color:var(--gray)">555-0202</span></td>
+            <td style="text-align:center">1</td>
+            <td><span class="wf-tag wf-tag-new">2</span></td>
+            <td style="font-weight:600">€6,890</td>
+            <td style="font-size:12px;color:var(--gray)">Feb 20</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--flame-light);color:var(--flame)">BH</div>
+                <div>
+                  <div style="font-weight:600">Baker's Hardware</div>
+                  <div style="font-size:11px;color:var(--gray)">Commercial</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-size:12px">tom@bakers.com<br><span style="color:var(--gray)">555-0303</span></td>
+            <td style="text-align:center">2</td>
+            <td style="text-align:center;color:var(--gray)">0</td>
+            <td style="font-weight:600">€3,210</td>
+            <td style="font-size:12px;color:var(--gray)">Feb 15</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--violet-light);color:var(--violet)">JM</div>
+                <div>
+                  <div style="font-weight:600">Jane Mitchell</div>
+                  <div style="font-size:11px;color:var(--gray)">Residential</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-size:12px">jane.m@email.com<br><span style="color:var(--gray)">555-0404</span></td>
+            <td style="text-align:center">1</td>
+            <td><span class="wf-tag wf-tag-scheduled">1</span></td>
+            <td style="font-weight:600">€1,890</td>
+            <td style="font-size:12px;color:var(--gray)">Feb 18</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Customer Detail Page</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Customer Detail — Acme Corp</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="breadcrumb">Customers /</span>
+      <span class="title">Acme Corp</span>
+      <div class="spacer"></div>
+      <span class="wf-btn wf-btn-secondary wf-btn-sm">Edit</span>
+    </div>
+    <div class="wf-content wf-row wf-p-20 wf-gap-20" style="align-items:flex-start">
+      <!-- Left: Tabs content -->
+      <div class="wf-col wf-gap-16" style="flex:3;min-width:360px">
+        <div class="wf-card">
+          <div style="padding:0 16px">
+            <div class="wf-tabs">
+              <div class="wf-tab active">Jobs (4)</div>
+              <div class="wf-tab">Sites (3)</div>
+              <div class="wf-tab">Invoices (8)</div>
+              <div class="wf-tab">Activity</div>
+            </div>
+          </div>
+          <div style="padding:0">
+            <table class="wf-table">
+              <thead><tr><th>#</th><th>Title</th><th>Status</th><th>Tech</th><th>Date</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td style="font-weight:600">#1048</td>
+                  <td>AC unit not cooling</td>
+                  <td><span class="wf-tag wf-tag-new">New</span></td>
+                  <td style="color:var(--gray)">—</td>
+                  <td style="font-size:12px;color:var(--gray)">Feb 23</td>
+                </tr>
+                <tr>
+                  <td style="font-weight:600">#1043</td>
+                  <td>Electrical panel upgrade</td>
+                  <td><span class="wf-tag wf-tag-inprogress">In Progress</span></td>
+                  <td>Sarah K.</td>
+                  <td style="font-size:12px;color:var(--gray)">Feb 22</td>
+                </tr>
+                <tr>
+                  <td style="font-weight:600">#1042</td>
+                  <td>Furnace inspection</td>
+                  <td><span class="wf-tag wf-tag-done">Done</span></td>
+                  <td>Mike R.</td>
+                  <td style="font-size:12px;color:var(--gray)">Feb 23</td>
+                </tr>
+                <tr>
+                  <td style="font-weight:600">#1039</td>
+                  <td>Water heater replacement</td>
+                  <td><span class="wf-tag wf-tag-paid">Paid</span></td>
+                  <td>Alex W.</td>
+                  <td style="font-size:12px;color:var(--gray)">Feb 20</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Right: Info sidebar -->
+      <div class="wf-col wf-gap-16" style="flex:1;min-width:260px;max-width:300px">
+        <div class="wf-card">
+          <div class="wf-card-header">Customer Info</div>
+          <div class="wf-card-body wf-col wf-gap-8" style="font-size:13px">
+            <div style="text-align:center;margin-bottom:8px">
+              <div class="wf-avatar" style="width:56px;height:56px;font-size:20px;margin:0 auto 8px">AC</div>
+              <div style="font-weight:700;font-size:15px">Acme Corp</div>
+              <div style="color:var(--gray);font-size:12px">Commercial &bull; Since Jan 2025</div>
+            </div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Contact</span><span>John Smith</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Email</span><span style="color:var(--sky)">john@acme.com</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Phone</span><span>555-0101</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Address</span><span>123 Main Street</span></div>
+          </div>
+        </div>
+        <div class="wf-card">
+          <div class="wf-card-header">Revenue Summary</div>
+          <div class="wf-card-body wf-col wf-gap-8" style="font-size:13px">
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Total</span><span style="font-weight:700">€12,450</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Outstanding</span><span style="color:var(--flame);font-weight:600">€640</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Jobs (all time)</span><span>18</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Avg job value</span><span>€691</span></div>
+          </div>
+        </div>
+        <div class="wf-card">
+          <div class="wf-card-header">Sites <span style="color:var(--gray);font-weight:400">(3)</span></div>
+          <div class="wf-card-body wf-col wf-gap-8" style="font-size:13px">
+            <div style="padding:6px 0;border-bottom:1px solid var(--mist-dark)">
+              <div style="font-weight:600">📍 Main Office</div>
+              <div style="font-size:11px;color:var(--gray)">123 Main St, Suite 200</div>
+            </div>
+            <div style="padding:6px 0;border-bottom:1px solid var(--mist-dark)">
+              <div style="font-weight:600">📍 Warehouse</div>
+              <div style="font-size:11px;color:var(--gray)">45 Industrial Blvd</div>
+            </div>
+            <div style="padding:6px 0">
+              <div style="font-weight:600">📍 Retail Store</div>
+              <div style="font-size:11px;color:var(--gray)">78 High Street</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Create / Edit Customer Modal <span class="badge badge-future">Future</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> New Customer Modal</div>
+  <div class="wireframe-body" style="position:relative;min-height:420px;background:var(--mist)">
+    <div class="wf-modal-overlay">
+      <div class="wf-modal" style="width:520px">
+        <div class="wf-modal-header">New Customer <span style="color:var(--gray);cursor:pointer">✕</span></div>
+        <div class="wf-modal-body wf-col wf-gap-4">
+          <div class="wf-row wf-gap-12">
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Company / Name *</label>
+              <input class="wf-input" style="width:100%" placeholder="Customer name">
+            </div>
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Type</label>
+              <select class="wf-select" style="width:100%"><option>Commercial</option></select>
+            </div>
+          </div>
+          <div class="wf-row wf-gap-12">
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Contact name</label>
+              <input class="wf-input" style="width:100%" placeholder="Primary contact">
+            </div>
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Phone</label>
+              <input class="wf-input" style="width:100%" placeholder="555-0000">
+            </div>
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Email</label>
+            <input class="wf-input" style="width:100%" placeholder="contact@company.com">
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Address</label>
+            <input class="wf-input" style="width:100%" placeholder="Street address">
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Notes</label>
+            <div class="wf-input" style="width:100%;min-height:48px;color:var(--gray)">Internal notes about this customer...</div>
+          </div>
+        </div>
+        <div class="wf-modal-footer">
+          <span class="wf-btn wf-btn-secondary">Cancel</span>
+          <span class="wf-btn wf-btn-primary">Create Customer</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="05-dispatch.html">&larr; 05 — Dispatch</a>
+  <a href="07-financials.html">07 — Financials &rarr;</a>
+</div>
+</div>
+</body>
+</html>

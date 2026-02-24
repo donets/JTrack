@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 — Authentication | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>02 — Authentication</h1>
+  <span class="badge badge-built">Built</span>
+  <span class="spacer"></span>
+  <a href="03-dashboard.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Login Page — Desktop</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Login Page — Desktop</div>
+  <div class="wireframe-body" style="min-height:500px;background:var(--mist);display:flex;align-items:center;justify-content:center">
+    <div style="width:400px;background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:40px">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:28px;font-weight:800;margin-bottom:4px">⚡ JTrack</div>
+        <div style="color:var(--gray);font-size:14px">Sign in to your account</div>
+      </div>
+      <div class="wf-form-group">
+        <label class="wf-form-label">Email address</label>
+        <input class="wf-input" style="width:100%" placeholder="you@company.com">
+      </div>
+      <div class="wf-form-group">
+        <label class="wf-form-label">Password</label>
+        <input class="wf-input" style="width:100%" type="password" placeholder="••••••••">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:13px">
+        <label style="display:flex;align-items:center;gap:6px;color:var(--ink-light)">
+          <span class="wf-checkbox" style="display:inline-block"></span> Remember me
+        </label>
+        <a href="#" style="color:var(--sky);text-decoration:none">Forgot password?</a>
+      </div>
+      <div class="wf-btn wf-btn-primary" style="width:100%;justify-content:center;padding:10px">Sign in</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Login Page — Mobile</h2>
+
+<div class="mobile-frame">
+  <div class="status-bar">9:41</div>
+  <div class="wireframe-label"><span>MOCKUP</span> Login — Mobile (375px)</div>
+  <div style="min-height:480px;background:var(--mist);padding:40px 24px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:28px;font-weight:800;margin-bottom:4px">⚡ JTrack</div>
+      <div style="color:var(--gray);font-size:14px">Sign in to your account</div>
+    </div>
+    <div class="wf-form-group">
+      <label class="wf-form-label">Email address</label>
+      <input class="wf-input" style="width:100%" placeholder="you@company.com">
+    </div>
+    <div class="wf-form-group">
+      <label class="wf-form-label">Password</label>
+      <input class="wf-input" style="width:100%" placeholder="••••••••">
+    </div>
+    <div class="wf-btn wf-btn-primary" style="width:100%;justify-content:center;padding:12px;margin-top:8px">Sign in</div>
+    <div style="text-align:center;margin-top:16px;font-size:13px">
+      <a href="#" style="color:var(--sky);text-decoration:none">Forgot password?</a>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Invite Acceptance Page <span class="badge badge-future">Future</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Accept Invitation</div>
+  <div class="wireframe-body" style="min-height:440px;background:var(--mist);display:flex;align-items:center;justify-content:center">
+    <div style="width:400px;background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:40px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:28px;font-weight:800;margin-bottom:4px">⚡ JTrack</div>
+        <div style="color:var(--gray);font-size:14px">You've been invited to join</div>
+        <div style="font-size:16px;font-weight:700;margin-top:8px">Downtown Office</div>
+        <div style="font-size:13px;color:var(--gray)">as a <span class="wf-tag wf-tag-tech">Technician</span></div>
+      </div>
+      <div class="wf-form-group">
+        <label class="wf-form-label">Your name</label>
+        <input class="wf-input" style="width:100%" placeholder="Full name">
+      </div>
+      <div class="wf-form-group">
+        <label class="wf-form-label">Set a password</label>
+        <input class="wf-input" style="width:100%" type="password" placeholder="Min 8 characters">
+      </div>
+      <div class="wf-btn wf-btn-primary" style="width:100%;justify-content:center;padding:10px">Accept & Sign in</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Session & Error States</h2>
+
+<div class="wf-duo">
+  <div class="wireframe">
+    <div class="wireframe-label"><span>MOCKUP</span> Login Error</div>
+    <div class="wireframe-body" style="padding:32px;background:var(--mist)">
+      <div style="width:100%;max-width:360px;margin:0 auto">
+        <div style="background:var(--rose-light);border:1px solid #fca5a5;border-radius:6px;padding:12px 16px;font-size:13px;color:#991b1b;margin-bottom:16px">
+          Invalid email or password. Please try again.
+        </div>
+        <div class="wf-form-group">
+          <label class="wf-form-label">Email address</label>
+          <input class="wf-input" style="width:100%;border-color:var(--rose)" value="user@example.com">
+        </div>
+        <div class="wf-form-group">
+          <label class="wf-form-label">Password</label>
+          <input class="wf-input" style="width:100%;border-color:var(--rose)" placeholder="••••••••">
+        </div>
+        <div class="wf-btn wf-btn-primary" style="width:100%;justify-content:center;padding:10px">Sign in</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wireframe">
+    <div class="wireframe-label"><span>MOCKUP</span> Session Expired Toast</div>
+    <div class="wireframe-body" style="padding:32px;background:var(--mist);min-height:200px;position:relative">
+      <div style="position:absolute;top:16px;right:16px;background:var(--white);border:1px solid var(--mist-dark);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:14px 18px;width:320px;display:flex;gap:10px;align-items:start">
+        <span style="color:var(--flame);font-size:18px">⚠️</span>
+        <div>
+          <div style="font-weight:600;font-size:13px">Session expired</div>
+          <div style="font-size:12px;color:var(--gray)">Please sign in again to continue.</div>
+        </div>
+        <span style="color:var(--gray);cursor:pointer;margin-left:auto">✕</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="01-shell-nav.html">&larr; 01 — App Shell</a>
+  <a href="03-dashboard.html">03 — Dashboard &rarr;</a>
+</div>
+</div>
+</body>
+</html>

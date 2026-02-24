@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 — Dashboard | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>03 — Dashboard</h1>
+  <span class="badge badge-planned">Planned</span>
+  <span class="spacer"></span>
+  <a href="04-tickets.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Owner / Manager Dashboard</h2>
+<p class="note">Stat cards, status distribution, activity feed, unassigned jobs, tech availability, revenue summary.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Dashboard — Owner / Manager View</div>
+  <div class="wireframe-body wf-col">
+    <!-- Top bar -->
+    <div class="wf-topbar">
+      <span class="title">Dashboard</span>
+      <div class="spacer"></div>
+      <span style="font-size:12px;color:var(--gray)">Today: Feb 23, 2026</span>
+    </div>
+    <div class="wf-content wf-p-20 wf-col wf-gap-16">
+      <!-- Stat cards row -->
+      <div class="wf-row wf-gap-16 wf-wrap">
+        <div class="wf-stat">
+          <div class="label">Open Jobs</div>
+          <div class="value">24</div>
+          <div class="change up">↑ 3 from last week</div>
+        </div>
+        <div class="wf-stat">
+          <div class="label">Due Today</div>
+          <div class="value" style="color:var(--flame)">7</div>
+          <div class="change">3 unassigned</div>
+        </div>
+        <div class="wf-stat">
+          <div class="label">Completed (MTD)</div>
+          <div class="value" style="color:var(--mint)">48</div>
+          <div class="change up">↑ 12% vs last month</div>
+        </div>
+        <div class="wf-stat">
+          <div class="label">Revenue (MTD)</div>
+          <div class="value">€18.4k</div>
+          <div class="change up">↑ 8% vs last month</div>
+        </div>
+      </div>
+      <!-- Two-column layout -->
+      <div class="wf-row wf-gap-16 wf-stretch" style="flex-wrap:wrap">
+        <!-- Left column -->
+        <div class="wf-col wf-gap-16" style="flex:2;min-width:320px">
+          <!-- Status distribution -->
+          <div class="wf-card">
+            <div class="wf-card-header">Job Status Distribution</div>
+            <div class="wf-card-body">
+              <div style="display:flex;gap:4px;height:28px;border-radius:4px;overflow:hidden;margin-bottom:12px">
+                <div style="flex:5;background:var(--sky);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600">New (5)</div>
+                <div style="flex:8;background:var(--violet);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600">Sched (8)</div>
+                <div style="flex:11;background:var(--flame);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600">In Prog (11)</div>
+                <div style="flex:48;background:var(--mint);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600">Done (48)</div>
+              </div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--gray)">
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--sky);margin-right:4px"></span>New</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--violet);margin-right:4px"></span>Scheduled</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--flame);margin-right:4px"></span>In Progress</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--mint);margin-right:4px"></span>Done</span>
+              </div>
+            </div>
+          </div>
+          <!-- Unassigned jobs -->
+          <div class="wf-card">
+            <div class="wf-card-header">
+              Unassigned Jobs
+              <span class="wf-tag wf-tag-new">3</span>
+            </div>
+            <div class="wf-card-body" style="padding:0">
+              <table class="wf-table">
+                <thead><tr><th>Ticket</th><th>Title</th><th>Priority</th><th>Created</th><th></th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight:600">#1048</td>
+                    <td>AC unit not cooling — 2nd floor</td>
+                    <td><span class="wf-tag" style="background:#fee2e2;color:#991b1b">High</span></td>
+                    <td style="color:var(--gray)">2h ago</td>
+                    <td><span class="wf-btn wf-btn-sm wf-btn-primary">Assign</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600">#1047</td>
+                    <td>Leaking pipe in kitchen</td>
+                    <td><span class="wf-tag" style="background:#fef3c7;color:#92400e">Medium</span></td>
+                    <td style="color:var(--gray)">5h ago</td>
+                    <td><span class="wf-btn wf-btn-sm wf-btn-primary">Assign</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600">#1046</td>
+                    <td>Replace hallway light fixtures</td>
+                    <td><span class="wf-tag" style="background:var(--mist-dark);color:var(--ink-light)">Low</span></td>
+                    <td style="color:var(--gray)">1d ago</td>
+                    <td><span class="wf-btn wf-btn-sm wf-btn-primary">Assign</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- Right column -->
+        <div class="wf-col wf-gap-16" style="flex:1;min-width:280px">
+          <!-- Tech availability -->
+          <div class="wf-card">
+            <div class="wf-card-header">Team Today</div>
+            <div class="wf-card-body wf-col wf-gap-12">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--mint-light);color:var(--mint)">MR</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Mike Rodriguez</div>
+                  <div style="font-size:11px;color:var(--gray)">3 jobs &bull; Next: 10:30 AM</div>
+                </div>
+                <span class="wf-tag wf-tag-inprogress">Busy</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--sky-light);color:var(--sky)">SK</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Sarah Kim</div>
+                  <div style="font-size:11px;color:var(--gray)">2 jobs &bull; Free at 2 PM</div>
+                </div>
+                <span class="wf-tag wf-tag-inprogress">Busy</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="wf-avatar" style="background:var(--violet-light);color:var(--violet)">AW</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Alex Wilson</div>
+                  <div style="font-size:11px;color:var(--gray)">1 job &bull; Free now</div>
+                </div>
+                <span class="wf-tag wf-tag-done">Available</span>
+              </div>
+            </div>
+          </div>
+          <!-- Activity feed -->
+          <div class="wf-card">
+            <div class="wf-card-header">Recent Activity</div>
+            <div class="wf-card-body" style="padding:0 16px">
+              <div class="wf-timeline-item">
+                <div class="wf-timeline-dot" style="background:var(--mint)"></div>
+                <div><b>Ticket #1042</b> completed<br><span style="font-size:11px;color:var(--gray)">Mike R. &bull; 10 min ago</span></div>
+              </div>
+              <div class="wf-timeline-item">
+                <div class="wf-timeline-dot" style="background:var(--sky)"></div>
+                <div>New comment on <b>#1038</b><br><span style="font-size:11px;color:var(--gray)">Sarah K. &bull; 25 min ago</span></div>
+              </div>
+              <div class="wf-timeline-item">
+                <div class="wf-timeline-dot" style="background:var(--flame)"></div>
+                <div><b>Ticket #1048</b> created<br><span style="font-size:11px;color:var(--gray)">System &bull; 2 hrs ago</span></div>
+              </div>
+              <div class="wf-timeline-item">
+                <div class="wf-timeline-dot" style="background:var(--violet)"></div>
+                <div><b>Payment</b> €450 received for #1039<br><span style="font-size:11px;color:var(--gray)">Stripe &bull; 3 hrs ago</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Technician Dashboard</h2>
+<p class="note">Simplified view: my jobs today + next job card. No financial data visible.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Dashboard — Technician View</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">My Day</span>
+      <div class="spacer"></div>
+      <span style="font-size:12px;color:var(--gray)">Feb 23, 2026</span>
+    </div>
+    <div class="wf-content wf-p-20 wf-col wf-gap-16">
+      <!-- Stat row -->
+      <div class="wf-row wf-gap-16">
+        <div class="wf-stat" style="flex:1">
+          <div class="label">My Jobs Today</div>
+          <div class="value">4</div>
+        </div>
+        <div class="wf-stat" style="flex:1">
+          <div class="label">Completed</div>
+          <div class="value" style="color:var(--mint)">1</div>
+        </div>
+        <div class="wf-stat" style="flex:1">
+          <div class="label">Remaining</div>
+          <div class="value" style="color:var(--flame)">3</div>
+        </div>
+      </div>
+      <!-- Next job card (prominent) -->
+      <div class="wf-card" style="border-left:4px solid var(--flame);border-color:var(--flame)">
+        <div class="wf-card-header" style="background:var(--flame-light)">
+          <span>🔥 Next Job</span>
+          <span class="wf-tag wf-tag-scheduled">Scheduled</span>
+        </div>
+        <div class="wf-card-body">
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px">AC unit not cooling — 2nd floor</div>
+          <div style="font-size:13px;color:var(--gray);margin-bottom:12px">
+            📍 123 Main Street, Suite 200 &bull; ⏰ 10:30 AM – 12:00 PM
+          </div>
+          <div style="font-size:13px;margin-bottom:16px">
+            Customer reports AC making unusual noise and not reaching set temperature. Unit is a Carrier 24ACC636 installed 2019.
+          </div>
+          <div class="wf-row wf-gap-8">
+            <span class="wf-btn wf-btn-primary">Start Job</span>
+            <span class="wf-btn wf-btn-secondary">Navigate 📍</span>
+            <span class="wf-btn wf-btn-secondary">Call Customer 📞</span>
+          </div>
+        </div>
+      </div>
+      <!-- Today's schedule -->
+      <div class="wf-card">
+        <div class="wf-card-header">Today's Schedule</div>
+        <div class="wf-card-body" style="padding:0">
+          <table class="wf-table">
+            <thead><tr><th>Time</th><th>Job</th><th>Location</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--gray)">8:00–9:30</td>
+                <td style="font-weight:600">#1040 Furnace inspection</td>
+                <td>45 Oak Avenue</td>
+                <td><span class="wf-tag wf-tag-done">Done</span></td>
+              </tr>
+              <tr style="background:var(--flame-light)">
+                <td style="font-weight:600">10:30–12:00</td>
+                <td style="font-weight:600">#1048 AC unit repair</td>
+                <td>123 Main St, Ste 200</td>
+                <td><span class="wf-tag wf-tag-scheduled">Scheduled</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--gray)">1:00–2:30</td>
+                <td>#1044 Water heater install</td>
+                <td>78 Pine Road</td>
+                <td><span class="wf-tag wf-tag-scheduled">Scheduled</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--gray)">3:00–4:00</td>
+                <td>#1045 Thermostat replacement</td>
+                <td>12 Elm Street</td>
+                <td><span class="wf-tag wf-tag-new">New</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Dashboard — Mobile (Technician)</h2>
+
+<div class="mobile-frame">
+  <div class="status-bar">9:41</div>
+  <div class="wireframe-label"><span>MOCKUP</span> Technician Dashboard — Mobile</div>
+  <div style="height:48px;background:var(--white);border-bottom:1px solid var(--mist-dark);display:flex;align-items:center;padding:0 12px;gap:10px">
+    <span style="font-size:20px">☰</span>
+    <span style="font-weight:700;font-size:15px">My Day</span>
+    <span style="flex:1"></span>
+    <div class="wf-sync-dot"></div>
+    <div class="wf-bell" style="font-size:16px">🔔</div>
+  </div>
+  <div style="background:var(--mist);padding:12px;height:380px;overflow:auto">
+    <!-- Stats -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1;background:white;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--mist-dark)">
+        <div style="font-size:24px;font-weight:700">4</div>
+        <div style="font-size:11px;color:var(--gray)">Jobs</div>
+      </div>
+      <div style="flex:1;background:white;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--mist-dark)">
+        <div style="font-size:24px;font-weight:700;color:var(--mint)">1</div>
+        <div style="font-size:11px;color:var(--gray)">Done</div>
+      </div>
+      <div style="flex:1;background:white;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--mist-dark)">
+        <div style="font-size:24px;font-weight:700;color:var(--flame)">3</div>
+        <div style="font-size:11px;color:var(--gray)">Left</div>
+      </div>
+    </div>
+    <!-- Next job -->
+    <div style="background:white;border-radius:8px;border-left:4px solid var(--flame);padding:14px;margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--flame);text-transform:uppercase;margin-bottom:4px">🔥 Next Job</div>
+      <div style="font-weight:700;margin-bottom:4px">AC unit not cooling</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:8px">📍 123 Main St &bull; ⏰ 10:30 AM</div>
+      <div style="display:flex;gap:6px">
+        <span class="wf-btn wf-btn-primary wf-btn-sm">Start</span>
+        <span class="wf-btn wf-btn-secondary wf-btn-sm">Navigate</span>
+        <span class="wf-btn wf-btn-secondary wf-btn-sm">Call</span>
+      </div>
+    </div>
+    <!-- Other jobs -->
+    <div style="background:white;border-radius:8px;padding:12px;font-size:13px">
+      <div style="font-weight:600;margin-bottom:8px;font-size:12px;color:var(--gray);text-transform:uppercase">Later Today</div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--mist-dark)">
+        <div style="font-weight:600">Water heater install</div>
+        <div style="font-size:11px;color:var(--gray)">1:00 PM &bull; 78 Pine Road</div>
+      </div>
+      <div style="padding:8px 0">
+        <div style="font-weight:600">Thermostat replacement</div>
+        <div style="font-size:11px;color:var(--gray)">3:00 PM &bull; 12 Elm Street</div>
+      </div>
+    </div>
+  </div>
+  <div class="wf-bottom-nav">
+    <div class="nav-btn active"><span class="icon">📊</span><span>Home</span></div>
+    <div class="nav-btn"><span class="icon">🎫</span><span>Jobs</span></div>
+    <div class="nav-btn"><span class="icon">📅</span><span>Schedule</span></div>
+    <div class="nav-btn"><span class="icon">👥</span><span>Clients</span></div>
+    <div class="nav-btn"><span class="icon">⋯</span><span>More</span></div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="02-auth.html">&larr; 02 — Authentication</a>
+  <a href="04-tickets.html">04 — Tickets &rarr;</a>
+</div>
+</div>
+</body>
+</html>

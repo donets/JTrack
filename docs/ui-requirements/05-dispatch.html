@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 — Scheduling & Dispatch | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>05 — Scheduling & Dispatch</h1>
+  <span class="badge badge-partial">Partial</span>
+  <span class="spacer"></span>
+  <a href="06-customers.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Dispatch Board — Technician Rows × Time Columns</h2>
+<p class="note">Drag tickets onto tech/time slots. Unassigned jobs in a side panel. Color = status.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Dispatch Board — Daily View</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Dispatch</span>
+      <div class="spacer"></div>
+      <span class="wf-btn wf-btn-sm wf-btn-secondary">← Prev</span>
+      <span style="font-size:13px;font-weight:600">Monday, Feb 23, 2026</span>
+      <span class="wf-btn wf-btn-sm wf-btn-secondary">Next →</span>
+      <span class="wf-btn wf-btn-sm wf-btn-secondary" style="margin-left:8px">Today</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab active">Board</div>
+        <div class="wf-tab">Timeline</div>
+        <div class="wf-tab">Map</div>
+      </div>
+    </div>
+    <div class="wf-content wf-row">
+      <!-- Main dispatch grid -->
+      <div style="flex:1;overflow-x:auto">
+        <!-- Time header -->
+        <div style="display:flex;border-bottom:2px solid var(--mist-dark)">
+          <div style="width:140px;min-width:140px;padding:8px 12px;background:var(--gray-light);font-size:11px;font-weight:600;text-transform:uppercase;color:var(--gray);border-right:1px solid var(--mist-dark)">Technician</div>
+          <div style="flex:1;display:flex">
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light);border-right:1px solid var(--mist-dark)">8 AM</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light);border-right:1px solid var(--mist-dark)">9 AM</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light);border-right:1px solid var(--mist-dark)">10 AM</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light);border-right:1px solid var(--mist-dark)">11 AM</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light);border-right:1px solid var(--mist-dark)">12 PM</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light);border-right:1px solid var(--mist-dark)">1 PM</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light);border-right:1px solid var(--mist-dark)">2 PM</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light);border-right:1px solid var(--mist-dark)">3 PM</div>
+            <div style="flex:1;text-align:center;padding:8px;font-size:11px;font-weight:600;color:var(--gray);background:var(--gray-light)">4 PM</div>
+          </div>
+        </div>
+        <!-- Mike Rodriguez row -->
+        <div class="wf-gantt-row">
+          <div class="wf-gantt-label">
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="wf-avatar-sm wf-avatar" style="background:var(--mint-light);color:var(--mint)">MR</div>
+              <span>Mike R.</span>
+            </div>
+          </div>
+          <div class="wf-gantt-bar-area">
+            <div class="wf-gantt-bar" style="left:0%;width:17%;background:var(--mint)">#1042 Furnace ✓</div>
+            <div class="wf-gantt-bar" style="left:22%;width:22%;background:var(--flame)">#1048 AC unit</div>
+            <div class="wf-gantt-bar" style="left:56%;width:22%;background:var(--violet)">#1044 Heater</div>
+            <div class="wf-gantt-bar" style="left:89%;width:11%;background:var(--sky)">#1045 Thermo</div>
+          </div>
+        </div>
+        <!-- Sarah Kim row -->
+        <div class="wf-gantt-row">
+          <div class="wf-gantt-label">
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="wf-avatar-sm wf-avatar" style="background:var(--sky-light);color:var(--sky)">SK</div>
+              <span>Sarah K.</span>
+            </div>
+          </div>
+          <div class="wf-gantt-bar-area">
+            <div class="wf-gantt-bar" style="left:0%;width:33%;background:var(--flame)">#1043 Elec panel</div>
+            <div class="wf-gantt-bar" style="left:56%;width:22%;background:var(--violet)">#1049 Inspect</div>
+          </div>
+        </div>
+        <!-- Alex Wilson row -->
+        <div class="wf-gantt-row">
+          <div class="wf-gantt-label">
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="wf-avatar-sm wf-avatar" style="background:var(--violet-light);color:var(--violet)">AW</div>
+              <span>Alex W.</span>
+            </div>
+          </div>
+          <div class="wf-gantt-bar-area">
+            <div class="wf-gantt-bar" style="left:22%;width:17%;background:var(--sky)">#1046 Lights</div>
+          </div>
+        </div>
+        <!-- Empty row for visual -->
+        <div class="wf-gantt-row" style="background:var(--gray-light)">
+          <div class="wf-gantt-label" style="color:var(--gray);font-style:italic">+ Add tech</div>
+          <div class="wf-gantt-bar-area"></div>
+        </div>
+      </div>
+      <!-- Unassigned sidebar -->
+      <div style="width:200px;min-width:200px;background:var(--white);border-left:1px solid var(--mist-dark);padding:12px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Unassigned <span class="wf-tag wf-tag-new" style="font-size:10px">2</span></div>
+        <div class="wf-kanban-card" style="cursor:grab">
+          <div class="card-title" style="font-size:12px">Pipe leak kitchen</div>
+          <div class="card-meta">#1047 &bull; Med</div>
+        </div>
+        <div class="wf-kanban-card" style="cursor:grab">
+          <div class="card-title" style="font-size:12px">Roof vent repair</div>
+          <div class="card-meta">#1054 &bull; Low</div>
+        </div>
+        <div style="text-align:center;padding:16px;color:var(--gray);font-size:12px;border:2px dashed var(--mist-dark);border-radius:var(--radius);margin-top:8px">
+          Drag to<br>assign & schedule
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Dispatch Timeline — Gantt View</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Dispatch — Weekly Timeline (Gantt)</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Dispatch</span>
+      <div class="spacer"></div>
+      <span style="font-size:13px;font-weight:600">Feb 23 – Mar 1, 2026</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab">Board</div>
+        <div class="wf-tab active">Timeline</div>
+        <div class="wf-tab">Map</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;background:var(--white)">
+      <!-- Day headers -->
+      <div style="display:flex;border-bottom:2px solid var(--mist-dark)">
+        <div style="width:140px;min-width:140px;padding:10px 12px;font-size:11px;font-weight:600;color:var(--gray);border-right:1px solid var(--mist-dark)">Technician</div>
+        <div style="flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;border-right:1px solid var(--mist-dark);background:var(--mint-light)">Mon 23</div>
+        <div style="flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;border-right:1px solid var(--mist-dark)">Tue 24</div>
+        <div style="flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;border-right:1px solid var(--mist-dark)">Wed 25</div>
+        <div style="flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;border-right:1px solid var(--mist-dark)">Thu 26</div>
+        <div style="flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;border-right:1px solid var(--mist-dark)">Fri 27</div>
+        <div style="flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;background:var(--gray-light);border-right:1px solid var(--mist-dark)">Sat 28</div>
+        <div style="flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;background:var(--gray-light)">Sun 1</div>
+      </div>
+      <!-- Mike row -->
+      <div class="wf-gantt-row" style="height:48px">
+        <div class="wf-gantt-label"><div style="display:flex;align-items:center;gap:6px"><div class="wf-avatar-sm wf-avatar" style="background:var(--mint-light);color:var(--mint)">MR</div>Mike R.</div></div>
+        <div class="wf-gantt-bar-area">
+          <div class="wf-gantt-bar" style="left:2%;width:12%;background:var(--mint);top:4px;height:18px;font-size:10px">#1042</div>
+          <div class="wf-gantt-bar" style="left:3%;width:10%;background:var(--flame);top:24px;height:18px;font-size:10px">#1048</div>
+          <div class="wf-gantt-bar" style="left:16%;width:8%;background:var(--sky);top:4px;height:18px;font-size:10px">#1047</div>
+          <div class="wf-gantt-bar" style="left:30%;width:10%;background:var(--violet);top:4px;height:18px;font-size:10px">#1051</div>
+          <div class="wf-gantt-bar" style="left:58%;width:10%;background:var(--sky);top:4px;height:18px;font-size:10px">#1055</div>
+        </div>
+      </div>
+      <!-- Sarah row -->
+      <div class="wf-gantt-row" style="height:48px">
+        <div class="wf-gantt-label"><div style="display:flex;align-items:center;gap:6px"><div class="wf-avatar-sm wf-avatar" style="background:var(--sky-light);color:var(--sky)">SK</div>Sarah K.</div></div>
+        <div class="wf-gantt-bar-area">
+          <div class="wf-gantt-bar" style="left:1%;width:13%;background:var(--flame);top:12px;height:18px;font-size:10px">#1043 Elec</div>
+          <div class="wf-gantt-bar" style="left:17%;width:8%;background:var(--violet);top:12px;height:18px;font-size:10px">#1049</div>
+          <div class="wf-gantt-bar" style="left:44%;width:10%;background:var(--sky);top:12px;height:18px;font-size:10px">#1053</div>
+        </div>
+      </div>
+      <!-- Alex row -->
+      <div class="wf-gantt-row" style="height:48px">
+        <div class="wf-gantt-label"><div style="display:flex;align-items:center;gap:6px"><div class="wf-avatar-sm wf-avatar" style="background:var(--violet-light);color:var(--violet)">AW</div>Alex W.</div></div>
+        <div class="wf-gantt-bar-area">
+          <div class="wf-gantt-bar" style="left:3%;width:8%;background:var(--sky);top:12px;height:18px;font-size:10px">#1046</div>
+          <div class="wf-gantt-bar" style="left:30%;width:12%;background:var(--violet);top:12px;height:18px;font-size:10px">#1050</div>
+          <div class="wf-gantt-bar" style="left:58%;width:8%;background:var(--sky);top:12px;height:18px;font-size:10px">#1052</div>
+        </div>
+      </div>
+    </div>
+    <!-- Legend -->
+    <div style="background:var(--white);padding:12px 20px;border-top:1px solid var(--mist-dark);display:flex;gap:16px;font-size:12px">
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--sky);vertical-align:middle;margin-right:4px"></span>Scheduled</span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--violet);vertical-align:middle;margin-right:4px"></span>Confirmed</span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--flame);vertical-align:middle;margin-right:4px"></span>In Progress</span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--mint);vertical-align:middle;margin-right:4px"></span>Done</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Dispatch Map View</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Dispatch — Map View</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Dispatch</span>
+      <div class="spacer"></div>
+      <span style="font-size:13px;font-weight:600">Feb 23, 2026</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab">Board</div>
+        <div class="wf-tab">Timeline</div>
+        <div class="wf-tab active">Map</div>
+      </div>
+    </div>
+    <div class="wf-content wf-row" style="height:360px">
+      <!-- Map area -->
+      <div style="flex:1;background:#e8f0e8;position:relative;display:flex;align-items:center;justify-content:center">
+        <!-- Placeholder map with pins -->
+        <div style="color:var(--gray);font-size:14px;text-align:center">
+          <div style="font-size:48px;margin-bottom:8px">🗺️</div>
+          <div>Interactive map with job pins</div>
+          <div style="font-size:12px;margin-top:4px">Pins color-coded by tech • Click to see details</div>
+        </div>
+        <!-- Sample pins -->
+        <div style="position:absolute;top:60px;left:30%;font-size:24px" title="Mike - #1042">📍</div>
+        <div style="position:absolute;top:120px;left:55%;font-size:24px;filter:hue-rotate(120deg)" title="Sarah - #1043">📍</div>
+        <div style="position:absolute;top:200px;left:40%;font-size:24px;filter:hue-rotate(240deg)" title="Alex - #1046">📍</div>
+        <div style="position:absolute;top:160px;left:70%;font-size:20px;opacity:.5" title="Unassigned - #1047">📌</div>
+      </div>
+      <!-- Side list -->
+      <div style="width:280px;min-width:280px;background:var(--white);border-left:1px solid var(--mist-dark);overflow:auto">
+        <div style="padding:12px;border-bottom:1px solid var(--mist-dark);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+          <span>Today's Jobs</span>
+          <span class="wf-tag wf-tag-new" style="font-size:10px">8</span>
+        </div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--mist-dark);font-size:13px;display:flex;gap:8px;align-items:start">
+          <div class="wf-avatar-sm wf-avatar" style="background:var(--mint-light);color:var(--mint);margin-top:2px">MR</div>
+          <div><b>#1042</b> Furnace inspection<br><span style="font-size:11px;color:var(--gray)">45 Oak Ave &bull; 8–9:30 AM</span></div>
+        </div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--mist-dark);font-size:13px;display:flex;gap:8px;align-items:start;background:var(--flame-light)">
+          <div class="wf-avatar-sm wf-avatar" style="background:var(--mint-light);color:var(--mint);margin-top:2px">MR</div>
+          <div><b>#1048</b> AC unit repair<br><span style="font-size:11px;color:var(--gray)">123 Main St &bull; 10:30–12</span></div>
+        </div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--mist-dark);font-size:13px;display:flex;gap:8px;align-items:start">
+          <div class="wf-avatar-sm wf-avatar" style="background:var(--sky-light);color:var(--sky);margin-top:2px">SK</div>
+          <div><b>#1043</b> Electrical panel<br><span style="font-size:11px;color:var(--gray)">78 Pine Rd &bull; 8–11 AM</span></div>
+        </div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--mist-dark);font-size:13px;display:flex;gap:8px;align-items:start">
+          <div class="wf-avatar-sm wf-avatar" style="background:var(--violet-light);color:var(--violet);margin-top:2px">AW</div>
+          <div><b>#1046</b> Hallway lights<br><span style="font-size:11px;color:var(--gray)">12 Elm St &bull; 10–12 PM</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="04-tickets.html">&larr; 04 — Tickets</a>
+  <a href="06-customers.html">06 — Customers &rarr;</a>
+</div>
+</div>
+</body>
+</html>

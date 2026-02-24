@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07 — Quotes, Invoices & Payments | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>07 — Quotes, Invoices & Payments</h1>
+  <span class="badge badge-partial">Partial</span>
+  <span class="spacer"></span>
+  <a href="08-team.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Quote Form with Line Items <span class="badge badge-future">Future</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Quote — Edit / Create</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="breadcrumb">Quotes /</span>
+      <span class="title">New Quote</span>
+      <div class="spacer"></div>
+      <span class="wf-btn wf-btn-secondary">Save Draft</span>
+      <span class="wf-btn wf-btn-primary">Send to Customer</span>
+    </div>
+    <div class="wf-content wf-p-20">
+      <div class="wf-row wf-gap-20" style="align-items:flex-start">
+        <!-- Main form -->
+        <div class="wf-col wf-gap-16" style="flex:3;min-width:400px">
+          <!-- Header info -->
+          <div class="wf-card">
+            <div class="wf-card-body">
+              <div class="wf-row wf-gap-12">
+                <div class="wf-form-group" style="flex:1">
+                  <label class="wf-form-label">Customer</label>
+                  <select class="wf-select" style="width:100%"><option>Acme Corp</option></select>
+                </div>
+                <div class="wf-form-group" style="flex:1">
+                  <label class="wf-form-label">Site</label>
+                  <select class="wf-select" style="width:100%"><option>Main Office — 123 Main St</option></select>
+                </div>
+              </div>
+              <div class="wf-row wf-gap-12">
+                <div class="wf-form-group" style="flex:1">
+                  <label class="wf-form-label">Valid until</label>
+                  <input class="wf-input" style="width:100%" placeholder="Mar 23, 2026">
+                </div>
+                <div class="wf-form-group" style="flex:1">
+                  <label class="wf-form-label">Reference</label>
+                  <input class="wf-input" style="width:100%" value="Q-2026-0042">
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Line items -->
+          <div class="wf-card">
+            <div class="wf-card-header">Line Items</div>
+            <div class="wf-card-body" style="padding:0 16px 16px">
+              <!-- Header -->
+              <div class="wf-line-item" style="font-size:11px;font-weight:600;color:var(--gray);text-transform:uppercase;border-bottom:2px solid var(--mist-dark)">
+                <div class="desc">Description</div>
+                <div class="qty">Qty</div>
+                <div class="rate">Rate</div>
+                <div class="amt">Amount</div>
+                <div style="width:28px"></div>
+              </div>
+              <div class="wf-line-item">
+                <div class="desc">AC diagnostic & inspection</div>
+                <div class="qty">1</div>
+                <div class="rate">€85.00</div>
+                <div class="amt">€85.00</div>
+                <div style="width:28px;text-align:center;color:var(--gray);cursor:pointer">✕</div>
+              </div>
+              <div class="wf-line-item">
+                <div class="desc">Refrigerant recharge (R-410A)</div>
+                <div class="qty">2</div>
+                <div class="rate">€120.00</div>
+                <div class="amt">€240.00</div>
+                <div style="width:28px;text-align:center;color:var(--gray);cursor:pointer">✕</div>
+              </div>
+              <div class="wf-line-item">
+                <div class="desc">Compressor capacitor replacement</div>
+                <div class="qty">1</div>
+                <div class="rate">€65.00</div>
+                <div class="amt">€65.00</div>
+                <div style="width:28px;text-align:center;color:var(--gray);cursor:pointer">✕</div>
+              </div>
+              <div class="wf-line-item">
+                <div class="desc">Labor — HVAC technician (hours)</div>
+                <div class="qty">3</div>
+                <div class="rate">€75.00</div>
+                <div class="amt">€225.00</div>
+                <div style="width:28px;text-align:center;color:var(--gray);cursor:pointer">✕</div>
+              </div>
+              <div style="padding:10px 0">
+                <span class="wf-btn wf-btn-secondary wf-btn-sm">+ Add Line Item</span>
+              </div>
+              <!-- Totals -->
+              <div style="border-top:2px solid var(--mist-dark);padding-top:12px">
+                <div class="wf-row wf-between" style="font-size:13px;padding:4px 0"><span style="color:var(--gray)">Subtotal</span><span>€615.00</span></div>
+                <div class="wf-row wf-between" style="font-size:13px;padding:4px 0"><span style="color:var(--gray)">Tax (21%)</span><span>€129.15</span></div>
+                <div class="wf-row wf-between" style="font-size:15px;font-weight:700;padding:8px 0;border-top:1px solid var(--mist-dark)"><span>Total</span><span>€744.15</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- Notes -->
+          <div class="wf-card">
+            <div class="wf-card-header">Notes & Terms</div>
+            <div class="wf-card-body">
+              <div class="wf-input" style="width:100%;min-height:60px;color:var(--gray)">Payment due within 14 days of acceptance. All parts come with 1-year warranty...</div>
+            </div>
+          </div>
+        </div>
+        <!-- Right sidebar: status -->
+        <div class="wf-col wf-gap-16" style="flex:1;min-width:220px;max-width:260px">
+          <div class="wf-card">
+            <div class="wf-card-header">Status</div>
+            <div class="wf-card-body wf-col wf-gap-8" style="font-size:13px">
+              <div style="text-align:center;padding:8px 0">
+                <span class="wf-tag" style="background:#fef3c7;color:#92400e;font-size:13px;padding:4px 12px">Draft</span>
+              </div>
+              <div class="wf-row wf-between"><span style="color:var(--gray)">Created</span><span>Feb 23</span></div>
+              <div class="wf-row wf-between"><span style="color:var(--gray)">Expires</span><span>Mar 23</span></div>
+            </div>
+          </div>
+          <div class="wf-card">
+            <div class="wf-card-header">Actions</div>
+            <div class="wf-card-body wf-col wf-gap-8">
+              <span class="wf-btn wf-btn-primary" style="width:100%;justify-content:center">Send to Customer</span>
+              <span class="wf-btn wf-btn-secondary" style="width:100%;justify-content:center">Preview PDF</span>
+              <span class="wf-btn wf-btn-secondary" style="width:100%;justify-content:center">Duplicate</span>
+              <span class="wf-btn wf-btn-secondary" style="width:100%;justify-content:center;color:var(--mint)">Convert to Job</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Invoice List</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Invoice List</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Invoices</span>
+      <div class="spacer"></div>
+      <input class="wf-input wf-input-search" placeholder="Search invoices..." style="width:180px">
+      <span class="wf-btn wf-btn-primary">+ New Invoice</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab active">All (24)</div>
+        <div class="wf-tab">Pending (8)</div>
+        <div class="wf-tab" style="color:var(--rose)">Overdue (3)</div>
+        <div class="wf-tab">Paid (13)</div>
+      </div>
+    </div>
+    <div style="background:var(--white)">
+      <!-- Summary cards -->
+      <div style="padding:16px 20px;display:flex;gap:12px;border-bottom:1px solid var(--mist-dark)">
+        <div style="flex:1;padding:12px;border-radius:6px;background:var(--mist)">
+          <div style="font-size:11px;color:var(--gray)">Outstanding</div>
+          <div style="font-size:22px;font-weight:700;color:var(--flame)">€4,280</div>
+        </div>
+        <div style="flex:1;padding:12px;border-radius:6px;background:var(--mist)">
+          <div style="font-size:11px;color:var(--gray)">Overdue</div>
+          <div style="font-size:22px;font-weight:700;color:var(--rose)">€1,240</div>
+        </div>
+        <div style="flex:1;padding:12px;border-radius:6px;background:var(--mist)">
+          <div style="font-size:11px;color:var(--gray)">Collected (MTD)</div>
+          <div style="font-size:22px;font-weight:700;color:var(--mint)">€14,180</div>
+        </div>
+      </div>
+      <table class="wf-table">
+        <thead>
+          <tr><th>Invoice</th><th>Customer</th><th>Job</th><th>Amount</th><th>Status</th><th>Due</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600">INV-0024</td>
+            <td>Acme Corp</td>
+            <td>#1043</td>
+            <td style="font-weight:600">€890.00</td>
+            <td><span class="wf-tag" style="background:#fef3c7;color:#92400e">Pending</span></td>
+            <td style="font-size:12px">Mar 5</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">View</span></td>
+          </tr>
+          <tr style="background:var(--rose-light)">
+            <td style="font-weight:600">INV-0018</td>
+            <td>Baker's Hardware</td>
+            <td>#1032</td>
+            <td style="font-weight:600">€540.00</td>
+            <td><span class="wf-tag" style="background:var(--rose-light);color:#991b1b">Overdue</span></td>
+            <td style="font-size:12px;color:var(--rose);font-weight:600">Feb 10</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">View</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">INV-0023</td>
+            <td>River Stone Apts</td>
+            <td>#1041</td>
+            <td style="font-weight:600">€320.00</td>
+            <td><span class="wf-tag wf-tag-paid">Paid</span></td>
+            <td style="font-size:12px;color:var(--gray)">Feb 28</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">View</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">INV-0022</td>
+            <td>Jane Mitchell</td>
+            <td>#1039</td>
+            <td style="font-weight:600">€1,450.00</td>
+            <td><span class="wf-tag wf-tag-paid">Paid</span></td>
+            <td style="font-size:12px;color:var(--gray)">Feb 25</td>
+            <td><span class="wf-btn wf-btn-sm wf-btn-secondary">View</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Record Payment Modal</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Record Payment</div>
+  <div class="wireframe-body" style="position:relative;min-height:400px;background:var(--mist)">
+    <div class="wf-modal-overlay">
+      <div class="wf-modal" style="width:440px">
+        <div class="wf-modal-header">Record Payment <span style="color:var(--gray);cursor:pointer">✕</span></div>
+        <div class="wf-modal-body wf-col wf-gap-4">
+          <div style="background:var(--mist);border-radius:6px;padding:12px;margin-bottom:8px;font-size:13px">
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Invoice</span><b>INV-0024</b></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Customer</span><span>Acme Corp</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Amount due</span><span style="font-weight:700;font-size:16px">€890.00</span></div>
+          </div>
+          <div class="wf-row wf-gap-12">
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Amount *</label>
+              <input class="wf-input" style="width:100%" value="890.00">
+            </div>
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Currency</label>
+              <select class="wf-select" style="width:100%"><option>EUR</option></select>
+            </div>
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Method</label>
+            <select class="wf-select" style="width:100%"><option>Manual (cash/check/bank transfer)</option></select>
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Date</label>
+            <input class="wf-input" style="width:100%" value="Feb 23, 2026">
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Notes</label>
+            <input class="wf-input" style="width:100%" placeholder="Reference number, notes...">
+          </div>
+        </div>
+        <div class="wf-modal-footer">
+          <span class="wf-btn wf-btn-secondary">Cancel</span>
+          <span class="wf-btn wf-btn-primary">Record Payment</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Invoice Detail / Form <span class="badge badge-planned">Planned</span></h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Invoice Detail</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="breadcrumb">Invoices /</span>
+      <span class="title">INV-0024</span>
+      <div class="spacer"></div>
+      <span class="wf-tag" style="background:#fef3c7;color:#92400e;font-size:12px;padding:4px 10px">Pending</span>
+      <span class="wf-btn wf-btn-secondary wf-btn-sm">Download PDF</span>
+      <span class="wf-btn wf-btn-primary wf-btn-sm">Record Payment</span>
+    </div>
+    <div class="wf-content wf-p-20">
+      <div class="wf-card" style="max-width:700px;margin:0 auto">
+        <div class="wf-card-body" style="padding:32px">
+          <!-- Invoice header -->
+          <div class="wf-row wf-between" style="margin-bottom:24px">
+            <div>
+              <div style="font-size:22px;font-weight:800">⚡ JTrack</div>
+              <div style="font-size:12px;color:var(--gray);margin-top:4px">Downtown Office<br>456 Business Ave<br>info@jtrack.io</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:24px;font-weight:700;color:var(--ink)">INVOICE</div>
+              <div style="font-size:13px;color:var(--gray);margin-top:4px">
+                INV-0024<br>Date: Feb 23, 2026<br>Due: Mar 5, 2026
+              </div>
+            </div>
+          </div>
+          <!-- Bill to -->
+          <div style="background:var(--mist);border-radius:6px;padding:16px;margin-bottom:20px">
+            <div style="font-size:11px;font-weight:600;color:var(--gray);text-transform:uppercase;margin-bottom:4px">Bill To</div>
+            <div style="font-weight:600">Acme Corp</div>
+            <div style="font-size:13px;color:var(--gray)">John Smith &bull; john@acme.com<br>123 Main Street, Suite 200</div>
+          </div>
+          <!-- Line items -->
+          <div class="wf-line-item" style="font-size:11px;font-weight:600;color:var(--gray);text-transform:uppercase;border-bottom:2px solid var(--mist-dark)">
+            <div class="desc">Description</div>
+            <div class="qty">Qty</div>
+            <div class="rate">Rate</div>
+            <div class="amt">Amount</div>
+          </div>
+          <div class="wf-line-item">
+            <div class="desc">Electrical panel upgrade — labor</div>
+            <div class="qty">5h</div>
+            <div class="rate">€75.00</div>
+            <div class="amt">€375.00</div>
+          </div>
+          <div class="wf-line-item">
+            <div class="desc">200A breaker panel</div>
+            <div class="qty">1</div>
+            <div class="rate">€320.00</div>
+            <div class="amt">€320.00</div>
+          </div>
+          <div class="wf-line-item">
+            <div class="desc">Copper wiring (meters)</div>
+            <div class="qty">15</div>
+            <div class="rate">€8.50</div>
+            <div class="amt">€127.50</div>
+          </div>
+          <!-- Totals -->
+          <div style="border-top:2px solid var(--mist-dark);padding-top:12px;margin-top:4px;max-width:250px;margin-left:auto">
+            <div class="wf-row wf-between" style="font-size:13px;padding:4px 0"><span style="color:var(--gray)">Subtotal</span><span>€822.50</span></div>
+            <div class="wf-row wf-between" style="font-size:13px;padding:4px 0"><span style="color:var(--gray)">Tax (21%)</span><span>€172.73</span></div>
+            <div class="wf-row wf-between" style="font-size:16px;font-weight:700;padding:8px 0;border-top:2px solid var(--ink)"><span>Total</span><span>€995.23</span></div>
+          </div>
+          <!-- Payment info -->
+          <div style="margin-top:24px;padding:12px 16px;background:var(--mist);border-radius:6px;font-size:12px;color:var(--gray)">
+            Payment terms: Net 14 days. Bank: IBAN DE89 3704 0044 0532 0130 00.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="06-customers.html">&larr; 06 — Customers</a>
+  <a href="08-team.html">08 — Team &rarr;</a>
+</div>
+</div>
+</body>
+</html>

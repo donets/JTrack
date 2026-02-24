@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 — Tickets / Jobs | JTrack UI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-header">
+  <a href="index.html">&larr; Index</a>
+  <h1>04 — Tickets / Jobs</h1>
+  <span class="badge badge-partial">Partial</span>
+  <span class="spacer"></span>
+  <a href="05-dispatch.html">Next &rarr;</a>
+</div>
+<div class="page-body">
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Ticket List — "All" Tab with Filters</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Tickets — List View with Filters</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Tickets</span>
+      <div class="spacer"></div>
+      <input class="wf-input wf-input-search" placeholder="Search tickets..." style="width:200px">
+      <span class="wf-btn wf-btn-primary">+ New Ticket</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab active">All</div>
+        <div class="wf-tab">Board</div>
+        <div class="wf-tab">Calendar</div>
+        <div class="wf-tab">Map</div>
+      </div>
+    </div>
+    <!-- Filter bar -->
+    <div style="background:var(--white);padding:12px 20px;border-bottom:1px solid var(--mist-dark);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select class="wf-select"><option>Status: All</option></select>
+      <select class="wf-select"><option>Priority: All</option></select>
+      <select class="wf-select"><option>Assigned: Anyone</option></select>
+      <select class="wf-select"><option>Date range</option></select>
+      <span style="flex:1"></span>
+      <span style="font-size:12px;color:var(--gray)">72 tickets</span>
+    </div>
+    <!-- Table -->
+    <div style="background:var(--white)">
+      <table class="wf-table">
+        <thead>
+          <tr>
+            <th style="width:60px">#</th>
+            <th>Title</th>
+            <th style="width:100px">Status</th>
+            <th style="width:80px">Priority</th>
+            <th style="width:120px">Assigned</th>
+            <th style="width:100px">Scheduled</th>
+            <th style="width:80px">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600">#1048</td>
+            <td>AC unit not cooling — 2nd floor</td>
+            <td><span class="wf-tag wf-tag-new">New</span></td>
+            <td><span class="wf-tag" style="background:#fee2e2;color:#991b1b">High</span></td>
+            <td style="color:var(--gray)">—</td>
+            <td style="color:var(--gray)">—</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">#1047</td>
+            <td>Leaking pipe in kitchen</td>
+            <td><span class="wf-tag wf-tag-scheduled">Scheduled</span></td>
+            <td><span class="wf-tag" style="background:#fef3c7;color:#92400e">Med</span></td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div class="wf-avatar-sm wf-avatar">SK</div>Sarah K.</div></td>
+            <td style="font-size:12px">Feb 24, 9AM</td>
+            <td>€280</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">#1046</td>
+            <td>Replace hallway light fixtures (x12)</td>
+            <td><span class="wf-tag wf-tag-inprogress">In Progress</span></td>
+            <td><span class="wf-tag" style="background:var(--mist-dark);color:var(--ink-light)">Low</span></td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div class="wf-avatar-sm wf-avatar" style="background:var(--mint-light);color:var(--mint)">MR</div>Mike R.</div></td>
+            <td style="font-size:12px">Feb 23, 1PM</td>
+            <td>€640</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">#1042</td>
+            <td>Furnace annual inspection</td>
+            <td><span class="wf-tag wf-tag-done">Done</span></td>
+            <td><span class="wf-tag" style="background:var(--mist-dark);color:var(--ink-light)">Low</span></td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div class="wf-avatar-sm wf-avatar" style="background:var(--mint-light);color:var(--mint)">MR</div>Mike R.</div></td>
+            <td style="font-size:12px">Feb 23, 8AM</td>
+            <td>€120</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">#1039</td>
+            <td>Emergency water heater replacement</td>
+            <td><span class="wf-tag wf-tag-paid">Paid</span></td>
+            <td><span class="wf-tag" style="background:#fee2e2;color:#991b1b">High</span></td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div class="wf-avatar-sm wf-avatar" style="background:var(--violet-light);color:var(--violet)">AW</div>Alex W.</div></td>
+            <td style="font-size:12px">Feb 20</td>
+            <td style="color:var(--mint);font-weight:600">€1,450</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Pagination -->
+    <div style="background:var(--white);padding:12px 20px;border-top:1px solid var(--mist-dark);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--gray)">
+      <span>Showing 1–25 of 72</span>
+      <div style="display:flex;gap:4px">
+        <span class="wf-btn wf-btn-sm wf-btn-secondary" style="opacity:.5">← Prev</span>
+        <span class="wf-btn wf-btn-sm wf-btn-primary">1</span>
+        <span class="wf-btn wf-btn-sm wf-btn-secondary">2</span>
+        <span class="wf-btn wf-btn-sm wf-btn-secondary">3</span>
+        <span class="wf-btn wf-btn-sm wf-btn-secondary">Next →</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Ticket Kanban Board — "Board" Tab</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Tickets — Kanban Board (drag & drop)</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Tickets</span>
+      <div class="spacer"></div>
+      <span class="wf-btn wf-btn-primary">+ New Ticket</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab">All</div>
+        <div class="wf-tab active">Board</div>
+        <div class="wf-tab">Calendar</div>
+        <div class="wf-tab">Map</div>
+      </div>
+    </div>
+    <div class="wf-content wf-p-16 wf-row wf-gap-12" style="overflow-x:auto;align-items:flex-start">
+      <!-- New column -->
+      <div class="wf-kanban-col">
+        <div class="wf-kanban-col-header"><span style="color:var(--sky)">●</span> New <span class="count">3</span></div>
+        <div class="wf-kanban-card">
+          <div class="card-title">AC unit not cooling</div>
+          <div class="card-meta">#1048 &bull; <span style="color:#991b1b">High</span> &bull; Unassigned</div>
+        </div>
+        <div class="wf-kanban-card">
+          <div class="card-title">Leaking pipe kitchen</div>
+          <div class="card-meta">#1047 &bull; Medium &bull; Unassigned</div>
+        </div>
+        <div class="wf-kanban-card">
+          <div class="card-title">Replace light fixtures</div>
+          <div class="card-meta">#1046 &bull; Low &bull; Unassigned</div>
+        </div>
+      </div>
+      <!-- Scheduled column -->
+      <div class="wf-kanban-col">
+        <div class="wf-kanban-col-header"><span style="color:var(--violet)">●</span> Scheduled <span class="count">2</span></div>
+        <div class="wf-kanban-card">
+          <div class="card-title">Water heater install</div>
+          <div class="card-meta">#1044 &bull; Med &bull; <div class="wf-avatar-sm wf-avatar" style="display:inline-flex;vertical-align:middle;width:18px;height:18px;font-size:8px">AW</div> Alex</div>
+        </div>
+        <div class="wf-kanban-card">
+          <div class="card-title">Thermostat replacement</div>
+          <div class="card-meta">#1045 &bull; Low &bull; <div class="wf-avatar-sm wf-avatar" style="display:inline-flex;vertical-align:middle;width:18px;height:18px;font-size:8px">MR</div> Mike</div>
+        </div>
+      </div>
+      <!-- In Progress column -->
+      <div class="wf-kanban-col">
+        <div class="wf-kanban-col-header"><span style="color:var(--flame)">●</span> In Progress <span class="count">2</span></div>
+        <div class="wf-kanban-card" style="border-left:3px solid var(--flame)">
+          <div class="card-title">Electrical panel upgrade</div>
+          <div class="card-meta">#1043 &bull; High &bull; <div class="wf-avatar-sm wf-avatar" style="display:inline-flex;vertical-align:middle;width:18px;height:18px;font-size:8px;background:var(--sky-light);color:var(--sky)">SK</div> Sarah</div>
+        </div>
+        <div class="wf-kanban-card" style="border-left:3px solid var(--flame)">
+          <div class="card-title">Hallway lights (x12)</div>
+          <div class="card-meta">#1046 &bull; Low &bull; <div class="wf-avatar-sm wf-avatar" style="display:inline-flex;vertical-align:middle;width:18px;height:18px;font-size:8px;background:var(--mint-light);color:var(--mint)">MR</div> Mike</div>
+        </div>
+      </div>
+      <!-- Done column -->
+      <div class="wf-kanban-col">
+        <div class="wf-kanban-col-header"><span style="color:var(--mint)">●</span> Done <span class="count">3</span></div>
+        <div class="wf-kanban-card" style="opacity:.7">
+          <div class="card-title">Furnace inspection</div>
+          <div class="card-meta">#1042 &bull; €120 &bull; Mike</div>
+        </div>
+        <div class="wf-kanban-card" style="opacity:.7">
+          <div class="card-title">Boiler repair</div>
+          <div class="card-meta">#1041 &bull; €890 &bull; Sarah</div>
+        </div>
+        <div class="wf-kanban-card" style="opacity:.7">
+          <div class="card-title">Duct cleaning</div>
+          <div class="card-meta">#1040 &bull; €320 &bull; Alex</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Ticket Calendar View — "Calendar" Tab</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Tickets — Weekly Calendar</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="title">Tickets</span>
+      <div class="spacer"></div>
+      <span class="wf-btn wf-btn-sm wf-btn-secondary">← Prev</span>
+      <span style="font-size:13px;font-weight:600">Feb 23 – Mar 1, 2026</span>
+      <span class="wf-btn wf-btn-sm wf-btn-secondary">Next →</span>
+      <span style="margin-left:8px" class="wf-btn wf-btn-sm wf-btn-secondary">Today</span>
+    </div>
+    <div style="background:var(--white);padding:0 20px">
+      <div class="wf-tabs">
+        <div class="wf-tab">All</div>
+        <div class="wf-tab">Board</div>
+        <div class="wf-tab active">Calendar</div>
+        <div class="wf-tab">Map</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <div class="wf-cal-grid">
+        <!-- Header row -->
+        <div class="wf-cal-header"></div>
+        <div class="wf-cal-header" style="background:var(--mint-light);font-weight:700">Mon 23</div>
+        <div class="wf-cal-header">Tue 24</div>
+        <div class="wf-cal-header">Wed 25</div>
+        <div class="wf-cal-header">Thu 26</div>
+        <div class="wf-cal-header">Fri 27</div>
+        <div class="wf-cal-header">Sat 28</div>
+        <div class="wf-cal-header">Sun 1</div>
+        <!-- 8 AM -->
+        <div class="wf-cal-time">8 AM</div>
+        <div class="wf-cal-cell"><div class="wf-cal-event" style="background:var(--mint-light);border-color:var(--mint)">✓ #1042 Furnace</div></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"><div class="wf-cal-event">🔧 #1050 Plumbing</div></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <!-- 10 AM -->
+        <div class="wf-cal-time">10 AM</div>
+        <div class="wf-cal-cell"><div class="wf-cal-event" style="background:var(--flame-light);border-color:var(--flame)">🔥 #1048 AC unit</div></div>
+        <div class="wf-cal-cell"><div class="wf-cal-event">🔧 #1047 Pipe</div></div>
+        <div class="wf-cal-cell"><div class="wf-cal-event">🔧 #1051 HVAC</div></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"><div class="wf-cal-event">🔧 #1052 Electric</div></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <!-- 12 PM -->
+        <div class="wf-cal-time">12 PM</div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <!-- 2 PM -->
+        <div class="wf-cal-time">2 PM</div>
+        <div class="wf-cal-cell"><div class="wf-cal-event">🔧 #1044 Heater</div></div>
+        <div class="wf-cal-cell"><div class="wf-cal-event" style="background:var(--violet-light);border-color:var(--violet)">📋 #1049 Inspect</div></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"><div class="wf-cal-event">🔧 #1053 Valve</div></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <!-- 4 PM -->
+        <div class="wf-cal-time">4 PM</div>
+        <div class="wf-cal-cell"><div class="wf-cal-event">🔧 #1045 Thermo</div></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+        <div class="wf-cal-cell" style="background:var(--gray-light)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Create Ticket Modal</h2>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Create New Ticket Modal</div>
+  <div class="wireframe-body" style="position:relative;min-height:520px;background:var(--mist)">
+    <div class="wf-modal-overlay">
+      <div class="wf-modal" style="width:560px">
+        <div class="wf-modal-header">
+          Create New Ticket
+          <span style="color:var(--gray);cursor:pointer">✕</span>
+        </div>
+        <div class="wf-modal-body wf-col wf-gap-4">
+          <div class="wf-form-group">
+            <label class="wf-form-label">Title *</label>
+            <input class="wf-input" style="width:100%" placeholder="Brief description of the job">
+          </div>
+          <div class="wf-form-group">
+            <label class="wf-form-label">Description</label>
+            <div class="wf-input" style="width:100%;min-height:72px;color:var(--gray)">Detailed notes, customer info, special instructions...</div>
+          </div>
+          <div class="wf-row wf-gap-12">
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Priority</label>
+              <select class="wf-select" style="width:100%"><option>Medium</option></select>
+            </div>
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Assign to</label>
+              <select class="wf-select" style="width:100%"><option>— Unassigned —</option></select>
+            </div>
+          </div>
+          <div class="wf-row wf-gap-12">
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Scheduled start</label>
+              <input class="wf-input" style="width:100%" type="text" placeholder="Pick date & time">
+            </div>
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Scheduled end</label>
+              <input class="wf-input" style="width:100%" type="text" placeholder="Pick date & time">
+            </div>
+          </div>
+          <div class="wf-row wf-gap-12">
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Amount (€)</label>
+              <input class="wf-input" style="width:100%" placeholder="0.00">
+            </div>
+            <div class="wf-form-group" style="flex:1">
+              <label class="wf-form-label">Currency</label>
+              <select class="wf-select" style="width:100%"><option>EUR</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="wf-modal-footer">
+          <span class="wf-btn wf-btn-secondary">Cancel</span>
+          <span class="wf-btn wf-btn-primary">Create Ticket</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Ticket Detail Page — Desktop</h2>
+<p class="note">Two-column layout: left = activity timeline, right = sidebar with detail/financial/checklist cards.</p>
+
+<div class="wireframe">
+  <div class="wireframe-label"><span>MOCKUP</span> Ticket Detail — Desktop</div>
+  <div class="wireframe-body wf-col">
+    <div class="wf-topbar">
+      <span class="breadcrumb">Tickets /</span>
+      <span class="title">#1048 AC unit not cooling — 2nd floor</span>
+      <div class="spacer"></div>
+      <span class="wf-tag wf-tag-new" style="font-size:12px">New</span>
+      <span class="wf-btn wf-btn-secondary wf-btn-sm">Edit</span>
+      <span class="wf-btn wf-btn-danger wf-btn-sm">Cancel</span>
+    </div>
+    <div class="wf-content wf-row wf-p-20 wf-gap-20" style="align-items:flex-start">
+      <!-- Left: Activity -->
+      <div class="wf-col wf-gap-16" style="flex:3;min-width:360px">
+        <!-- Description -->
+        <div class="wf-card">
+          <div class="wf-card-header">Description</div>
+          <div class="wf-card-body" style="font-size:14px">
+            Customer reports AC making unusual noise and not reaching set temperature.
+            Unit is a Carrier 24ACC636 installed 2019. Needs inspection and likely
+            refrigerant recharge. Customer prefers morning appointment.
+          </div>
+        </div>
+        <!-- Activity Timeline -->
+        <div class="wf-card">
+          <div class="wf-card-header">Activity</div>
+          <div class="wf-card-body" style="padding:0 16px">
+            <div class="wf-timeline-item">
+              <div class="wf-avatar-sm wf-avatar" style="margin-top:2px">JD</div>
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between">
+                  <b>John Doe</b>
+                  <span style="font-size:11px;color:var(--gray)">2 hours ago</span>
+                </div>
+                <div style="margin-top:4px">Created this ticket from customer call. Unit model info added to description.</div>
+              </div>
+            </div>
+            <div class="wf-timeline-item">
+              <div class="wf-avatar-sm wf-avatar" style="margin-top:2px;background:var(--sky-light);color:var(--sky)">SY</div>
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between">
+                  <b>System</b>
+                  <span style="font-size:11px;color:var(--gray)">2 hours ago</span>
+                </div>
+                <div style="margin-top:4px;color:var(--gray);font-style:italic">Ticket created</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Add comment -->
+        <div class="wf-card">
+          <div class="wf-card-body">
+            <div class="wf-input" style="width:100%;min-height:60px;margin-bottom:10px;color:var(--gray)">Write a comment...</div>
+            <div class="wf-row wf-gap-8 wf-end">
+              <span class="wf-btn wf-btn-secondary wf-btn-sm">📎 Attach</span>
+              <span class="wf-btn wf-btn-secondary wf-btn-sm">📷 Photo</span>
+              <span class="wf-btn wf-btn-primary wf-btn-sm">Send</span>
+            </div>
+          </div>
+        </div>
+        <!-- Attachments -->
+        <div class="wf-card">
+          <div class="wf-card-header">Attachments <span style="color:var(--gray);font-weight:400">(0)</span></div>
+          <div class="wf-card-body" style="text-align:center;padding:24px;color:var(--gray)">
+            <div style="font-size:32px;margin-bottom:4px">📎</div>
+            <div style="font-size:13px">No attachments yet. Drag & drop or click to upload.</div>
+          </div>
+        </div>
+      </div>
+      <!-- Right: Sidebar -->
+      <div class="wf-col wf-gap-16" style="flex:1;min-width:260px;max-width:300px">
+        <!-- Details card -->
+        <div class="wf-card">
+          <div class="wf-card-header">Details</div>
+          <div class="wf-card-body wf-col wf-gap-12" style="font-size:13px">
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Status</span><span class="wf-tag wf-tag-new">New</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Priority</span><span class="wf-tag" style="background:#fee2e2;color:#991b1b">High</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Assigned</span><span style="color:var(--gray)">— Unassigned —</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Created by</span><span>John Doe</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Created</span><span>Feb 23, 8:15 AM</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Scheduled</span><span style="color:var(--gray)">Not set</span></div>
+          </div>
+        </div>
+        <!-- Financial card -->
+        <div class="wf-card">
+          <div class="wf-card-header">Financial</div>
+          <div class="wf-card-body wf-col wf-gap-12" style="font-size:13px">
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Total amount</span><span>—</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Paid</span><span>€0</span></div>
+            <div class="wf-row wf-between"><span style="color:var(--gray)">Balance</span><span>—</span></div>
+            <span class="wf-btn wf-btn-secondary wf-btn-sm" style="width:100%;justify-content:center">+ Record Payment</span>
+          </div>
+        </div>
+        <!-- Checklist card -->
+        <div class="wf-card">
+          <div class="wf-card-header">Checklist <span style="font-weight:400;color:var(--gray)">0/4</span></div>
+          <div class="wf-card-body">
+            <div class="wf-progress" style="margin-bottom:12px"><div class="wf-progress-fill" style="width:0%;background:var(--mint)"></div></div>
+            <div class="wf-check-item"><span class="wf-checkbox"></span> Inspect unit</div>
+            <div class="wf-check-item"><span class="wf-checkbox"></span> Check refrigerant levels</div>
+            <div class="wf-check-item"><span class="wf-checkbox"></span> Test thermostat</div>
+            <div class="wf-check-item"><span class="wf-checkbox"></span> Customer sign-off</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h2>Ticket Detail — Mobile</h2>
+
+<div class="mobile-frame">
+  <div class="status-bar">9:41</div>
+  <div class="wireframe-label"><span>MOCKUP</span> Ticket Detail — Mobile</div>
+  <div style="height:48px;background:var(--white);border-bottom:1px solid var(--mist-dark);display:flex;align-items:center;padding:0 12px;gap:10px">
+    <span style="color:var(--sky)">← Back</span>
+    <span style="flex:1;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">#1048 AC unit not cooling</span>
+    <span class="wf-tag wf-tag-new" style="font-size:10px">New</span>
+  </div>
+  <div style="height:382px;background:var(--mist);overflow:auto;padding:12px">
+    <!-- Status quick-actions -->
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <span class="wf-btn wf-btn-primary wf-btn-sm" style="flex:1;justify-content:center">Start Job</span>
+      <span class="wf-btn wf-btn-secondary wf-btn-sm" style="flex:1;justify-content:center">📍 Nav</span>
+      <span class="wf-btn wf-btn-secondary wf-btn-sm" style="flex:1;justify-content:center">📞 Call</span>
+    </div>
+    <!-- Details -->
+    <div style="background:white;border-radius:8px;padding:12px;margin-bottom:10px;font-size:13px">
+      <div style="font-weight:700;margin-bottom:8px">Details</div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--gray)">Priority</span><span class="wf-tag" style="background:#fee2e2;color:#991b1b;font-size:10px">High</span></div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--gray)">Assigned</span><span>Unassigned</span></div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--gray)">Created</span><span>Feb 23, 8:15 AM</span></div>
+    </div>
+    <!-- Description -->
+    <div style="background:white;border-radius:8px;padding:12px;margin-bottom:10px;font-size:13px">
+      <div style="font-weight:700;margin-bottom:4px">Description</div>
+      Customer reports AC making unusual noise. Carrier 24ACC636, installed 2019.
+    </div>
+    <!-- Comment input -->
+    <div style="background:white;border-radius:8px;padding:12px;font-size:13px">
+      <div style="border:1px solid var(--mist-dark);border-radius:6px;padding:8px;color:var(--gray);margin-bottom:8px;min-height:40px">Add comment...</div>
+      <div style="display:flex;gap:6px;justify-content:flex-end">
+        <span class="wf-btn wf-btn-secondary wf-btn-sm">📷</span>
+        <span class="wf-btn wf-btn-primary wf-btn-sm">Send</span>
+      </div>
+    </div>
+  </div>
+  <div class="wf-bottom-nav">
+    <div class="nav-btn"><span class="icon">📊</span><span>Home</span></div>
+    <div class="nav-btn active"><span class="icon">🎫</span><span>Jobs</span></div>
+    <div class="nav-btn"><span class="icon">📅</span><span>Schedule</span></div>
+    <div class="nav-btn"><span class="icon">👥</span><span>Clients</span></div>
+    <div class="nav-btn"><span class="icon">⋯</span><span>More</span></div>
+  </div>
+</div>
+
+<div class="page-nav">
+  <a href="03-dashboard.html">&larr; 03 — Dashboard</a>
+  <a href="05-dispatch.html">05 — Dispatch &rarr;</a>
+</div>
+</div>
+</body>
+</html>

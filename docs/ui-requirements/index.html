@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JTrack UI Requirements</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .index-body { max-width: 900px; margin: 0 auto; padding: 48px 32px; }
+  .hero { text-align: center; margin-bottom: 48px; }
+  .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 8px; }
+  .hero p { color: var(--ink-light); font-size: 16px; }
+  .color-row { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; justify-content: center; }
+  .color-swatch { width: 120px; text-align: center; }
+  .color-swatch .swatch { width: 120px; height: 60px; border-radius: var(--radius); margin-bottom: 6px; border: 1px solid var(--mist-dark); }
+  .color-swatch .name { font-weight: 600; font-size: 13px; }
+  .color-swatch .hex { font-size: 12px; color: var(--gray); }
+  .page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 32px; }
+  .page-link {
+    display: block;
+    background: var(--white);
+    border: 1px solid var(--mist-dark);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: box-shadow .15s;
+  }
+  .page-link:hover { box-shadow: var(--shadow-lg); }
+  .page-link h3 { font-size: 15px; margin-bottom: 4px; }
+  .page-link p { font-size: 13px; color: var(--ink-light); margin: 0; }
+  .page-link .page-num { font-size: 11px; color: var(--gray); margin-bottom: 6px; font-weight: 600; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 24px 0; }
+  .tech-stack { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 16px 0; }
+  .tech-pill {
+    background: var(--white);
+    border: 1px solid var(--mist-dark);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <h1>JTrack UI Requirements</h1>
+  <span class="subtitle">Trades Job Management Platform</span>
+</div>
+
+<div class="index-body">
+  <div class="hero">
+    <h1>UI Specification & Wireframes</h1>
+    <p>Visual requirements for the JTrack field service CRM frontend</p>
+  </div>
+
+  <div class="tech-stack">
+    <span class="tech-pill">Nuxt 4 / Vue 3</span>
+    <span class="tech-pill">Tailwind CSS</span>
+    <span class="tech-pill">RxDB Offline-First</span>
+    <span class="tech-pill">Pinia</span>
+    <span class="tech-pill">Capacitor (Mobile)</span>
+    <span class="tech-pill">NestJS API</span>
+    <span class="tech-pill">Prisma + PostgreSQL</span>
+  </div>
+
+  <h2>Design System Colors</h2>
+  <div class="color-row">
+    <div class="color-swatch"><div class="swatch" style="background:#0f172a"></div><div class="name">Ink</div><div class="hex">#0f172a</div></div>
+    <div class="color-swatch"><div class="swatch" style="background:#f1f5f9"></div><div class="name">Mist</div><div class="hex">#f1f5f9</div></div>
+    <div class="color-swatch"><div class="swatch" style="background:#10b981"></div><div class="name">Mint</div><div class="hex">#10b981</div></div>
+    <div class="color-swatch"><div class="swatch" style="background:#f97316"></div><div class="name">Flame</div><div class="hex">#f97316</div></div>
+    <div class="color-swatch"><div class="swatch" style="background:#3b82f6"></div><div class="name">Sky</div><div class="hex">#3b82f6</div></div>
+    <div class="color-swatch"><div class="swatch" style="background:#ef4444"></div><div class="name">Rose</div><div class="hex">#ef4444</div></div>
+    <div class="color-swatch"><div class="swatch" style="background:#8b5cf6"></div><div class="name">Violet</div><div class="hex">#8b5cf6</div></div>
+  </div>
+
+  <h2>Status Legend</h2>
+  <div class="legend">
+    <span class="badge badge-built">Built</span>
+    <span class="badge badge-partial">Partial</span>
+    <span class="badge badge-planned">Planned</span>
+    <span class="badge badge-future">Future</span>
+  </div>
+
+  <h2>Pages</h2>
+  <div class="page-grid">
+    <a href="01-shell-nav.html" class="page-link">
+      <div class="page-num">01</div>
+      <h3>App Shell & Navigation <span class="badge badge-partial">Partial</span></h3>
+      <p>Sidebar, top bar, mobile shell, notification area, location switcher</p>
+    </a>
+    <a href="02-auth.html" class="page-link">
+      <div class="page-num">02</div>
+      <h3>Authentication <span class="badge badge-built">Built</span></h3>
+      <p>Login, session handling, invite acceptance</p>
+    </a>
+    <a href="03-dashboard.html" class="page-link">
+      <div class="page-num">03</div>
+      <h3>Dashboard <span class="badge badge-planned">Planned</span></h3>
+      <p>Owner/Manager stats, technician day view</p>
+    </a>
+    <a href="04-tickets.html" class="page-link">
+      <div class="page-num">04</div>
+      <h3>Tickets / Jobs <span class="badge badge-partial">Partial</span></h3>
+      <p>List, kanban, calendar, map, create, detail</p>
+    </a>
+    <a href="05-dispatch.html" class="page-link">
+      <div class="page-num">05</div>
+      <h3>Scheduling & Dispatch <span class="badge badge-partial">Partial</span></h3>
+      <p>Dispatch board, timeline, map view</p>
+    </a>
+    <a href="06-customers.html" class="page-link">
+      <div class="page-num">06</div>
+      <h3>Customers & Sites <span class="badge badge-partial">Partial</span></h3>
+      <p>Customer list, detail, sites, locations</p>
+    </a>
+    <a href="07-financials.html" class="page-link">
+      <div class="page-num">07</div>
+      <h3>Quotes, Invoices & Payments <span class="badge badge-partial">Partial</span></h3>
+      <p>Quoting, invoicing, payment recording</p>
+    </a>
+    <a href="08-team.html" class="page-link">
+      <div class="page-num">08</div>
+      <h3>Team & RBAC <span class="badge badge-partial">Partial</span></h3>
+      <p>Members, invites, roles, RBAC matrix</p>
+    </a>
+    <a href="09-extras.html" class="page-link">
+      <div class="page-num">09</div>
+      <h3>Extras & Future <span class="badge badge-future">Future</span></h3>
+      <p>Inventory, time tracking, forms, analytics, settings, mobile, notifications</p>
+    </a>
+    <a href="10-build-order.html" class="page-link">
+      <div class="page-num">10</div>
+      <h3>Build Order & Data Notes</h3>
+      <p>Recommended implementation sequence</p>
+    </a>
+  </div>
+</div>
+</body>
+</html>
