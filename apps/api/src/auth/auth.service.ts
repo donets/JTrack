@@ -2,8 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { compare, hash } from 'bcryptjs'
+import { type Prisma } from '@prisma/client'
 import { PrismaService } from '@/prisma/prisma.service'
-import type { LoginInput } from '@jtrack/shared'
+import type { InviteCompleteInput, LoginInput } from '@jtrack/shared'
+
+const INVITE_TOKEN_TYPE = 'invite'
 
 @Injectable()
 export class AuthService {
@@ -57,6 +60,60 @@ export class AuthService {
     if (!tokenMatches) {
       throw new UnauthorizedException('Invalid refresh token')
     }
+
+    const tokens = await this.createTokens({
+      sub: user.id,
+      email: user.email,
+      isAdmin: user.isAdmin
+    })
+
+    await this.setRefreshToken(user.id, tokens.refreshToken)
+
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: this.toUserResponse(user)
+    }
+  }
+
+  async completeInvite(input: InviteCompleteInput) {
+    const payload = await this.verifyInviteToken(input.token)
+    const passwordHash = await hash(input.password, 12)
+
+    const user = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const activation = await tx.userLocation.updateMany({
+        where: {
+          userId: payload.sub,
+          locationId: payload.locationId,
+          status: 'invited'
+        },
+        data: {
+          status: 'active'
+        }
+      })
+
+      if (activation.count !== 1) {
+        throw new UnauthorizedException('Invite is invalid or already used')
+      }
+
+      const updatedUser = await tx.user.update({
+        where: { id: payload.sub },
+        data: {
+          passwordHash,
+          refreshTokenHash: null
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          isAdmin: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      })
+
+      return updatedUser
+    })
 
     const tokens = await this.createTokens({
       sub: user.id,
@@ -142,6 +199,27 @@ export class AuthService {
       where: { id: userId },
       data: { refreshTokenHash }
     })
+  }
+
+  private async verifyInviteToken(rawToken: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync<{
+        sub: string
+        locationId: string
+        type?: string
+      }>(rawToken, {
+        secret: this.configService.get<string>('JWT_INVITE_SECRET')
+          ?? this.configService.getOrThrow<string>('JWT_REFRESH_SECRET')
+      })
+
+      if (payload.type !== INVITE_TOKEN_TYPE) {
+        throw new UnauthorizedException('Invalid invite token')
+      }
+
+      return payload
+    } catch {
+      throw new UnauthorizedException('Invalid invite token')
+    }
   }
 
   private toUserResponse(user: {

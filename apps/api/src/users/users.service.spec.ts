@@ -1,20 +1,24 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 import { hash } from 'bcryptjs'
 import { randomUUID } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { UsersService } from './users.service'
 
 vi.mock('bcryptjs', () => ({
-  hash: vi.fn(async () => 'hashed-system-password')
+  hash: vi.fn()
 }))
 
 vi.mock('node:crypto', () => ({
-  randomUUID: vi.fn(() => 'generated-system-password')
+  randomUUID: vi.fn()
 }))
 
+const hashMock = vi.mocked(hash)
+const randomUuidMock = vi.mocked(randomUUID)
 const SYSTEM_EMAIL = 'system+deleted-user@jtrack.local'
 
-describe('UsersService', () => {
+describe('UsersService.remove', () => {
   let service: UsersService
   let tx: {
     user: {
@@ -38,6 +42,13 @@ describe('UsersService', () => {
   }
   let prisma: {
     $transaction: ReturnType<typeof vi.fn>
+  }
+  let jwtService: {
+    signAsync: ReturnType<typeof vi.fn>
+  }
+  let configService: {
+    get: ReturnType<typeof vi.fn>
+    getOrThrow: ReturnType<typeof vi.fn>
   }
 
   beforeEach(() => {
@@ -66,8 +77,25 @@ describe('UsersService', () => {
       $transaction: vi.fn(async (callback: (client: typeof tx) => Promise<void>) => callback(tx))
     }
 
-    service = new UsersService(prisma as never)
-    vi.clearAllMocks()
+    jwtService = {
+      signAsync: vi.fn()
+    }
+
+    configService = {
+      get: vi.fn(),
+      getOrThrow: vi.fn((key: string) => `${key}-secret`)
+    }
+
+    hashMock.mockReset()
+    randomUuidMock.mockReset()
+    hashMock.mockResolvedValue('hashed-system-password')
+    randomUuidMock.mockReturnValue('generated-system-password')
+
+    service = new UsersService(
+      prisma as never,
+      jwtService as unknown as JwtService,
+      configService as unknown as ConfigService
+    )
   })
 
   it('remove reassigns related records to existing system user and deletes target', async () => {
@@ -112,7 +140,7 @@ describe('UsersService', () => {
       where: { userId: 'user-1' }
     })
     expect(tx.user.delete).toHaveBeenCalledWith({ where: { id: 'user-1' } })
-    expect(hash).not.toHaveBeenCalled()
+    expect(hashMock).not.toHaveBeenCalled()
   })
 
   it('remove creates system user when it does not exist', async () => {
@@ -133,8 +161,8 @@ describe('UsersService', () => {
 
     await service.remove('user-1')
 
-    expect(randomUUID).toHaveBeenCalledTimes(1)
-    expect(hash).toHaveBeenCalledWith('generated-system-password', 12)
+    expect(randomUuidMock).toHaveBeenCalledTimes(1)
+    expect(hashMock).toHaveBeenCalledWith('generated-system-password', 12)
     expect(tx.user.create).toHaveBeenCalledWith({
       data: {
         email: SYSTEM_EMAIL,
@@ -173,5 +201,129 @@ describe('UsersService', () => {
     expect(tx.user.update).not.toHaveBeenCalled()
     expect(tx.ticket.updateMany).not.toHaveBeenCalled()
     expect(tx.user.delete).not.toHaveBeenCalled()
+  })
+})
+
+describe('UsersService.invite', () => {
+  let service: UsersService
+  let prisma: {
+    user: {
+      upsert: ReturnType<typeof vi.fn>
+    }
+    userLocation: {
+      upsert: ReturnType<typeof vi.fn>
+    }
+  }
+  let jwtService: {
+    signAsync: ReturnType<typeof vi.fn>
+  }
+  let configService: {
+    get: ReturnType<typeof vi.fn>
+    getOrThrow: ReturnType<typeof vi.fn>
+  }
+
+  beforeEach(() => {
+    prisma = {
+      user: {
+        upsert: vi.fn()
+      },
+      userLocation: {
+        upsert: vi.fn()
+      }
+    }
+
+    jwtService = {
+      signAsync: vi.fn()
+    }
+
+    configService = {
+      get: vi.fn(),
+      getOrThrow: vi.fn((key: string) => `${key}-secret`)
+    }
+
+    hashMock.mockReset()
+    randomUuidMock.mockReset()
+
+    service = new UsersService(
+      prisma as never,
+      jwtService as unknown as JwtService,
+      configService as unknown as ConfigService
+    )
+  })
+
+  it('invite returns onboarding token and URL and does not use hardcoded password', async () => {
+    randomUuidMock.mockReturnValue('generated-invite-secret')
+    hashMock.mockResolvedValue('generated-password-hash')
+    prisma.user.upsert.mockResolvedValue({
+      id: 'user-1',
+      email: 'invitee@jtrack.local',
+      name: 'Invitee',
+      isAdmin: false,
+      createdAt: new Date('2026-02-24T09:00:00.000Z'),
+      updatedAt: new Date('2026-02-24T09:00:00.000Z')
+    })
+    jwtService.signAsync.mockResolvedValue('invite-token-1')
+    configService.get.mockImplementation((key: string) => {
+      if (key === 'WEB_ORIGIN') {
+        return 'http://localhost:3000'
+      }
+
+      if (key === 'JWT_INVITE_SECRET') {
+        return 'invite-secret'
+      }
+
+      if (key === 'JWT_INVITE_TTL') {
+        return '7d'
+      }
+
+      return undefined
+    })
+
+    const result = await service.invite(
+      {
+        email: 'invitee@jtrack.local',
+        name: 'Invitee',
+        role: 'Technician'
+      },
+      'loc-1'
+    )
+
+    expect(hashMock).toHaveBeenCalledWith('generated-invite-secret', 12)
+    expect(prisma.userLocation.upsert).toHaveBeenCalledWith({
+      where: {
+        userId_locationId: {
+          userId: 'user-1',
+          locationId: 'loc-1'
+        }
+      },
+      update: {
+        role: 'Technician',
+        status: 'invited'
+      },
+      create: {
+        userId: 'user-1',
+        locationId: 'loc-1',
+        role: 'Technician',
+        status: 'invited'
+      }
+    })
+    expect(jwtService.signAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sub: 'user-1',
+        locationId: 'loc-1',
+        type: 'invite'
+      }),
+      expect.objectContaining({
+        secret: 'invite-secret',
+        expiresIn: '7d'
+      })
+    )
+    expect(result).toEqual({
+      ok: true,
+      userId: 'user-1',
+      status: 'invited',
+      onboardingToken: 'invite-token-1',
+      onboardingUrl: 'http://localhost:3000/invite/accept?token=invite-token-1'
+    })
   })
 })

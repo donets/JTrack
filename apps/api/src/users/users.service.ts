@@ -1,16 +1,28 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 import { hash } from 'bcryptjs'
 import { randomUUID } from 'node:crypto'
 import { type Prisma } from '@prisma/client'
-import { createUserSchema, updateUserSchema, type RoleKey } from '@jtrack/shared'
+import {
+  createUserSchema,
+  updateUserSchema,
+  type InviteResponse,
+  type RoleKey
+} from '@jtrack/shared'
 import { PrismaService } from '@/prisma/prisma.service'
 
 const DELETED_USER_SYSTEM_EMAIL = 'system+deleted-user@jtrack.local'
 const DELETED_USER_SYSTEM_NAME = 'System Deleted User'
+const INVITE_TOKEN_TYPE = 'invite'
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService
+  ) {}
 
   async listByLocation(locationId: string) {
     const memberships = await this.prisma.userLocation.findMany({
@@ -91,9 +103,9 @@ export class UsersService {
     }
   }
 
-  async invite(data: unknown, locationId: string) {
+  async invite(data: unknown, locationId: string): Promise<InviteResponse> {
     const input = createUserSchema.parse(data)
-    const passwordHash = await hash(input.password ?? 'InviteOnly123!', 12)
+    const passwordHash = await hash(randomUUID(), 12)
 
     const user = await this.prisma.user.upsert({
       where: { email: input.email },
@@ -126,10 +138,30 @@ export class UsersService {
       }
     })
 
+    const onboardingToken = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        locationId,
+        type: INVITE_TOKEN_TYPE
+      },
+      {
+        secret: this.configService.get<string>('JWT_INVITE_SECRET')
+          ?? this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        expiresIn: (this.configService.get<string>('JWT_INVITE_TTL') ?? '7d') as never
+      }
+    )
+
+    const onboardingBaseUrl = this.configService.get<string>('WEB_ORIGIN') ?? ''
+    const onboardingUrl = onboardingBaseUrl
+      ? `${onboardingBaseUrl.replace(/\/$/, '')}/invite/accept?token=${encodeURIComponent(onboardingToken)}`
+      : `/invite/accept?token=${encodeURIComponent(onboardingToken)}`
+
     return {
       ok: true,
       userId: user.id,
-      status: 'invited'
+      status: 'invited',
+      onboardingToken,
+      onboardingUrl
     }
   }
 

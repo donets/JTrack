@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common'
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 import type { Request, Response } from 'express'
-import { loginInputSchema } from '@jtrack/shared'
+import { inviteCompleteInputSchema, loginInputSchema } from '@jtrack/shared'
 import { CurrentUser } from '@/common/current-user.decorator'
 import type { JwtUser } from '@/common/types'
 import { ZodValidationPipe } from '@/common/zod-validation.pipe'
@@ -73,6 +73,27 @@ export class AuthController {
     }
 
     const result = await this.authService.refresh(refreshToken)
+
+    response.cookie(
+      'refresh_token',
+      result.refreshToken,
+      this.authService.getRefreshCookieOptions()
+    )
+
+    return {
+      accessToken: result.accessToken,
+      user: result.user
+    }
+  }
+
+  @Public()
+  @Post('invite/complete')
+  @UsePipes(new ZodValidationPipe(inviteCompleteInputSchema))
+  async completeInvite(
+    @Body() body: { token: string; password: string },
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await this.authService.completeInvite(body)
 
     response.cookie(
       'refresh_token',

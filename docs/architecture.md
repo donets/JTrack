@@ -35,7 +35,7 @@ flowchart LR
 
 ## 4. API Layer (NestJS)
 ### 4.1 Module Boundaries
-- `auth`: login/refresh/logout/me, JWT issuance, refresh token rotation.
+- `auth`: login/refresh/logout/me, invite onboarding completion, JWT issuance, refresh token rotation.
 - `rbac`: role/privilege resolution and access checks.
 - `locations`: tenant container lifecycle.
 - `users`: membership and operator management.
@@ -98,6 +98,7 @@ sequenceDiagram
 - Access:
   - short-lived JWT access token in Authorization header.
   - refresh token in HttpOnly cookie (`/auth` path).
+  - invite onboarding uses signed short-lived invite token (`/auth/invite/complete`) and atomically claims membership (`invited` -> `active`) in the same transaction as initial password set.
   - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`).
   - auth brute-force mitigation is enforced via throttling on `/auth/login` and `/auth/refresh`.
 - Authorization:
