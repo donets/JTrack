@@ -41,6 +41,7 @@ flowchart LR
 - `users`: membership and operator management.
 - `tickets`, `comments`, `attachments`, `payments`: core domain CRUD.
 - `sync`: delta pull/push and conflict handling.
+- `health`: readiness/liveness probe endpoint with DB connectivity check.
 - `prisma`: DB access abstraction and lifecycle.
 
 ### 4.2 Cross-Cutting Guards

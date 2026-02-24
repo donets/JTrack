@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { inviteCompleteInputSchema, inviteResponseSchema } from './schemas.js'
+import {
+  healthResponseSchema,
+  inviteCompleteInputSchema,
+  inviteResponseSchema
+} from './schemas.js'
 
 describe('shared schemas', () => {
   it('validates invite completion payload', () => {
@@ -26,6 +30,26 @@ describe('shared schemas', () => {
         ok: true,
         userId: 'user-1',
         status: 'invited'
+      })
+    ).toThrow()
+  })
+
+  it('validates health response payload', () => {
+    const parsed = healthResponseSchema.parse({
+      status: 'ok',
+      database: 'up',
+      version: '1.0.0'
+    })
+
+    expect(parsed.status).toBe('ok')
+  })
+
+  it('rejects malformed health response payload', () => {
+    expect(() =>
+      healthResponseSchema.parse({
+        status: 'ready',
+        database: 'up',
+        version: '1.0.0'
       })
     ).toThrow()
   })

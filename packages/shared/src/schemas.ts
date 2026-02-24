@@ -117,6 +117,15 @@ export const refreshInputSchema = z.object({
   refreshToken: z.string().min(1).optional()
 })
 
+export const healthStatusSchema = z.enum(['ok', 'degraded'])
+export const healthDatabaseStatusSchema = z.enum(['up', 'down'])
+
+export const healthResponseSchema = z.object({
+  status: healthStatusSchema,
+  database: healthDatabaseStatusSchema,
+  version: z.string().min(1)
+})
+
 export const authResponseSchema = z.object({
   accessToken: z.string().min(1),
   user: userSchema
@@ -252,6 +261,7 @@ export type PaymentStatus = z.infer<typeof paymentStatusSchema>
 export type PaymentRecord = z.infer<typeof paymentRecordSchema>
 export type LoginInput = z.infer<typeof loginInputSchema>
 export type RefreshInput = z.infer<typeof refreshInputSchema>
+export type HealthResponse = z.infer<typeof healthResponseSchema>
 export type AuthResponse = z.infer<typeof authResponseSchema>
 export type InviteCompleteInput = z.infer<typeof inviteCompleteInputSchema>
 export type CreateUserInput = z.infer<typeof createUserSchema>
