@@ -55,7 +55,7 @@ flowchart LR
   - referential integrity via foreign keys,
   - indexes tuned for location-scoped queries and sync windows.
 - Soft-delete only where sync tombstones are required.
-- User deletion is hard-delete with transactional reassignment of historical `createdBy`/`author`/`uploadedBy` references to a reserved system user to satisfy FK constraints.
+- User deletion is hard-delete with transactional session invalidation (`refreshTokenHash` reset) and reassignment of historical `createdBy`/`assignedTo`/`author`/`uploadedBy` references to a reserved non-admin system user to satisfy FK constraints.
 
 ## 6. Client Architecture
 ### 6.1 Web App

@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { hash } from 'bcryptjs'
+import { randomUUID } from 'node:crypto'
 import { type Prisma } from '@prisma/client'
 import { createUserSchema, updateUserSchema, type RoleKey } from '@jtrack/shared'
 import { PrismaService } from '@/prisma/prisma.service'
 
 const DELETED_USER_SYSTEM_EMAIL = 'system+deleted-user@jtrack.local'
 const DELETED_USER_SYSTEM_NAME = 'System Deleted User'
-const DELETED_USER_SYSTEM_PASSWORD = 'SystemUserDisabled123!'
 
 @Injectable()
 export class UsersService {
@@ -195,11 +195,21 @@ export class UsersService {
         throw new BadRequestException('System deleted-user account cannot be removed')
       }
 
+      await tx.user.update({
+        where: { id: userId },
+        data: { refreshTokenHash: null }
+      })
+
       const replacementUserId = await this.getOrCreateDeletedUserSystemAccount(tx)
 
       await tx.ticket.updateMany({
         where: { createdByUserId: userId },
         data: { createdByUserId: replacementUserId }
+      })
+
+      await tx.ticket.updateMany({
+        where: { assignedToUserId: userId },
+        data: { assignedToUserId: replacementUserId }
       })
 
       await tx.ticketComment.updateMany({
@@ -229,13 +239,13 @@ export class UsersService {
       return existingSystemUser.id
     }
 
-    const passwordHash = await hash(DELETED_USER_SYSTEM_PASSWORD, 12)
+    const passwordHash = await hash(randomUUID(), 12)
     const systemUser = await tx.user.create({
       data: {
         email: DELETED_USER_SYSTEM_EMAIL,
         name: DELETED_USER_SYSTEM_NAME,
         passwordHash,
-        isAdmin: true
+        isAdmin: false
       },
       select: { id: true }
     })

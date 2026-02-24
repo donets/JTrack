@@ -1,10 +1,15 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { hash } from 'bcryptjs'
+import { randomUUID } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { UsersService } from './users.service'
 
 vi.mock('bcryptjs', () => ({
   hash: vi.fn(async () => 'hashed-system-password')
+}))
+
+vi.mock('node:crypto', () => ({
+  randomUUID: vi.fn(() => 'generated-system-password')
 }))
 
 const SYSTEM_EMAIL = 'system+deleted-user@jtrack.local'
@@ -14,6 +19,7 @@ describe('UsersService', () => {
   let tx: {
     user: {
       findUnique: ReturnType<typeof vi.fn>
+      update: ReturnType<typeof vi.fn>
       create: ReturnType<typeof vi.fn>
       delete: ReturnType<typeof vi.fn>
     }
@@ -38,6 +44,7 @@ describe('UsersService', () => {
     tx = {
       user: {
         findUnique: vi.fn(),
+        update: vi.fn(),
         create: vi.fn(),
         delete: vi.fn()
       },
@@ -81,9 +88,17 @@ describe('UsersService', () => {
     const result = await service.remove('user-1')
 
     expect(result).toEqual({ ok: true })
+    expect(tx.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { refreshTokenHash: null }
+    })
     expect(tx.ticket.updateMany).toHaveBeenCalledWith({
       where: { createdByUserId: 'user-1' },
       data: { createdByUserId: 'system-user-id' }
+    })
+    expect(tx.ticket.updateMany).toHaveBeenCalledWith({
+      where: { assignedToUserId: 'user-1' },
+      data: { assignedToUserId: 'system-user-id' }
     })
     expect(tx.ticketComment.updateMany).toHaveBeenCalledWith({
       where: { authorUserId: 'user-1' },
@@ -118,13 +133,14 @@ describe('UsersService', () => {
 
     await service.remove('user-1')
 
-    expect(hash).toHaveBeenCalledWith('SystemUserDisabled123!', 12)
+    expect(randomUUID).toHaveBeenCalledTimes(1)
+    expect(hash).toHaveBeenCalledWith('generated-system-password', 12)
     expect(tx.user.create).toHaveBeenCalledWith({
       data: {
         email: SYSTEM_EMAIL,
         name: 'System Deleted User',
         passwordHash: 'hashed-system-password',
-        isAdmin: true
+        isAdmin: false
       },
       select: { id: true }
     })
@@ -132,12 +148,17 @@ describe('UsersService', () => {
       where: { createdByUserId: 'user-1' },
       data: { createdByUserId: 'created-system-user' }
     })
+    expect(tx.ticket.updateMany).toHaveBeenCalledWith({
+      where: { assignedToUserId: 'user-1' },
+      data: { assignedToUserId: 'created-system-user' }
+    })
   })
 
   it('remove throws not found when target user is missing', async () => {
     tx.user.findUnique.mockResolvedValue(null)
 
     await expect(service.remove('missing-user')).rejects.toBeInstanceOf(NotFoundException)
+    expect(tx.user.update).not.toHaveBeenCalled()
     expect(tx.ticket.updateMany).not.toHaveBeenCalled()
     expect(tx.user.delete).not.toHaveBeenCalled()
   })
@@ -149,6 +170,7 @@ describe('UsersService', () => {
     })
 
     await expect(service.remove('system-user-id')).rejects.toBeInstanceOf(BadRequestException)
+    expect(tx.user.update).not.toHaveBeenCalled()
     expect(tx.ticket.updateMany).not.toHaveBeenCalled()
     expect(tx.user.delete).not.toHaveBeenCalled()
   })

@@ -172,4 +172,4 @@ CREATE INDEX "PaymentRecord_ticketId_idx" ON "PaymentRecord"("ticketId");
 -- Notes:
 -- 1) Soft-delete is used via deletedAt on Ticket/TicketComment/TicketAttachment.
 -- 2) updatedAt is maintained by application layer (Prisma @updatedAt behavior).
--- 3) User deletion flow reassigns historical Ticket/TicketComment/TicketAttachment user FKs to reserved system account before hard-delete.
+-- 3) User deletion flow first clears User.refreshTokenHash, then reassigns historical Ticket/TicketComment/TicketAttachment user FKs (including Ticket.assignedToUserId) to reserved non-admin system account before hard-delete.

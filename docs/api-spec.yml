@@ -301,7 +301,7 @@ paths:
     delete:
       tags: [Users]
       summary: Delete user and memberships
-      description: Reassigns historical ticket/comment/attachment author references to system deleted-user account before removing user.
+      description: Clears target user refresh token hash, then reassigns historical ticket creator/assignee/comment author/attachment uploader references to reserved system deleted-user account before removing user.
       parameters:
         - $ref: '#/components/parameters/XLocationId'
         - $ref: '#/components/parameters/PathId'
