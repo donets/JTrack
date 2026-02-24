@@ -134,3 +134,17 @@ sequenceDiagram
   - Mitigation: mandatory `x-location-id` guard and role checks.
 - Risk: stale refresh tokens.
   - Mitigation: refresh token hashing + rotation on refresh/login.
+
+## 11. Testing Architecture
+- Test runner:
+  - `Vitest` is configured per package (`apps/api`, `apps/web`, `packages/shared`).
+  - Monorepo test entrypoint is `pnpm test` (`turbo run test`).
+- API unit coverage:
+  - `AuthService` token/cookie/auth failure paths.
+  - `SyncService` pull/push conflict handling (server-wins).
+  - RBAC guards (`LocationGuard`, `PrivilegesGuard`).
+- Web unit coverage:
+  - Pinia `auth` store flows (login/refresh/bootstrap/me).
+  - Pinia `sync` store flows (push+pull orchestration, incoming changes application, error handling).
+- Shared package coverage:
+  - Sync schema contracts and RBAC role-privilege matrix invariants.

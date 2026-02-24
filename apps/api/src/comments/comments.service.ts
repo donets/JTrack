@@ -16,7 +16,7 @@ export class CommentsService {
       orderBy: { createdAt: 'asc' }
     })
 
-    return comments.map((comment) => ({
+    return comments.map((comment: (typeof comments)[number]) => ({
       ...comment,
       createdAt: comment.createdAt.toISOString(),
       updatedAt: comment.updatedAt.toISOString(),

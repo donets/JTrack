@@ -1,4 +1,4 @@
-import { PrismaClient, RoleKey, TicketStatus } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { roleKeys, rolePrivileges } from '@jtrack/shared'
 import { hash } from 'bcryptjs'
 
@@ -7,9 +7,9 @@ const prisma = new PrismaClient()
 async function syncRolesAndPrivileges() {
   for (const role of roleKeys) {
     await prisma.role.upsert({
-      where: { key: role as RoleKey },
+      where: { key: role },
       update: { name: role },
-      create: { key: role as RoleKey, name: role }
+      create: { key: role, name: role }
     })
   }
 
@@ -27,11 +27,11 @@ async function syncRolesAndPrivileges() {
   }
 
   for (const role of roleKeys) {
-    await prisma.rolePrivilege.deleteMany({ where: { roleKey: role as RoleKey } })
+    await prisma.rolePrivilege.deleteMany({ where: { roleKey: role } })
 
     await prisma.rolePrivilege.createMany({
       data: rolePrivileges[role].map((privilegeKey) => ({
-        roleKey: role as RoleKey,
+        roleKey: role,
         privilegeKey
       })),
       skipDuplicates: true
@@ -112,7 +112,7 @@ async function seedDemoData() {
     where: { id: '22222222-2222-2222-2222-222222222221' },
     update: {
       title: 'Boiler inspection',
-      status: TicketStatus.Scheduled,
+      status: 'Scheduled',
       assignedToUserId: ownerUser.id,
       locationId: location.id,
       createdByUserId: ownerUser.id
@@ -121,7 +121,7 @@ async function seedDemoData() {
       id: '22222222-2222-2222-2222-222222222221',
       title: 'Boiler inspection',
       description: 'Quarterly maintenance visit',
-      status: TicketStatus.Scheduled,
+      status: 'Scheduled',
       scheduledStartAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
       scheduledEndAt: new Date(Date.now() + 1000 * 60 * 60 * 26),
       priority: 'high',
@@ -135,7 +135,7 @@ async function seedDemoData() {
     where: { id: '22222222-2222-2222-2222-222222222222' },
     update: {
       title: 'AC not cooling',
-      status: TicketStatus.New,
+      status: 'New',
       locationId: location.id,
       createdByUserId: ownerUser.id
     },
@@ -143,7 +143,7 @@ async function seedDemoData() {
       id: '22222222-2222-2222-2222-222222222222',
       title: 'AC not cooling',
       description: 'Customer reports warm air only',
-      status: TicketStatus.New,
+      status: 'New',
       priority: 'medium',
       locationId: location.id,
       createdByUserId: ownerUser.id

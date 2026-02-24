@@ -17,7 +17,7 @@ export class PaymentsService {
       }
     })
 
-    return payments.map((payment) => ({
+    return payments.map((payment: (typeof payments)[number]) => ({
       ...payment,
       createdAt: payment.createdAt.toISOString(),
       updatedAt: payment.updatedAt.toISOString()

@@ -17,10 +17,10 @@ export class RbacService {
       orderBy: { key: 'asc' }
     })
 
-    return roles.map((role) => ({
+    return roles.map((role: (typeof roles)[number]) => ({
       key: role.key,
       name: role.name,
-      privileges: role.rolePrivileges.map((entry) => entry.privilegeKey)
+      privileges: role.rolePrivileges.map((entry: (typeof role.rolePrivileges)[number]) => entry.privilegeKey)
     }))
   }
 
@@ -29,7 +29,7 @@ export class RbacService {
       orderBy: { key: 'asc' }
     })
 
-    return privileges.map((privilege) => ({
+    return privileges.map((privilege: (typeof privileges)[number]) => ({
       key: privilege.key,
       description: privilege.description
     }))

@@ -8,6 +8,7 @@
     "prebuild": "prisma generate",
     "build": "nest build && tsc-alias -p tsconfig.json",
     "start": "node dist/src/main.js",
+    "test": "vitest run --config vitest.config.ts",
     "lint": "eslint src prisma/seed.ts --ext .ts",
     "typecheck": "pnpm --filter @jtrack/shared build && tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",

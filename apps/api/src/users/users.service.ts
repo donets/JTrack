@@ -27,7 +27,7 @@ export class UsersService {
       }
     })
 
-    return memberships.map((membership) => ({
+    return memberships.map((membership: (typeof memberships)[number]) => ({
       ...membership.user,
       role: membership.role,
       membershipStatus: membership.status,

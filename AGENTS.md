@@ -58,6 +58,7 @@ Useful checks:
 ```bash
 pnpm lint
 pnpm typecheck
+pnpm test
 ```
 
 ## 4) Domain and Security Constraints (Must Preserve)
@@ -105,6 +106,7 @@ pnpm typecheck
 ```
 
 For feature changes, also run targeted manual/API checks relevant to the task.
+For test-focused tasks, also run `pnpm test`.
 
 ## 8) Handoff Format
 
@@ -118,6 +120,9 @@ Always include references to updated docs under `/Users/vlad/Projects/JTrack/doc
 
 ## 9) Change Log
 
+- 2026-02-24: CI test workflow trigger scope adjusted: `pnpm test` now runs on all pull requests and on pushes to `main`/`develop`.
+- 2026-02-24: Fixed API typecheck baseline errors: removed direct Prisma enum imports from `prisma/seed.ts`, added explicit service callback/transaction typing across API modules, and aligned docs for type-safety quality gate.
+- 2026-02-24: JTR-7 completed: Vitest infrastructure added for API/Web/Shared, initial critical-path tests added (auth/sync/guards + Pinia auth/sync stores + shared sync/RBAC contracts), docs updated.
 - 2026-02-24: JTR-11 completed: API/Web Dockerfiles migrated to multi-stage builds, `docker/.dockerignore` added, and Render docker command aligned with lean runtime image startup.
 - 2026-02-24: Fixed P0 security follow-up: cookie `secure` flag now supports explicit `COOKIE_SECURE`, logout now recreates clean RxDB instance for same-tab re-login, sync clientId reset behavior tightened; docs and Render env updated.
 - 2026-02-23: Added `.idea` to repository `.gitignore`; documented VCS hygiene in system design docs.
