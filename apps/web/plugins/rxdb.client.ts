@@ -130,6 +130,35 @@ const syncStateSchema = {
   required: ['id', 'lastPulledAt', 'updatedAt']
 }
 
+const pendingAttachmentUploadSchema = {
+  title: 'pendingAttachmentUploads',
+  version: 0,
+  primaryKey: 'id',
+  type: 'object',
+  properties: {
+    id: { type: 'string', maxLength: 64 },
+    attachmentId: { type: 'string' },
+    ticketId: { type: 'string' },
+    locationId: { type: 'string' },
+    fileName: { type: 'string' },
+    mimeType: { type: 'string' },
+    base64: { type: 'string' },
+    width: { type: ['number', 'null'] },
+    height: { type: ['number', 'null'] },
+    createdAt: { type: 'number' }
+  },
+  required: [
+    'id',
+    'attachmentId',
+    'ticketId',
+    'locationId',
+    'fileName',
+    'mimeType',
+    'base64',
+    'createdAt'
+  ]
+}
+
 let rxdbPromise: Promise<RxDatabase> | null = null
 let rxdbInstance: RxDatabase | null = null
 
@@ -146,7 +175,8 @@ async function createDatabase() {
     ticketAttachments: { schema: ticketAttachmentSchema },
     paymentRecords: { schema: paymentRecordSchema },
     outbox: { schema: outboxSchema },
-    syncState: { schema: syncStateSchema }
+    syncState: { schema: syncStateSchema },
+    pendingAttachmentUploads: { schema: pendingAttachmentUploadSchema }
   })
 
   return database

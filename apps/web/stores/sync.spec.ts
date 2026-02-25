@@ -515,6 +515,291 @@ describe('sync store', () => {
     expect(ticketsCollection.findOne).toHaveBeenCalledWith('ticket-remote-delete')
   })
 
+  it('flushPendingAttachmentUploads uploads staged files and enqueues outbox metadata', async () => {
+    const syncStore = useSyncStore()
+    const pendingRemove = vi.fn()
+    const attachmentPatch = vi.fn()
+    const outboxUpsert = vi.fn()
+
+    const db = {
+      collections: {
+        pendingAttachmentUploads: {
+          find: vi.fn(() => ({
+            exec: vi.fn(async () => [
+              {
+                toJSON: () => ({
+                  id: 'pending-1',
+                  attachmentId: 'attachment-1',
+                  ticketId: 'ticket-1',
+                  locationId: 'loc-1',
+                  fileName: 'photo.jpg',
+                  mimeType: 'image/jpeg',
+                  base64: 'Zm9v',
+                  width: null,
+                  height: null,
+                  createdAt: 1
+                }),
+                remove: pendingRemove
+              }
+            ])
+          }))
+        },
+        ticketAttachments: {
+          findOne: vi.fn(() => ({
+            exec: vi.fn(async () => ({
+              toJSON: () => ({
+                id: 'attachment-1',
+                ticketId: 'ticket-1',
+                locationId: 'loc-1',
+                uploadedByUserId: 'user-1',
+                kind: 'Photo',
+                storageKey: 'pending/photo.jpg',
+                url: 'data:image/jpeg;base64,Zm9v',
+                mimeType: 'image/jpeg',
+                size: 3,
+                width: null,
+                height: null,
+                createdAt: '2026-02-25T10:00:00.000Z',
+                updatedAt: '2026-02-25T10:00:00.000Z',
+                deletedAt: null
+              }),
+              incrementalPatch: attachmentPatch
+            }))
+          }))
+        },
+        outbox: {
+          upsert: outboxUpsert
+        }
+      }
+    }
+
+    const api = {
+      post: vi
+        .fn()
+        .mockResolvedValueOnce({
+          storageKey: 'uploads/photo.jpg',
+          uploadUrl: 'https://upload.local/1',
+          headers: {}
+        }),
+      put: vi.fn().mockResolvedValue({
+        url: '/uploads/photo.jpg',
+        size: 123
+      })
+    }
+
+    await syncStore.flushPendingAttachmentUploads(db, api, 'loc-1')
+
+    expect(api.post).toHaveBeenNthCalledWith(1, '/attachments/presign', {
+      fileName: 'photo.jpg',
+      mimeType: 'image/jpeg'
+    })
+    expect(api.put).toHaveBeenCalledWith('https://upload.local/1', { base64: 'Zm9v' })
+    expect(attachmentPatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storageKey: 'uploads/photo.jpg',
+        url: '/uploads/photo.jpg',
+        size: 123
+      })
+    )
+    expect(outboxUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'pending-attachment:pending-1',
+        entity: 'ticketAttachments',
+        operation: 'create',
+        locationId: 'loc-1'
+      })
+    )
+    expect(pendingRemove).toHaveBeenCalledTimes(1)
+  })
+
+  it('flushPendingAttachmentUploads removes dangling pending docs when attachment no longer exists', async () => {
+    const syncStore = useSyncStore()
+    const pendingRemove = vi.fn()
+    const outboxUpsert = vi.fn()
+    const apiPost = vi.fn()
+    const apiPut = vi.fn()
+
+    const db = {
+      collections: {
+        pendingAttachmentUploads: {
+          find: vi.fn(() => ({
+            exec: vi.fn(async () => [
+              {
+                toJSON: () => ({
+                  id: 'pending-missing',
+                  attachmentId: 'attachment-missing',
+                  ticketId: 'ticket-1',
+                  locationId: 'loc-1',
+                  fileName: 'missing.jpg',
+                  mimeType: 'image/jpeg',
+                  base64: 'Zm9v',
+                  width: null,
+                  height: null,
+                  createdAt: 1
+                }),
+                remove: pendingRemove
+              }
+            ])
+          }))
+        },
+        ticketAttachments: {
+          findOne: vi.fn(() => ({
+            exec: vi.fn(async () => null)
+          }))
+        },
+        outbox: {
+          upsert: outboxUpsert
+        }
+      }
+    }
+
+    await syncStore.flushPendingAttachmentUploads(
+      db,
+      {
+        post: apiPost,
+        put: apiPut
+      },
+      'loc-1'
+    )
+
+    expect(pendingRemove).toHaveBeenCalledTimes(1)
+    expect(apiPost).not.toHaveBeenCalled()
+    expect(apiPut).not.toHaveBeenCalled()
+    expect(outboxUpsert).not.toHaveBeenCalled()
+  })
+
+  it('flushPendingAttachmentUploads continues with next file when one upload fails', async () => {
+    const syncStore = useSyncStore()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const firstPendingRemove = vi.fn()
+    const secondPendingRemove = vi.fn()
+    const firstAttachmentPatch = vi.fn()
+    const secondAttachmentPatch = vi.fn()
+    const outboxUpsert = vi.fn()
+
+    const db = {
+      collections: {
+        pendingAttachmentUploads: {
+          find: vi.fn(() => ({
+            exec: vi.fn(async () => [
+              {
+                toJSON: () => ({
+                  id: 'pending-1',
+                  attachmentId: 'attachment-1',
+                  ticketId: 'ticket-1',
+                  locationId: 'loc-1',
+                  fileName: 'first.jpg',
+                  mimeType: 'image/jpeg',
+                  base64: 'Zmlyc3Q=',
+                  width: null,
+                  height: null,
+                  createdAt: 1
+                }),
+                remove: firstPendingRemove
+              },
+              {
+                toJSON: () => ({
+                  id: 'pending-2',
+                  attachmentId: 'attachment-2',
+                  ticketId: 'ticket-2',
+                  locationId: 'loc-1',
+                  fileName: 'second.jpg',
+                  mimeType: 'image/jpeg',
+                  base64: 'c2Vjb25k',
+                  width: null,
+                  height: null,
+                  createdAt: 2
+                }),
+                remove: secondPendingRemove
+              }
+            ])
+          }))
+        },
+        ticketAttachments: {
+          findOne: vi.fn((id: string) => ({
+            exec: vi.fn(async () => {
+              if (id === 'attachment-1') {
+                return {
+                  toJSON: () => ({
+                    id: 'attachment-1',
+                    ticketId: 'ticket-1',
+                    locationId: 'loc-1',
+                    uploadedByUserId: 'user-1',
+                    kind: 'Photo',
+                    storageKey: 'pending/first.jpg',
+                    url: '',
+                    mimeType: 'image/jpeg',
+                    size: 3,
+                    width: null,
+                    height: null,
+                    createdAt: '2026-02-25T10:00:00.000Z',
+                    updatedAt: '2026-02-25T10:00:00.000Z',
+                    deletedAt: null
+                  }),
+                  incrementalPatch: firstAttachmentPatch
+                }
+              }
+
+              return {
+                toJSON: () => ({
+                  id: 'attachment-2',
+                  ticketId: 'ticket-2',
+                  locationId: 'loc-1',
+                  uploadedByUserId: 'user-1',
+                  kind: 'Photo',
+                  storageKey: 'pending/second.jpg',
+                  url: '',
+                  mimeType: 'image/jpeg',
+                  size: 3,
+                  width: null,
+                  height: null,
+                  createdAt: '2026-02-25T10:00:00.000Z',
+                  updatedAt: '2026-02-25T10:00:00.000Z',
+                  deletedAt: null
+                }),
+                incrementalPatch: secondAttachmentPatch
+              }
+            })
+          }))
+        },
+        outbox: {
+          upsert: outboxUpsert
+        }
+      }
+    }
+
+    const api = {
+      post: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('failed to fetch'))
+        .mockResolvedValueOnce({
+          storageKey: 'uploads/second.jpg',
+          uploadUrl: 'https://upload.local/2',
+          headers: {}
+        }),
+      put: vi.fn().mockResolvedValue({
+        url: '/uploads/second.jpg',
+        size: 222
+      })
+    }
+
+    await syncStore.flushPendingAttachmentUploads(db, api, 'loc-1')
+
+    expect(api.post).toHaveBeenCalledTimes(2)
+    expect(firstPendingRemove).not.toHaveBeenCalled()
+    expect(secondPendingRemove).toHaveBeenCalledTimes(1)
+    expect(firstAttachmentPatch).not.toHaveBeenCalled()
+    expect(secondAttachmentPatch).toHaveBeenCalledTimes(1)
+    expect(outboxUpsert).toHaveBeenCalledTimes(1)
+    expect(outboxUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'pending-attachment:pending-2',
+        entity: 'ticketAttachments'
+      })
+    )
+    warnSpy.mockRestore()
+  })
+
   it('applyEntityChanges soft-deletes docs with deletedAt and hard-removes others', async () => {
     const syncStore = useSyncStore()
     const softDeleteDoc = {

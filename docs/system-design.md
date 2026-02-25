@@ -69,6 +69,10 @@
 ### 6.3 Client Storage Implementation Note
 - RxDB v16 document updates must use `incrementalPatch`/`incrementalModify`.
 - `atomicPatch` is not supported in this version and causes runtime method errors.
+- Offline attachment files are staged in local `pendingAttachmentUploads` collection and uploaded during the next online sync cycle before outbox push.
+  - Staged file payload is stored once (in `pendingAttachmentUploads`), while `ticketAttachments` keeps a lightweight pending placeholder.
+  - Offline staging is bounded by max file size (25MB) to reduce IndexedDB quota pressure.
+  - Pending uploads are flushed with per-item retry semantics: one failed file does not block subsequent files in the same sync run.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 
 ## 7. Consistency and Conflict Rules
