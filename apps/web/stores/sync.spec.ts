@@ -321,7 +321,7 @@ describe('sync store', () => {
     })
   })
 
-  it('syncNow filters echoed records from pull response after successful push', async () => {
+  it('syncNow filters echoed upserts when updatedAt equals push timestamp', async () => {
     const authStore = useAuthStore()
     const locationStore = useLocationStore()
     const syncStore = useSyncStore()
@@ -438,6 +438,81 @@ describe('sync store', () => {
     expect(ticketsCollection.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'ticket-remote' })
     )
+  })
+
+  it('syncNow suppresses echoed deletes from pull response after push', async () => {
+    const authStore = useAuthStore()
+    const locationStore = useLocationStore()
+    const syncStore = useSyncStore()
+    authStore.accessToken = 'access-1'
+    locationStore.activeLocationId = 'loc-1'
+
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        newTimestamp: 1_700_000_001_000
+      })
+      .mockResolvedValueOnce({
+        changes: {
+          ...createEmptyChanges(),
+          tickets: {
+            created: [],
+            updated: [],
+            deleted: ['ticket-echo-delete', 'ticket-remote-delete']
+          }
+        },
+        timestamp: 1_700_000_002_000,
+        hasMore: false,
+        nextCursor: null
+      })
+    vi.stubGlobal('useApiClient', () => ({ post }))
+
+    const syncStateDoc = {
+      toJSON: () => ({
+        lastPulledAt: 1_700_000_000_000
+      }),
+      incrementalPatch: vi.fn()
+    }
+
+    const removeOutbox = vi.fn()
+    const ticketsCollection = createCollectionMock()
+
+    vi.stubGlobal('useRxdb', () => ({
+      collections: {
+        syncState: {
+          findOne: vi.fn(() => ({
+            exec: vi.fn(async () => syncStateDoc)
+          })),
+          insert: vi.fn()
+        },
+        outbox: {
+          find: vi.fn(() => ({
+            exec: vi.fn(async () => [
+              {
+                toJSON: () => ({
+                  entity: 'tickets',
+                  operation: 'delete',
+                  payload: { id: 'ticket-echo-delete' },
+                  createdAt: 1
+                }),
+                remove: removeOutbox
+              }
+            ])
+          }))
+        },
+        tickets: ticketsCollection,
+        ticketComments: createCollectionMock(),
+        ticketAttachments: createCollectionMock(),
+        paymentRecords: createCollectionMock()
+      }
+    }))
+
+    await syncStore.syncNow()
+
+    expect(removeOutbox).toHaveBeenCalledTimes(1)
+    expect(ticketsCollection.findOne).toHaveBeenCalledTimes(1)
+    expect(ticketsCollection.findOne).toHaveBeenCalledWith('ticket-remote-delete')
   })
 
   it('applyEntityChanges soft-deletes docs with deletedAt and hard-removes others', async () => {

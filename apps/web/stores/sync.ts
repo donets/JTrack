@@ -36,8 +36,6 @@ type EchoSuppressionState = Record<
   }
 >
 
-type SyncEntityRecord = { id: string; updatedAt: string }
-
 function createEmptyChanges(): SyncChanges {
   return {
     tickets: { created: [], updated: [], deleted: [] },
@@ -48,12 +46,16 @@ function createEmptyChanges(): SyncChanges {
 }
 
 function createEchoSuppressionState(): EchoSuppressionState {
-  return {
-    tickets: { upsertIds: new Set(), deletedIds: new Set() },
-    ticketComments: { upsertIds: new Set(), deletedIds: new Set() },
-    ticketAttachments: { upsertIds: new Set(), deletedIds: new Set() },
-    paymentRecords: { upsertIds: new Set(), deletedIds: new Set() }
+  const state = {} as EchoSuppressionState
+
+  for (const entity of entityCollections) {
+    state[entity] = {
+      upsertIds: new Set<string>(),
+      deletedIds: new Set<string>()
+    }
   }
+
+  return state
 }
 
 function buildEchoSuppressionState(changes: SyncChanges): EchoSuppressionState {
@@ -74,8 +76,8 @@ function buildEchoSuppressionState(changes: SyncChanges): EchoSuppressionState {
   return state
 }
 
-function filterEchoedUpserts<TRecord extends SyncEntityRecord>(
-  records: TRecord[],
+function filterEchoedUpserts<TRecords extends Array<{ id: string; updatedAt: string }>>(
+  records: TRecords,
   pushedIds: Set<string>,
   pushTimestamp: number
 ) {
@@ -89,8 +91,30 @@ function filterEchoedUpserts<TRecord extends SyncEntityRecord>(
       return true
     }
 
+    // Equal timestamp is treated as same-cycle echo from the just-completed push.
     return updatedAt > pushTimestamp
-  })
+  }) as TRecords
+}
+
+function filterEchoedEntityChanges<TKey extends EntityCollection>(
+  changes: SyncChanges[TKey],
+  echoedState: EchoSuppressionState[TKey],
+  pushTimestamp: number
+): SyncChanges[TKey] {
+  return {
+    created: filterEchoedUpserts(changes.created, echoedState.upsertIds, pushTimestamp),
+    updated: filterEchoedUpserts(changes.updated, echoedState.upsertIds, pushTimestamp),
+    // Deleted payloads contain IDs only, so suppression is ID-based.
+    deleted: changes.deleted.filter((deletedId: string) => !echoedState.deletedIds.has(deletedId))
+  } as SyncChanges[TKey]
+}
+
+function setEntityChanges<TKey extends EntityCollection>(
+  changes: SyncChanges,
+  entity: TKey,
+  value: SyncChanges[TKey]
+) {
+  changes[entity] = value
 }
 
 function filterEchoedPullChanges(
@@ -98,58 +122,18 @@ function filterEchoedPullChanges(
   echoedState: EchoSuppressionState,
   pushTimestamp: number
 ): SyncChanges {
-  return {
-    tickets: {
-      created: filterEchoedUpserts(changes.tickets.created, echoedState.tickets.upsertIds, pushTimestamp),
-      updated: filterEchoedUpserts(changes.tickets.updated, echoedState.tickets.upsertIds, pushTimestamp),
-      deleted: changes.tickets.deleted.filter((deletedId: string) => !echoedState.tickets.deletedIds.has(deletedId))
-    },
-    ticketComments: {
-      created: filterEchoedUpserts(
-        changes.ticketComments.created,
-        echoedState.ticketComments.upsertIds,
-        pushTimestamp
-      ),
-      updated: filterEchoedUpserts(
-        changes.ticketComments.updated,
-        echoedState.ticketComments.upsertIds,
-        pushTimestamp
-      ),
-      deleted: changes.ticketComments.deleted.filter(
-        (deletedId: string) => !echoedState.ticketComments.deletedIds.has(deletedId)
-      )
-    },
-    ticketAttachments: {
-      created: filterEchoedUpserts(
-        changes.ticketAttachments.created,
-        echoedState.ticketAttachments.upsertIds,
-        pushTimestamp
-      ),
-      updated: filterEchoedUpserts(
-        changes.ticketAttachments.updated,
-        echoedState.ticketAttachments.upsertIds,
-        pushTimestamp
-      ),
-      deleted: changes.ticketAttachments.deleted.filter(
-        (deletedId: string) => !echoedState.ticketAttachments.deletedIds.has(deletedId)
-      )
-    },
-    paymentRecords: {
-      created: filterEchoedUpserts(
-        changes.paymentRecords.created,
-        echoedState.paymentRecords.upsertIds,
-        pushTimestamp
-      ),
-      updated: filterEchoedUpserts(
-        changes.paymentRecords.updated,
-        echoedState.paymentRecords.upsertIds,
-        pushTimestamp
-      ),
-      deleted: changes.paymentRecords.deleted.filter(
-        (deletedId: string) => !echoedState.paymentRecords.deletedIds.has(deletedId)
-      )
-    }
+  const filtered = createEmptyChanges()
+
+  for (const entity of entityCollections) {
+    const filteredEntityChanges = filterEchoedEntityChanges(
+      changes[entity],
+      echoedState[entity],
+      pushTimestamp
+    )
+    setEntityChanges(filtered, entity, filteredEntityChanges)
   }
+
+  return filtered
 }
 
 function generateClientId() {
@@ -217,6 +201,7 @@ export const useSyncStore = defineStore('sync', {
         const syncStateDoc = await db.collections.syncState.findOne(syncStateId).exec()
         const lastPulledAt = syncStateDoc?.toJSON().lastPulledAt ?? null
         let pushTimestamp: number | null = null
+        let echoedState: EchoSuppressionState | null = null
 
         const outboxDocs = await db.collections.outbox
           .find({
@@ -253,9 +238,9 @@ export const useSyncStore = defineStore('sync', {
           outgoingChanges[outbox.entity].updated.push(outbox.payload as never)
         }
 
-        const echoedState = buildEchoSuppressionState(outgoingChanges)
-
         if (outboxDocs.length > 0) {
+          echoedState = buildEchoSuppressionState(outgoingChanges)
+
           const pushResponseRaw = await api.post('/sync/push', {
             locationId,
             lastPulledAt,
@@ -285,7 +270,7 @@ export const useSyncStore = defineStore('sync', {
 
           const pullResponse = syncPullResponseSchema.parse(pullResponseRaw)
           const pullChanges =
-            pushTimestamp === null
+            pushTimestamp === null || echoedState === null
               ? pullResponse.changes
               : filterEchoedPullChanges(pullResponse.changes, echoedState, pushTimestamp)
 
