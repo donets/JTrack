@@ -103,15 +103,15 @@ const bindStreams = () => {
   }
 
   ticketSub = db.collections.tickets
-    .find({
+    .findOne({
       selector: {
         id: ticketId,
         locationId: locationStore.activeLocationId
       }
     })
     .$
-    .subscribe((docs: any[]) => {
-      ticket.value = docs[0]?.toJSON() ?? null
+    .subscribe((doc: any | null) => {
+      ticket.value = doc?.toJSON() ?? null
     })
 
   commentsSub = db.collections.ticketComments

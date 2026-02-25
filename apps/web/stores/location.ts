@@ -17,8 +17,6 @@ interface LocationState {
   loaded: boolean
 }
 
-const hasClientStorage = () => typeof window !== 'undefined' && typeof localStorage !== 'undefined'
-
 export const useLocationStore = defineStore('location', {
   state: (): LocationState => ({
     memberships: [],
@@ -31,7 +29,7 @@ export const useLocationStore = defineStore('location', {
   },
   actions: {
     restoreActiveLocation() {
-      if (!hasClientStorage()) {
+      if (!import.meta.client && typeof localStorage === 'undefined') {
         return
       }
 
@@ -43,7 +41,7 @@ export const useLocationStore = defineStore('location', {
       const previousLocationId = this.activeLocationId
       this.activeLocationId = locationId
 
-      if (hasClientStorage()) {
+      if (import.meta.client || typeof localStorage !== 'undefined') {
         if (locationId) {
           localStorage.setItem('jtrack.activeLocationId', locationId)
         } else {
@@ -52,7 +50,9 @@ export const useLocationStore = defineStore('location', {
       }
 
       if (previousLocationId !== locationId) {
-        void this.cleanupLocationScopedData(locationId)
+        void this.cleanupLocationScopedData(locationId).catch((error) => {
+          console.warn('[location] failed to cleanup location-scoped data', error)
+        })
       }
     },
 
@@ -80,7 +80,7 @@ export const useLocationStore = defineStore('location', {
     },
 
     async cleanupLocationScopedData(locationId: string | null) {
-      if (typeof window === 'undefined') {
+      if (!import.meta.client && typeof window === 'undefined') {
         return
       }
 
@@ -95,9 +95,27 @@ export const useLocationStore = defineStore('location', {
         const query = selector ? collection.find({ selector }) : collection.find()
         const docs = await query.exec()
 
-        for (const doc of docs) {
-          await doc.remove()
+        if (docs.length === 0) {
+          return
         }
+
+        const ids = docs
+          .map((doc: any) => {
+            if (typeof doc.primary === 'string') {
+              return doc.primary
+            }
+
+            const json = typeof doc.toJSON === 'function' ? doc.toJSON() : null
+            return typeof json?.id === 'string' ? json.id : null
+          })
+          .filter((id: string | null): id is string => id !== null)
+
+        if (ids.length > 0 && typeof collection.bulkRemove === 'function') {
+          await collection.bulkRemove(ids)
+          return
+        }
+
+        await Promise.all(docs.map((doc: any) => doc.remove()))
       }
 
       const locationScopedCollections = [
