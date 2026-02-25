@@ -17,6 +17,8 @@ interface LocationState {
   loaded: boolean
 }
 
+const canUseClientStorage = import.meta.client || import.meta.env.MODE === 'test'
+
 export const useLocationStore = defineStore('location', {
   state: (): LocationState => ({
     memberships: [],
@@ -29,7 +31,7 @@ export const useLocationStore = defineStore('location', {
   },
   actions: {
     restoreActiveLocation() {
-      if (!import.meta.client) {
+      if (!canUseClientStorage) {
         return
       }
 
@@ -38,14 +40,21 @@ export const useLocationStore = defineStore('location', {
     },
 
     setActiveLocation(locationId: string | null) {
+      const previousLocationId = this.activeLocationId
       this.activeLocationId = locationId
 
-      if (import.meta.client) {
+      if (canUseClientStorage) {
         if (locationId) {
           localStorage.setItem('jtrack.activeLocationId', locationId)
         } else {
           localStorage.removeItem('jtrack.activeLocationId')
         }
+      }
+
+      if (previousLocationId !== locationId) {
+        void this.cleanupLocationScopedData(locationId).catch((error) => {
+          console.warn('[location] failed to cleanup location-scoped data', error)
+        })
       }
     },
 
@@ -70,6 +79,66 @@ export const useLocationStore = defineStore('location', {
       this.memberships = []
       this.loaded = false
       this.setActiveLocation(null)
+    },
+
+    async cleanupLocationScopedData(locationId: string | null) {
+      if (!canUseClientStorage) {
+        return
+      }
+
+      let db: any
+      try {
+        db = useRxdb()
+      } catch {
+        return
+      }
+
+      const removeBySelector = async (collection: any, selector?: Record<string, unknown>) => {
+        const query = selector ? collection.find({ selector }) : collection.find()
+        const docs = await query.exec()
+
+        if (docs.length === 0) {
+          return
+        }
+
+        const ids = docs
+          .map((doc: any) => {
+            if (typeof doc.primary === 'string') {
+              return doc.primary
+            }
+
+            const json = typeof doc.toJSON === 'function' ? doc.toJSON() : null
+            return typeof json?.id === 'string' ? json.id : null
+          })
+          .filter((id: string | null): id is string => id !== null)
+
+        if (ids.length > 0 && typeof collection.bulkRemove === 'function') {
+          await collection.bulkRemove(ids)
+          return
+        }
+
+        await Promise.all(docs.map((doc: any) => doc.remove()))
+      }
+
+      const locationScopedCollections = [
+        db.collections.tickets,
+        db.collections.ticketComments,
+        db.collections.ticketAttachments,
+        db.collections.paymentRecords,
+        db.collections.outbox,
+        db.collections.pendingAttachmentUploads
+      ].filter(Boolean)
+
+      await Promise.all(
+        locationScopedCollections.map((collection: any) =>
+          removeBySelector(collection, locationId ? { locationId: { $ne: locationId } } : undefined)
+        )
+      )
+
+      await removeBySelector(
+        db.collections.syncState,
+        locationId ? { id: { $ne: `sync:${locationId}` } } : undefined
+      )
     }
   }
 })
