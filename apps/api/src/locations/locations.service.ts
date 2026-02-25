@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { type Prisma } from '@prisma/client'
 import type { CreateLocationInput, UpdateLocationInput } from '@jtrack/shared'
+import { serializeDates } from '@/common/date-serializer'
 import type { JwtUser } from '@/common/types'
 import { PrismaService } from '@/prisma/prisma.service'
 
@@ -14,16 +15,18 @@ export class LocationsService {
         orderBy: { createdAt: 'desc' }
       })
 
-      return locations.map((location: (typeof locations)[number]) => ({
-        id: location.id,
-        name: location.name,
-        timezone: location.timezone,
-        address: location.address,
-        role: 'Owner',
-        membershipStatus: 'active',
-        createdAt: location.createdAt.toISOString(),
-        updatedAt: location.updatedAt.toISOString()
-      }))
+      return locations.map((location: (typeof locations)[number]) =>
+        serializeDates({
+          id: location.id,
+          name: location.name,
+          timezone: location.timezone,
+          address: location.address,
+          role: 'Owner',
+          membershipStatus: 'active',
+          createdAt: location.createdAt,
+          updatedAt: location.updatedAt
+        })
+      )
     }
 
     const memberships = await this.prisma.userLocation.findMany({
@@ -36,16 +39,18 @@ export class LocationsService {
       }
     })
 
-    return memberships.map((membership: (typeof memberships)[number]) => ({
-      id: membership.location.id,
-      name: membership.location.name,
-      timezone: membership.location.timezone,
-      address: membership.location.address,
-      role: membership.role,
-      membershipStatus: membership.status,
-      createdAt: membership.location.createdAt.toISOString(),
-      updatedAt: membership.location.updatedAt.toISOString()
-    }))
+    return memberships.map((membership: (typeof memberships)[number]) =>
+      serializeDates({
+        id: membership.location.id,
+        name: membership.location.name,
+        timezone: membership.location.timezone,
+        address: membership.location.address,
+        role: membership.role,
+        membershipStatus: membership.status,
+        createdAt: membership.location.createdAt,
+        updatedAt: membership.location.updatedAt
+      })
+    )
   }
 
   async create(user: JwtUser, input: CreateLocationInput) {
@@ -77,14 +82,14 @@ export class LocationsService {
         }
       })
 
-      return {
+      return serializeDates({
         id: location.id,
         name: location.name,
         timezone: location.timezone,
         address: location.address,
-        createdAt: location.createdAt.toISOString(),
-        updatedAt: location.updatedAt.toISOString()
-      }
+        createdAt: location.createdAt,
+        updatedAt: location.updatedAt
+      })
     })
   }
 
@@ -109,14 +114,14 @@ export class LocationsService {
       data: input
     })
 
-    return {
+    return serializeDates({
       id: location.id,
       name: location.name,
       timezone: location.timezone,
       address: location.address,
-      createdAt: location.createdAt.toISOString(),
-      updatedAt: location.updatedAt.toISOString()
-    }
+      createdAt: location.createdAt,
+      updatedAt: location.updatedAt
+    })
   }
 
   async remove(user: JwtUser, locationId: string) {

@@ -6,6 +6,7 @@ import {
   type TicketStatus,
   type UpdateTicketInput
 } from '@jtrack/shared'
+import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
@@ -69,23 +70,13 @@ export class TicketsService {
 
     return {
       ...this.serialize(ticket),
-      comments: ticket.comments.map((comment: (typeof ticket.comments)[number]) => ({
-        ...comment,
-        createdAt: comment.createdAt.toISOString(),
-        updatedAt: comment.updatedAt.toISOString(),
-        deletedAt: comment.deletedAt?.toISOString() ?? null
-      })),
-      attachments: ticket.attachments.map((attachment: (typeof ticket.attachments)[number]) => ({
-        ...attachment,
-        createdAt: attachment.createdAt.toISOString(),
-        updatedAt: attachment.updatedAt.toISOString(),
-        deletedAt: attachment.deletedAt?.toISOString() ?? null
-      })),
-      paymentRecords: ticket.paymentRecords.map((payment: (typeof ticket.paymentRecords)[number]) => ({
-        ...payment,
-        createdAt: payment.createdAt.toISOString(),
-        updatedAt: payment.updatedAt.toISOString()
-      }))
+      comments: ticket.comments.map((comment: (typeof ticket.comments)[number]) => serializeDates(comment)),
+      attachments: ticket.attachments.map((attachment: (typeof ticket.attachments)[number]) =>
+        serializeDates(attachment)
+      ),
+      paymentRecords: ticket.paymentRecords.map((payment: (typeof ticket.paymentRecords)[number]) =>
+        serializeDates(payment)
+      )
     }
   }
 
@@ -190,13 +181,6 @@ export class TicketsService {
     updatedAt: Date
     deletedAt: Date | null
   }) {
-    return {
-      ...ticket,
-      scheduledStartAt: ticket.scheduledStartAt?.toISOString() ?? null,
-      scheduledEndAt: ticket.scheduledEndAt?.toISOString() ?? null,
-      createdAt: ticket.createdAt.toISOString(),
-      updatedAt: ticket.updatedAt.toISOString(),
-      deletedAt: ticket.deletedAt?.toISOString() ?? null
-    }
+    return serializeDates(ticket)
   }
 }

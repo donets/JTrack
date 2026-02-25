@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import type { CreatePaymentRecordInput, PaymentStatus } from '@jtrack/shared'
+import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
@@ -17,11 +18,7 @@ export class PaymentsService {
       }
     })
 
-    return payments.map((payment: (typeof payments)[number]) => ({
-      ...payment,
-      createdAt: payment.createdAt.toISOString(),
-      updatedAt: payment.updatedAt.toISOString()
-    }))
+    return payments.map((payment: (typeof payments)[number]) => serializeDates(payment))
   }
 
   async create(locationId: string, input: CreatePaymentRecordInput) {
@@ -49,11 +46,7 @@ export class PaymentsService {
       }
     })
 
-    return {
-      ...payment,
-      createdAt: payment.createdAt.toISOString(),
-      updatedAt: payment.updatedAt.toISOString()
-    }
+    return serializeDates(payment)
   }
 
   async updateStatus(locationId: string, paymentId: string, status: PaymentStatus) {
@@ -79,10 +72,6 @@ export class PaymentsService {
       throw new NotFoundException('Payment record not found')
     }
 
-    return {
-      ...updated,
-      createdAt: updated.createdAt.toISOString(),
-      updatedAt: updated.updatedAt.toISOString()
-    }
+    return serializeDates(updated)
   }
 }

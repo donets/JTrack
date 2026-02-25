@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import type { CreateCommentInput } from '@jtrack/shared'
+import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
@@ -16,12 +17,7 @@ export class CommentsService {
       orderBy: { createdAt: 'asc' }
     })
 
-    return comments.map((comment: (typeof comments)[number]) => ({
-      ...comment,
-      createdAt: comment.createdAt.toISOString(),
-      updatedAt: comment.updatedAt.toISOString(),
-      deletedAt: comment.deletedAt?.toISOString() ?? null
-    }))
+    return comments.map((comment: (typeof comments)[number]) => serializeDates(comment))
   }
 
   async create(locationId: string, authorUserId: string, input: CreateCommentInput) {
@@ -47,12 +43,7 @@ export class CommentsService {
       }
     })
 
-    return {
-      ...comment,
-      createdAt: comment.createdAt.toISOString(),
-      updatedAt: comment.updatedAt.toISOString(),
-      deletedAt: comment.deletedAt?.toISOString() ?? null
-    }
+    return serializeDates(comment)
   }
 
   async remove(locationId: string, commentId: string) {

@@ -10,6 +10,7 @@ import {
   type RoleKey,
   type UpdateUserInput
 } from '@jtrack/shared'
+import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
 
 const DELETED_USER_SYSTEM_EMAIL = 'system+deleted-user@jtrack.local'
@@ -44,13 +45,13 @@ export class UsersService {
       }
     })
 
-    return memberships.map((membership: (typeof memberships)[number]) => ({
-      ...membership.user,
-      role: membership.role,
-      membershipStatus: membership.status,
-      createdAt: membership.user.createdAt.toISOString(),
-      updatedAt: membership.user.updatedAt.toISOString()
-    }))
+    return memberships.map((membership: (typeof memberships)[number]) =>
+      serializeDates({
+        ...membership.user,
+        role: membership.role,
+        membershipStatus: membership.status
+      })
+    )
   }
 
   async create(input: CreateUserInput, locationId?: string) {
@@ -92,14 +93,14 @@ export class UsersService {
       })
     }
 
-    return {
+    return serializeDates({
       id: user.id,
       email: user.email,
       name: user.name,
       isAdmin: user.isAdmin,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString()
-    }
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    })
   }
 
   async invite(input: CreateUserInput, locationId: string): Promise<InviteResponse> {
@@ -177,11 +178,7 @@ export class UsersService {
       }
     })
 
-    return {
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString()
-    }
+    return serializeDates(user)
   }
 
   async getById(userId: string) {
@@ -201,11 +198,7 @@ export class UsersService {
       return null
     }
 
-    return {
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString()
-    }
+    return serializeDates(user)
   }
 
   async remove(userId: string) {

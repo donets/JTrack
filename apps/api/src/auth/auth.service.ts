@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import { compare, hash } from 'bcryptjs'
 import { type Prisma } from '@prisma/client'
 import { PrismaService } from '@/prisma/prisma.service'
+import { serializeDates } from '@/common/date-serializer'
 import type { InviteCompleteInput, LoginInput } from '@jtrack/shared'
 
 const INVITE_TOKEN_TYPE = 'invite'
@@ -230,13 +231,13 @@ export class AuthService {
     createdAt: Date
     updatedAt: Date
   }) {
-    return {
+    return serializeDates({
       id: user.id,
       email: user.email,
       name: user.name,
       isAdmin: user.isAdmin,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString()
-    }
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    })
   }
 }
