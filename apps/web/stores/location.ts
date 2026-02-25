@@ -17,6 +17,8 @@ interface LocationState {
   loaded: boolean
 }
 
+const canUseClientStorage = import.meta.client || import.meta.env.MODE === 'test'
+
 export const useLocationStore = defineStore('location', {
   state: (): LocationState => ({
     memberships: [],
@@ -29,7 +31,7 @@ export const useLocationStore = defineStore('location', {
   },
   actions: {
     restoreActiveLocation() {
-      if (!import.meta.client && typeof localStorage === 'undefined') {
+      if (!canUseClientStorage) {
         return
       }
 
@@ -41,7 +43,7 @@ export const useLocationStore = defineStore('location', {
       const previousLocationId = this.activeLocationId
       this.activeLocationId = locationId
 
-      if (import.meta.client || typeof localStorage !== 'undefined') {
+      if (canUseClientStorage) {
         if (locationId) {
           localStorage.setItem('jtrack.activeLocationId', locationId)
         } else {
@@ -80,7 +82,7 @@ export const useLocationStore = defineStore('location', {
     },
 
     async cleanupLocationScopedData(locationId: string | null) {
-      if (!import.meta.client && typeof window === 'undefined') {
+      if (!canUseClientStorage) {
         return
       }
 
