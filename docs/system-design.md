@@ -59,6 +59,9 @@
 - Input: `{ locationId, lastPulledAt, changes, clientId }`.
 - Server applies each entity batch inside one DB transaction.
 - Existing rows for each entity batch are preloaded with `findMany(id in [...])` to avoid N+1 per-record lookups.
+- Client keeps pull baseline at prior `lastPulledAt` to avoid skipping concurrent remote writes and suppresses push-echo payloads locally by comparing pushed IDs with pulled records updated at or before push `newTimestamp`.
+  - `updatedAt === newTimestamp` is treated as same-cycle echo and filtered out.
+  - Delete echo suppression is ID-based (pull deleted payload contains IDs only, without per-record timestamps).
 - Conflict policy: server-wins (last-write-wins by server timeline).
   - If existing row was updated after client `lastPulledAt`, incoming mutation is skipped.
 - On success returns `{ ok: true, newTimestamp }`.

@@ -321,6 +321,200 @@ describe('sync store', () => {
     })
   })
 
+  it('syncNow filters echoed upserts when updatedAt equals push timestamp', async () => {
+    const authStore = useAuthStore()
+    const locationStore = useLocationStore()
+    const syncStore = useSyncStore()
+    authStore.accessToken = 'access-1'
+    locationStore.activeLocationId = 'loc-1'
+
+    const pushTimestamp = 1_700_000_001_000
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        newTimestamp: pushTimestamp
+      })
+      .mockResolvedValueOnce({
+        changes: {
+          ...createEmptyChanges(),
+          tickets: {
+            created: [
+              {
+                id: 'ticket-echo',
+                locationId: 'loc-1',
+                createdByUserId: 'user-1',
+                assignedToUserId: null,
+                title: 'Echo',
+                description: null,
+                status: 'New',
+                scheduledStartAt: null,
+                scheduledEndAt: null,
+                priority: null,
+                totalAmountCents: null,
+                currency: 'EUR',
+                createdAt: '2026-02-24T12:00:00.000Z',
+                updatedAt: '2023-11-14T22:13:21.000Z',
+                deletedAt: null
+              },
+              {
+                id: 'ticket-remote',
+                locationId: 'loc-1',
+                createdByUserId: 'user-2',
+                assignedToUserId: null,
+                title: 'Remote',
+                description: null,
+                status: 'New',
+                scheduledStartAt: null,
+                scheduledEndAt: null,
+                priority: null,
+                totalAmountCents: null,
+                currency: 'EUR',
+                createdAt: '2026-02-24T12:01:00.000Z',
+                updatedAt: '2026-02-24T12:01:00.000Z',
+                deletedAt: null
+              }
+            ],
+            updated: [],
+            deleted: []
+          }
+        },
+        timestamp: 1_700_000_002_000,
+        hasMore: false,
+        nextCursor: null
+      })
+    vi.stubGlobal('useApiClient', () => ({ post }))
+
+    const syncStateDoc = {
+      toJSON: () => ({
+        lastPulledAt: 1_700_000_000_000
+      }),
+      incrementalPatch: vi.fn()
+    }
+
+    const removeOutbox = vi.fn()
+    const ticketsCollection = createCollectionMock()
+
+    vi.stubGlobal('useRxdb', () => ({
+      collections: {
+        syncState: {
+          findOne: vi.fn(() => ({
+            exec: vi.fn(async () => syncStateDoc)
+          })),
+          insert: vi.fn()
+        },
+        outbox: {
+          find: vi.fn(() => ({
+            exec: vi.fn(async () => [
+              {
+                toJSON: () => ({
+                  entity: 'tickets',
+                  operation: 'create',
+                  payload: { id: 'ticket-echo' },
+                  createdAt: 1
+                }),
+                remove: removeOutbox
+              }
+            ])
+          }))
+        },
+        tickets: ticketsCollection,
+        ticketComments: createCollectionMock(),
+        ticketAttachments: createCollectionMock(),
+        paymentRecords: createCollectionMock()
+      }
+    }))
+
+    await syncStore.syncNow()
+
+    expect(post).toHaveBeenNthCalledWith(2, '/sync/pull', {
+      locationId: 'loc-1',
+      lastPulledAt: 1_700_000_000_000,
+      limit: 100,
+      cursor: null
+    })
+    expect(removeOutbox).toHaveBeenCalledTimes(1)
+    expect(ticketsCollection.upsert).toHaveBeenCalledTimes(1)
+    expect(ticketsCollection.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'ticket-remote' })
+    )
+  })
+
+  it('syncNow suppresses echoed deletes from pull response after push', async () => {
+    const authStore = useAuthStore()
+    const locationStore = useLocationStore()
+    const syncStore = useSyncStore()
+    authStore.accessToken = 'access-1'
+    locationStore.activeLocationId = 'loc-1'
+
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        newTimestamp: 1_700_000_001_000
+      })
+      .mockResolvedValueOnce({
+        changes: {
+          ...createEmptyChanges(),
+          tickets: {
+            created: [],
+            updated: [],
+            deleted: ['ticket-echo-delete', 'ticket-remote-delete']
+          }
+        },
+        timestamp: 1_700_000_002_000,
+        hasMore: false,
+        nextCursor: null
+      })
+    vi.stubGlobal('useApiClient', () => ({ post }))
+
+    const syncStateDoc = {
+      toJSON: () => ({
+        lastPulledAt: 1_700_000_000_000
+      }),
+      incrementalPatch: vi.fn()
+    }
+
+    const removeOutbox = vi.fn()
+    const ticketsCollection = createCollectionMock()
+
+    vi.stubGlobal('useRxdb', () => ({
+      collections: {
+        syncState: {
+          findOne: vi.fn(() => ({
+            exec: vi.fn(async () => syncStateDoc)
+          })),
+          insert: vi.fn()
+        },
+        outbox: {
+          find: vi.fn(() => ({
+            exec: vi.fn(async () => [
+              {
+                toJSON: () => ({
+                  entity: 'tickets',
+                  operation: 'delete',
+                  payload: { id: 'ticket-echo-delete' },
+                  createdAt: 1
+                }),
+                remove: removeOutbox
+              }
+            ])
+          }))
+        },
+        tickets: ticketsCollection,
+        ticketComments: createCollectionMock(),
+        ticketAttachments: createCollectionMock(),
+        paymentRecords: createCollectionMock()
+      }
+    }))
+
+    await syncStore.syncNow()
+
+    expect(removeOutbox).toHaveBeenCalledTimes(1)
+    expect(ticketsCollection.findOne).toHaveBeenCalledTimes(1)
+    expect(ticketsCollection.findOne).toHaveBeenCalledWith('ticket-remote-delete')
+  })
+
   it('applyEntityChanges soft-deletes docs with deletedAt and hard-removes others', async () => {
     const syncStore = useSyncStore()
     const softDeleteDoc = {

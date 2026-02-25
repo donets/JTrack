@@ -21,6 +21,21 @@ type OutboxEntity =
   | 'ticketAttachments'
   | 'paymentRecords'
 
+const entityCollections: EntityCollection[] = [
+  'tickets',
+  'ticketComments',
+  'ticketAttachments',
+  'paymentRecords'
+]
+
+type EchoSuppressionState = Record<
+  EntityCollection,
+  {
+    upsertIds: Set<string>
+    deletedIds: Set<string>
+  }
+>
+
 function createEmptyChanges(): SyncChanges {
   return {
     tickets: { created: [], updated: [], deleted: [] },
@@ -28,6 +43,97 @@ function createEmptyChanges(): SyncChanges {
     ticketAttachments: { created: [], updated: [], deleted: [] },
     paymentRecords: { created: [], updated: [], deleted: [] }
   }
+}
+
+function createEchoSuppressionState(): EchoSuppressionState {
+  const state = {} as EchoSuppressionState
+
+  for (const entity of entityCollections) {
+    state[entity] = {
+      upsertIds: new Set<string>(),
+      deletedIds: new Set<string>()
+    }
+  }
+
+  return state
+}
+
+function buildEchoSuppressionState(changes: SyncChanges): EchoSuppressionState {
+  const state = createEchoSuppressionState()
+
+  for (const entity of entityCollections) {
+    for (const record of [...changes[entity].created, ...changes[entity].updated] as Array<{
+      id: string
+    }>) {
+      state[entity].upsertIds.add(record.id)
+    }
+
+    for (const deletedId of changes[entity].deleted) {
+      state[entity].deletedIds.add(deletedId)
+    }
+  }
+
+  return state
+}
+
+function filterEchoedUpserts<TRecords extends Array<{ id: string; updatedAt: string }>>(
+  records: TRecords,
+  pushedIds: Set<string>,
+  pushTimestamp: number
+) {
+  return records.filter((record) => {
+    if (!pushedIds.has(record.id)) {
+      return true
+    }
+
+    const updatedAt = Date.parse(record.updatedAt)
+    if (Number.isNaN(updatedAt)) {
+      return true
+    }
+
+    // Equal timestamp is treated as same-cycle echo from the just-completed push.
+    return updatedAt > pushTimestamp
+  }) as TRecords
+}
+
+function filterEchoedEntityChanges<TKey extends EntityCollection>(
+  changes: SyncChanges[TKey],
+  echoedState: EchoSuppressionState[TKey],
+  pushTimestamp: number
+): SyncChanges[TKey] {
+  return {
+    created: filterEchoedUpserts(changes.created, echoedState.upsertIds, pushTimestamp),
+    updated: filterEchoedUpserts(changes.updated, echoedState.upsertIds, pushTimestamp),
+    // Deleted payloads contain IDs only, so suppression is ID-based.
+    deleted: changes.deleted.filter((deletedId: string) => !echoedState.deletedIds.has(deletedId))
+  } as SyncChanges[TKey]
+}
+
+function setEntityChanges<TKey extends EntityCollection>(
+  changes: SyncChanges,
+  entity: TKey,
+  value: SyncChanges[TKey]
+) {
+  changes[entity] = value
+}
+
+function filterEchoedPullChanges(
+  changes: SyncChanges,
+  echoedState: EchoSuppressionState,
+  pushTimestamp: number
+): SyncChanges {
+  const filtered = createEmptyChanges()
+
+  for (const entity of entityCollections) {
+    const filteredEntityChanges = filterEchoedEntityChanges(
+      changes[entity],
+      echoedState[entity],
+      pushTimestamp
+    )
+    setEntityChanges(filtered, entity, filteredEntityChanges)
+  }
+
+  return filtered
 }
 
 function generateClientId() {
@@ -94,6 +200,8 @@ export const useSyncStore = defineStore('sync', {
         const syncStateId = `sync:${locationId}`
         const syncStateDoc = await db.collections.syncState.findOne(syncStateId).exec()
         const lastPulledAt = syncStateDoc?.toJSON().lastPulledAt ?? null
+        let pushTimestamp: number | null = null
+        let echoedState: EchoSuppressionState | null = null
 
         const outboxDocs = await db.collections.outbox
           .find({
@@ -131,14 +239,17 @@ export const useSyncStore = defineStore('sync', {
         }
 
         if (outboxDocs.length > 0) {
-          const pushResponse = await api.post('/sync/push', {
+          echoedState = buildEchoSuppressionState(outgoingChanges)
+
+          const pushResponseRaw = await api.post('/sync/push', {
             locationId,
             lastPulledAt,
             changes: outgoingChanges,
             clientId: this.clientId
           })
 
-          syncPushResponseSchema.parse(pushResponse)
+          const pushResponse = syncPushResponseSchema.parse(pushResponseRaw)
+          pushTimestamp = pushResponse.newTimestamp
 
           for (const outboxDoc of outboxDocs) {
             await outboxDoc.remove()
@@ -158,8 +269,12 @@ export const useSyncStore = defineStore('sync', {
           })
 
           const pullResponse = syncPullResponseSchema.parse(pullResponseRaw)
+          const pullChanges =
+            pushTimestamp === null || echoedState === null
+              ? pullResponse.changes
+              : filterEchoedPullChanges(pullResponse.changes, echoedState, pushTimestamp)
 
-          await this.applyIncomingChanges(db, pullResponse.changes)
+          await this.applyIncomingChanges(db, pullChanges)
           pullTimestamp = pullResponse.timestamp
           pullHasMore = pullResponse.hasMore
           pullCursor = pullResponse.nextCursor
