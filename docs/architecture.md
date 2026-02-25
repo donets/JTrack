@@ -47,6 +47,7 @@ flowchart LR
 - `JwtAuthGuard`: validates bearer access token.
 - `LocationGuard`: enforces `x-location-id` + active membership; for admin bypass, writes synthetic `locationRole=Owner` into request context.
 - `PrivilegesGuard`: validates endpoint privilege set against role.
+- `ZodValidationPipe`: validates request payloads at controller boundary using shared schema contracts.
 
 ## 5. Data Architecture
 - PostgreSQL as source of truth.

@@ -235,6 +235,13 @@ export declare const loginInputSchema: z.ZodObject<{
     email: string;
     password: string;
 }>;
+export declare const refreshInputSchema: z.ZodObject<{
+    refreshToken: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    refreshToken?: string | undefined;
+}, {
+    refreshToken?: string | undefined;
+}>;
 export declare const authResponseSchema: z.ZodObject<{
     accessToken: z.ZodString;
     user: z.ZodObject<{
@@ -424,6 +431,13 @@ export declare const updateTicketSchema: z.ZodObject<{
     totalAmountCents?: number | undefined;
     currency?: string | undefined;
 }>;
+export declare const ticketStatusUpdateInputSchema: z.ZodObject<{
+    status: z.ZodEnum<["New", "Scheduled", "InProgress", "Done", "Invoiced", "Paid", "Canceled"]>;
+}, "strip", z.ZodTypeAny, {
+    status: "New" | "Scheduled" | "InProgress" | "Done" | "Invoiced" | "Paid" | "Canceled";
+}, {
+    status: "New" | "Scheduled" | "InProgress" | "Done" | "Invoiced" | "Paid" | "Canceled";
+}>;
 export declare const ticketListQuerySchema: z.ZodObject<{
     status: z.ZodOptional<z.ZodEnum<["New", "Scheduled", "InProgress", "Done", "Invoiced", "Paid", "Canceled"]>>;
     assignedToUserId: z.ZodOptional<z.ZodString>;
@@ -593,6 +607,23 @@ export declare const createAttachmentMetadataSchema: z.ZodObject<{
     width?: number | null | undefined;
     height?: number | null | undefined;
 }>;
+export declare const presignInputSchema: z.ZodObject<{
+    fileName: z.ZodString;
+    mimeType: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    mimeType: string;
+    fileName: string;
+}, {
+    mimeType: string;
+    fileName: string;
+}>;
+export declare const uploadInputSchema: z.ZodObject<{
+    base64: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    base64: string;
+}, {
+    base64: string;
+}>;
 export declare const createPaymentRecordSchema: z.ZodObject<{
     ticketId: z.ZodString;
     provider: z.ZodEnum<["manual", "stripe"]>;
@@ -612,6 +643,13 @@ export declare const createPaymentRecordSchema: z.ZodObject<{
     status?: "Pending" | "Succeeded" | "Failed" | "Refunded" | undefined;
     currency?: string | undefined;
 }>;
+export declare const paymentStatusUpdateInputSchema: z.ZodObject<{
+    status: z.ZodEnum<["Pending", "Succeeded", "Failed", "Refunded"]>;
+}, "strip", z.ZodTypeAny, {
+    status: "Pending" | "Succeeded" | "Failed" | "Refunded";
+}, {
+    status: "Pending" | "Succeeded" | "Failed" | "Refunded";
+}>;
 export type User = z.infer<typeof userSchema>;
 export type Location = z.infer<typeof locationSchema>;
 export type UserLocation = z.infer<typeof userLocationSchema>;
@@ -625,6 +663,7 @@ export type PaymentProvider = z.infer<typeof paymentProviderSchema>;
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
 export type PaymentRecord = z.infer<typeof paymentRecordSchema>;
 export type LoginInput = z.infer<typeof loginInputSchema>;
+export type RefreshInput = z.infer<typeof refreshInputSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
 export type InviteCompleteInput = z.infer<typeof inviteCompleteInputSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
@@ -634,9 +673,13 @@ export type CreateLocationInput = z.infer<typeof createLocationSchema>;
 export type UpdateLocationInput = z.infer<typeof updateLocationSchema>;
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
 export type UpdateTicketInput = z.infer<typeof updateTicketSchema>;
+export type UpdateTicketStatusInput = z.infer<typeof ticketStatusUpdateInputSchema>;
 export type TicketListQuery = z.infer<typeof ticketListQuerySchema>;
 export type TicketListResponse = z.infer<typeof ticketListResponseSchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type CreateAttachmentMetadataInput = z.infer<typeof createAttachmentMetadataSchema>;
+export type PresignInput = z.infer<typeof presignInputSchema>;
+export type UploadInput = z.infer<typeof uploadInputSchema>;
 export type CreatePaymentRecordInput = z.infer<typeof createPaymentRecordSchema>;
+export type UpdatePaymentStatusInput = z.infer<typeof paymentStatusUpdateInputSchema>;
 //# sourceMappingURL=schemas.d.ts.map

@@ -1,6 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, UsePipes } from '@nestjs/common'
+import {
+  createUserSchema,
+  type CreateUserInput,
+  updateUserSchema,
+  type UpdateUserInput
+} from '@jtrack/shared'
 import { RequirePrivileges } from '@/rbac/require-privileges.decorator'
 import { CurrentLocation } from '@/common/current-location.decorator'
+import { ZodValidationPipe } from '@/common/zod-validation.pipe'
 import { UsersService } from './users.service'
 
 @Controller('users')
@@ -15,13 +22,15 @@ export class UsersController {
 
   @Post()
   @RequirePrivileges(['users.manage'])
-  async create(@Body() body: unknown, @CurrentLocation() locationId: string) {
+  @UsePipes(new ZodValidationPipe(createUserSchema))
+  async create(@Body() body: CreateUserInput, @CurrentLocation() locationId: string) {
     return this.usersService.create(body, locationId)
   }
 
   @Post('invite')
   @RequirePrivileges(['users.manage'])
-  async invite(@Body() body: unknown, @CurrentLocation() locationId: string) {
+  @UsePipes(new ZodValidationPipe(createUserSchema))
+  async invite(@Body() body: CreateUserInput, @CurrentLocation() locationId: string) {
     return this.usersService.invite(body, locationId)
   }
 
@@ -33,7 +42,8 @@ export class UsersController {
 
   @Patch(':id')
   @RequirePrivileges(['users.manage'])
-  async update(@Param('id') id: string, @Body() body: unknown) {
+  @UsePipes(new ZodValidationPipe(updateUserSchema))
+  async update(@Param('id') id: string, @Body() body: UpdateUserInput) {
     return this.usersService.update(id, body)
   }
 

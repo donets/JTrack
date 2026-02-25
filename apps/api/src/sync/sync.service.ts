@@ -1,10 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { type Prisma } from '@prisma/client'
 import {
-  syncPullRequestSchema,
-  syncPushRequestSchema,
   type SyncChanges,
+  type SyncPullRequest,
   type SyncPullResponse,
+  type SyncPushRequest,
   type SyncPushResponse,
   type Ticket,
   type TicketAttachment,
@@ -17,9 +17,7 @@ import { PrismaService } from '@/prisma/prisma.service'
 export class SyncService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async pull(rawBody: unknown, activeLocationId: string): Promise<SyncPullResponse> {
-    const body = syncPullRequestSchema.parse(rawBody)
-
+  async pull(body: SyncPullRequest, activeLocationId: string): Promise<SyncPullResponse> {
     if (body.locationId !== activeLocationId) {
       throw new ForbiddenException('Body locationId must match x-location-id')
     }
@@ -158,9 +156,7 @@ export class SyncService {
     }
   }
 
-  async push(rawBody: unknown, activeLocationId: string): Promise<SyncPushResponse> {
-    const body = syncPushRequestSchema.parse(rawBody)
-
+  async push(body: SyncPushRequest, activeLocationId: string): Promise<SyncPushResponse> {
     if (body.locationId !== activeLocationId) {
       throw new ForbiddenException('Body locationId must match x-location-id')
     }

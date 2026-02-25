@@ -11,7 +11,12 @@ import {
 } from '@nestjs/common'
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 import type { Request, Response } from 'express'
-import { inviteCompleteInputSchema, loginInputSchema } from '@jtrack/shared'
+import {
+  inviteCompleteInputSchema,
+  loginInputSchema,
+  refreshInputSchema,
+  type RefreshInput
+} from '@jtrack/shared'
 import { CurrentUser } from '@/common/current-user.decorator'
 import type { JwtUser } from '@/common/types'
 import { ZodValidationPipe } from '@/common/zod-validation.pipe'
@@ -61,10 +66,11 @@ export class AuthController {
       limit: 10
     }
   })
+  @UsePipes(new ZodValidationPipe(refreshInputSchema))
   async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-    @Body() body: { refreshToken?: string }
+    @Body() body: RefreshInput
   ) {
     const refreshToken = request.cookies?.refresh_token ?? body?.refreshToken
 

@@ -1,17 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common'
-import { createAttachmentMetadataSchema } from '@jtrack/shared'
-import { z } from 'zod'
+import type {
+  CreateAttachmentMetadataInput,
+  PresignInput,
+  UploadInput
+} from '@jtrack/shared'
 import { PrismaService } from '@/prisma/prisma.service'
 import { STORAGE_PROVIDER, type StorageProvider } from './storage/storage-provider.interface'
-
-const presignInputSchema = z.object({
-  fileName: z.string().min(1),
-  mimeType: z.string().min(1)
-})
-
-const uploadInputSchema = z.object({
-  base64: z.string().min(1)
-})
 
 @Injectable()
 export class AttachmentsService {
@@ -21,23 +15,22 @@ export class AttachmentsService {
     private readonly storageProvider: StorageProvider
   ) {}
 
-  async presign(data: unknown) {
-    const input = presignInputSchema.parse(data)
+  async presign(input: PresignInput) {
     return this.storageProvider.getPresignedUpload(input)
   }
 
-  async upload(storageKey: string, data: unknown) {
-    const input = uploadInputSchema.parse(data)
-
+  async upload(storageKey: string, input: UploadInput) {
     return this.storageProvider.saveBase64({
       storageKey,
       base64: input.base64
     })
   }
 
-  async createMetadata(locationId: string, uploadedByUserId: string, data: unknown) {
-    const input = createAttachmentMetadataSchema.parse(data)
-
+  async createMetadata(
+    locationId: string,
+    uploadedByUserId: string,
+    input: CreateAttachmentMetadataInput
+  ) {
     const ticket = await this.prisma.ticket.findFirst({
       where: {
         id: input.ticketId,

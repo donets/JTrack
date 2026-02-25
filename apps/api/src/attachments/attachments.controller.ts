@@ -1,7 +1,26 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UsePipes
+} from '@nestjs/common'
+import {
+  createAttachmentMetadataSchema,
+  type CreateAttachmentMetadataInput,
+  presignInputSchema,
+  type PresignInput,
+  uploadInputSchema,
+  type UploadInput
+} from '@jtrack/shared'
 import { CurrentLocation } from '@/common/current-location.decorator'
 import { CurrentUser } from '@/common/current-user.decorator'
 import type { JwtUser } from '@/common/types'
+import { ZodValidationPipe } from '@/common/zod-validation.pipe'
 import { RequirePrivileges } from '@/rbac/require-privileges.decorator'
 import { AttachmentsService } from './attachments.service'
 
@@ -11,22 +30,25 @@ export class AttachmentsController {
 
   @Post('presign')
   @RequirePrivileges(['attachments.write'])
-  async presign(@Body() body: unknown) {
+  @UsePipes(new ZodValidationPipe(presignInputSchema))
+  async presign(@Body() body: PresignInput) {
     return this.attachmentsService.presign(body)
   }
 
   @Put('upload/:storageKey')
   @RequirePrivileges(['attachments.write'])
-  async upload(@Param('storageKey') storageKey: string, @Body() body: unknown) {
+  @UsePipes(new ZodValidationPipe(uploadInputSchema))
+  async upload(@Param('storageKey') storageKey: string, @Body() body: UploadInput) {
     return this.attachmentsService.upload(storageKey, body)
   }
 
   @Post('metadata')
   @RequirePrivileges(['attachments.write'])
+  @UsePipes(new ZodValidationPipe(createAttachmentMetadataSchema))
   async createMetadata(
     @CurrentLocation() locationId: string,
     @CurrentUser() user: JwtUser,
-    @Body() body: unknown
+    @Body() body: CreateAttachmentMetadataInput
   ) {
     return this.attachmentsService.createMetadata(locationId, user.sub, body)
   }

@@ -113,6 +113,10 @@ export const loginInputSchema = z.object({
   password: z.string().min(8)
 })
 
+export const refreshInputSchema = z.object({
+  refreshToken: z.string().min(1).optional()
+})
+
 export const authResponseSchema = z.object({
   accessToken: z.string().min(1),
   user: userSchema
@@ -173,6 +177,10 @@ export const updateTicketSchema = createTicketSchema
     status: ticketStatusSchema.optional()
   })
 
+export const ticketStatusUpdateInputSchema = z.object({
+  status: ticketStatusSchema
+})
+
 const paginationLimitSchema = z.coerce.number().int().min(1).max(200)
 const paginationOffsetSchema = z.coerce.number().int().min(0)
 
@@ -209,12 +217,25 @@ export const createAttachmentMetadataSchema = z.object({
   height: z.number().int().nullable().optional()
 })
 
+export const presignInputSchema = z.object({
+  fileName: z.string().min(1),
+  mimeType: z.string().min(1)
+})
+
+export const uploadInputSchema = z.object({
+  base64: z.string().min(1)
+})
+
 export const createPaymentRecordSchema = z.object({
   ticketId: idSchema,
   provider: paymentProviderSchema,
   amountCents: z.number().int().nonnegative(),
   currency: z.string().default('EUR'),
   status: paymentStatusSchema.default('Pending')
+})
+
+export const paymentStatusUpdateInputSchema = z.object({
+  status: paymentStatusSchema
 })
 
 export type User = z.infer<typeof userSchema>
@@ -230,6 +251,7 @@ export type PaymentProvider = z.infer<typeof paymentProviderSchema>
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>
 export type PaymentRecord = z.infer<typeof paymentRecordSchema>
 export type LoginInput = z.infer<typeof loginInputSchema>
+export type RefreshInput = z.infer<typeof refreshInputSchema>
 export type AuthResponse = z.infer<typeof authResponseSchema>
 export type InviteCompleteInput = z.infer<typeof inviteCompleteInputSchema>
 export type CreateUserInput = z.infer<typeof createUserSchema>
@@ -239,8 +261,12 @@ export type CreateLocationInput = z.infer<typeof createLocationSchema>
 export type UpdateLocationInput = z.infer<typeof updateLocationSchema>
 export type CreateTicketInput = z.infer<typeof createTicketSchema>
 export type UpdateTicketInput = z.infer<typeof updateTicketSchema>
+export type UpdateTicketStatusInput = z.infer<typeof ticketStatusUpdateInputSchema>
 export type TicketListQuery = z.infer<typeof ticketListQuerySchema>
 export type TicketListResponse = z.infer<typeof ticketListResponseSchema>
 export type CreateCommentInput = z.infer<typeof createCommentSchema>
 export type CreateAttachmentMetadataInput = z.infer<typeof createAttachmentMetadataSchema>
+export type PresignInput = z.infer<typeof presignInputSchema>
+export type UploadInput = z.infer<typeof uploadInputSchema>
 export type CreatePaymentRecordInput = z.infer<typeof createPaymentRecordSchema>
+export type UpdatePaymentStatusInput = z.infer<typeof paymentStatusUpdateInputSchema>

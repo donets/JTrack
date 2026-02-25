@@ -98,6 +98,9 @@ export const loginInputSchema = z.object({
     email: z.string().email(),
     password: z.string().min(8)
 });
+export const refreshInputSchema = z.object({
+    refreshToken: z.string().min(1).optional()
+});
 export const authResponseSchema = z.object({
     accessToken: z.string().min(1),
     user: userSchema
@@ -149,6 +152,9 @@ export const updateTicketSchema = createTicketSchema
     .extend({
     status: ticketStatusSchema.optional()
 });
+export const ticketStatusUpdateInputSchema = z.object({
+    status: ticketStatusSchema
+});
 const paginationLimitSchema = z.coerce.number().int().min(1).max(200);
 const paginationOffsetSchema = z.coerce.number().int().min(0);
 export const ticketListQuerySchema = z.object({
@@ -180,11 +186,21 @@ export const createAttachmentMetadataSchema = z.object({
     width: z.number().int().nullable().optional(),
     height: z.number().int().nullable().optional()
 });
+export const presignInputSchema = z.object({
+    fileName: z.string().min(1),
+    mimeType: z.string().min(1)
+});
+export const uploadInputSchema = z.object({
+    base64: z.string().min(1)
+});
 export const createPaymentRecordSchema = z.object({
     ticketId: idSchema,
     provider: paymentProviderSchema,
     amountCents: z.number().int().nonnegative(),
     currency: z.string().default('EUR'),
     status: paymentStatusSchema.default('Pending')
+});
+export const paymentStatusUpdateInputSchema = z.object({
+    status: paymentStatusSchema
 });
 //# sourceMappingURL=schemas.js.map
