@@ -19,6 +19,8 @@ interface PendingAttachmentUploadInput {
   height?: number
 }
 
+const MAX_OFFLINE_ATTACHMENT_SIZE_BYTES = 25 * 1024 * 1024
+
 export const useOfflineRepository = () => {
   const db = useRxdb()
   const authStore = useAuthStore()
@@ -154,6 +156,13 @@ export const useOfflineRepository = () => {
     const now = new Date().toISOString()
     const attachmentId = crypto.randomUUID()
     const approximateSize = Math.max(1, Math.floor((input.base64.length * 3) / 4))
+
+    if (approximateSize > MAX_OFFLINE_ATTACHMENT_SIZE_BYTES) {
+      throw new Error(
+        `Attachment exceeds offline staging limit (${Math.floor(MAX_OFFLINE_ATTACHMENT_SIZE_BYTES / (1024 * 1024))}MB)`
+      )
+    }
+
     const kind = input.mimeType.startsWith('image/') ? 'Photo' : 'File'
 
     const attachment = {
@@ -163,7 +172,8 @@ export const useOfflineRepository = () => {
       uploadedByUserId: userId,
       kind,
       storageKey: `pending/${input.fileName}`,
-      url: `data:${input.mimeType};base64,${input.base64}`,
+      // Base64 is stored in pendingAttachmentUploads only to avoid duplicate large payloads.
+      url: '',
       mimeType: input.mimeType,
       size: approximateSize,
       width: input.width ?? null,

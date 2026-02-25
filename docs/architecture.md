@@ -71,7 +71,7 @@ flowchart LR
   - local mutation first,
   - enqueue operation,
   - background push + pull convergence.
-- Offline attachments are staged in RxDB (`pendingAttachmentUploads`) and converted to regular attachment outbox records after deferred upload when connectivity returns.
+- Offline attachments are staged in RxDB (`pendingAttachmentUploads`) and converted to regular attachment outbox records after deferred upload when connectivity returns; base64 file payload is stored only in staging collection (attachment placeholder keeps pending metadata without duplicating file bytes).
 
 ### 6.2 Mobile App
 - Capacitor wraps web build output.

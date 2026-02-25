@@ -20,7 +20,11 @@ function isLikelyOfflineError(error: unknown) {
   }
 
   const message = error.message.toLowerCase()
-  return message.includes('network') || message.includes('fetch')
+  return (
+    message.includes('failed to fetch') ||
+    message.includes('network request failed') ||
+    message.includes('load failed')
+  )
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
@@ -119,6 +123,7 @@ export const useAttachmentAdapter = () => {
       })
     } catch (error) {
       if (isLikelyOfflineError(error)) {
+        console.warn('[attachments] network unavailable, staging attachment upload for retry')
         await repository.stageAttachmentUpload({
           ticketId,
           fileName: payload.fileName,

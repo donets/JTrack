@@ -49,7 +49,7 @@
               :key="attachment.id"
               class="rounded border border-slate-100 bg-slate-50 p-3 text-sm"
             >
-              <template v-if="attachment.storageKey.startsWith('pending/')">
+              <template v-if="attachment.storageKey?.startsWith('pending/')">
                 <p class="text-amber-700">{{ attachment.storageKey }} (pending upload)</p>
               </template>
               <a v-else :href="attachmentUrl(attachment.url)" class="text-emerald-700 hover:underline" target="_blank">

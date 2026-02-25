@@ -404,7 +404,6 @@ export const useSyncStore = defineStore('sync', {
             processed: false,
             error: null
           })
-
           await pendingDoc.remove()
         } catch (error) {
           console.warn('[sync] failed to flush pending attachment upload, will retry', error)
