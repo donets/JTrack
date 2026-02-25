@@ -7,6 +7,7 @@ info:
 servers:
   - url: http://localhost:3001
 tags:
+  - name: Health
   - name: Auth
   - name: Locations
   - name: Users
@@ -19,6 +20,25 @@ tags:
 security:
   - bearerAuth: []
 paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Readiness and liveness probe
+      security: []
+      responses:
+        '200':
+          description: API is ready, DB reachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: API is alive but dependencies are unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
   /auth/login:
     post:
       tags: [Auth]
@@ -888,6 +908,19 @@ components:
           type: boolean
           enum: [true]
       required: [ok]
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        database:
+          type: string
+          enum: [up, down]
+        version:
+          type: string
+      required: [status, database, version]
 
     LoginInput:
       type: object

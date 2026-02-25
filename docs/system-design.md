@@ -8,6 +8,7 @@
 
 ## 2. Functional Scope
 - Authentication: email/password + JWT access token + refresh token.
+- Health check: public `GET /health` for readiness/liveness probes.
 - Invite onboarding: signed invite token + first-time password setup endpoint.
 - Multi-location tenancy: each domain record belongs to a `locationId`.
 - RBAC: role/privilege model with guards on each protected endpoint.
@@ -81,6 +82,7 @@
 - Permission and membership violations: `403 Forbidden`.
 - Missing domain object: `404 Not Found`.
 - Location delete with dependent business records: `409 Conflict`.
+- Health readiness check when DB is unavailable: `503 Service Unavailable`.
 - Invalid or already-used invite token: `401 Unauthorized`.
 - Validation is schema-based (Zod) and fails fast at controller boundary via `ZodValidationPipe`; service layer consumes already-validated typed inputs.
 - API response date serialization is centralized in `apps/api/src/common/date-serializer.ts` to keep all date fields consistently ISO formatted.

@@ -143,6 +143,12 @@ export interface RefreshInput {
   refreshToken?: string
 }
 
+export interface HealthResponse {
+  status: 'ok' | 'degraded'
+  database: 'up' | 'down'
+  version: string
+}
+
 export interface AuthResponse {
   accessToken: string
   user: User

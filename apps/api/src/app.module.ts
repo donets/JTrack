@@ -15,6 +15,7 @@ import { CommentsModule } from './comments/comments.module'
 import { AttachmentsModule } from './attachments/attachments.module'
 import { PaymentsModule } from './payments/payments.module'
 import { SyncModule } from './sync/sync.module'
+import { HealthModule } from './health/health.module'
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { SyncModule } from './sync/sync.module'
     CommentsModule,
     AttachmentsModule,
     PaymentsModule,
-    SyncModule
+    SyncModule,
+    HealthModule
   ],
   providers: [
     {
