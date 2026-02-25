@@ -15,6 +15,7 @@ apps/mobile/ios
 apps/mobile/node_modules
 apps/api/dist
 packages/tsconfig/dist
+packages/shared/dist
 apps/api/node_modules
 apps/api/uploads
 

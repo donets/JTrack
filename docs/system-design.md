@@ -112,7 +112,7 @@
   - Single-command monorepo dev workflow via Turbo.
   - Local DB migration workflow uses `pnpm db:migrate` without hardcoded migration names (optional explicit name via `pnpm db:migrate -- --name <migration_name>`).
   - CI quality gate runs `pnpm test` on every `pull_request` and on `push` to `main`/`develop` via GitHub Actions (`.github/workflows/tests.yml`).
-  - Repository hygiene: local IDE metadata (`.idea`) is excluded from VCS via `.gitignore`.
+  - Repository hygiene: local IDE metadata (`.idea`) and generated shared build artifacts (`packages/shared/dist`) are excluded from VCS via `.gitignore`.
 
 ## 10. Tradeoffs
 - `isAdmin` bypass simplifies internal operations but centralizes trust.
