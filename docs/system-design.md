@@ -41,7 +41,7 @@
 
 ## 6. Offline Sync Protocol
 ### 6.1 Pull (`POST /sync/pull`)
-- Input: `{ locationId, lastPulledAt, clientId?, limit?, cursor? }`.
+- Input: `{ locationId, lastPulledAt, limit?, cursor? }`.
 - Server returns records where:
   - `updatedAt > lastPulledAt`, or
   - `deletedAt > lastPulledAt` (for soft-deletable entities).
@@ -59,7 +59,7 @@
 - Input: `{ locationId, lastPulledAt, changes, clientId }`.
 - Server applies each entity batch inside one DB transaction.
 - Existing rows for each entity batch are preloaded with `findMany(id in [...])` to avoid N+1 per-record lookups.
-- Push response `newTimestamp` is used as pull baseline in the same sync cycle to avoid echoing the client’s own fresh mutations.
+- Client keeps pull baseline at prior `lastPulledAt` to avoid skipping concurrent remote writes and suppresses push-echo payloads locally by comparing pushed IDs with pulled records updated at or before push `newTimestamp`.
 - Conflict policy: server-wins (last-write-wins by server timeline).
   - If existing row was updated after client `lastPulledAt`, incoming mutation is skipped.
 - On success returns `{ ok: true, newTimestamp }`.

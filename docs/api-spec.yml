@@ -783,7 +783,7 @@ paths:
     post:
       tags: [Sync]
       summary: Pull changes since last client timestamp
-      description: Body `locationId` must match `x-location-id`. Supports cursor-based pagination with fixed snapshot timestamp. Optional `clientId` can be provided to correlate pull cycle with current client instance.
+      description: Body `locationId` must match `x-location-id`. Supports cursor-based pagination with fixed snapshot timestamp.
       parameters:
         - $ref: '#/components/parameters/XLocationId'
       requestBody:
@@ -1556,8 +1556,6 @@ components:
           type: integer
           format: int64
           nullable: true
-        clientId:
-          type: string
         limit:
           type: integer
           minimum: 1

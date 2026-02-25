@@ -6,12 +6,12 @@
 ## What changed
 
 - Updated web sync flow (`apps/web/stores/sync.ts`):
-  - after successful `POST /sync/push`, client now uses `pushResponse.newTimestamp` as `lastPulledAt` for the following `POST /sync/pull` in the same sync run
-  - `clientId` is now sent in pull requests for explicit client-cycle correlation
-- Extended shared sync pull contract (`packages/shared/src/sync.ts`): `SyncPullRequest` now supports optional `clientId`.
+  - pull baseline remains the persisted `lastPulledAt` (pre-push checkpoint) to avoid dropping concurrent remote updates created during the push window
+  - pull response is locally filtered to suppress push-echo records by comparing pushed IDs and response `updatedAt` timestamps against push `newTimestamp`
+- Shared sync pull contract (`packages/shared/src/sync.ts`) remains unchanged: `SyncPullRequest` does not include `clientId`.
 - Updated tests:
-  - `apps/web/stores/sync.spec.ts` verifies pull requests use the post-push timestamp and include `clientId`
-  - `packages/shared/src/sync.spec.ts` verifies optional pull `clientId` parsing
+  - `apps/web/stores/sync.spec.ts` verifies pull keeps pre-push baseline and filters echoed records after push
+  - `packages/shared/src/sync.spec.ts` covers pull request defaults and cursor parsing
 - Updated sync API/design documentation and data models.
 
 ## Files

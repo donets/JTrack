@@ -43,16 +43,6 @@ describe('sync schemas', () => {
     expect(parsed.cursor).toBeNull()
   })
 
-  it('accepts optional clientId in pull request', () => {
-    const parsed = syncPullRequestSchema.parse({
-      locationId: 'loc-1',
-      lastPulledAt: 1_700_000_000_000,
-      clientId: 'client-1'
-    })
-
-    expect(parsed.clientId).toBe('client-1')
-  })
-
   it('accepts pull response with pagination cursor', () => {
     const parsed = syncPullResponseSchema.parse({
       changes: {
