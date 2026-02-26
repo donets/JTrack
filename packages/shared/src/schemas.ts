@@ -108,13 +108,54 @@ export const paymentRecordSchema = z.object({
   updatedAt: timestampSchema
 })
 
+export const passwordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password must be at most 128 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one digit')
+
 export const loginInputSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8)
+  password: z.string().min(1)
 })
 
 export const refreshInputSchema = z.object({
   refreshToken: z.string().min(1).optional()
+})
+
+export const registerInputSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+  password: passwordSchema,
+  locationName: z.string().min(1),
+  timezone: z.string().min(1),
+  address: z.string().optional()
+})
+
+export const verifyEmailRequestInputSchema = z.object({
+  email: z.string().email()
+})
+
+export const verifyEmailConfirmInputSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6).regex(/^\d{6}$/, 'Code must be 6 digits')
+})
+
+export const forgotPasswordInputSchema = z.object({
+  email: z.string().email()
+})
+
+export const resetPasswordInputSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6).regex(/^\d{6}$/, 'Code must be 6 digits'),
+  newPassword: passwordSchema
+})
+
+export const changePasswordInputSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: passwordSchema
 })
 
 export const healthStatusSchema = z.enum(['ok', 'degraded'])
@@ -133,7 +174,7 @@ export const authResponseSchema = z.object({
 
 export const inviteCompleteInputSchema = z.object({
   token: z.string().min(1),
-  password: z.string().min(8)
+  password: passwordSchema
 })
 
 export const createUserSchema = z.object({
@@ -280,3 +321,9 @@ export type PresignInput = z.infer<typeof presignInputSchema>
 export type UploadInput = z.infer<typeof uploadInputSchema>
 export type CreatePaymentRecordInput = z.infer<typeof createPaymentRecordSchema>
 export type UpdatePaymentStatusInput = z.infer<typeof paymentStatusUpdateInputSchema>
+export type RegisterInput = z.infer<typeof registerInputSchema>
+export type VerifyEmailRequestInput = z.infer<typeof verifyEmailRequestInputSchema>
+export type VerifyEmailConfirmInput = z.infer<typeof verifyEmailConfirmInputSchema>
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordInputSchema>
+export type ResetPasswordInput = z.infer<typeof resetPasswordInputSchema>
+export type ChangePasswordInput = z.infer<typeof changePasswordInputSchema>

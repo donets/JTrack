@@ -19,6 +19,8 @@ export type TicketStatus =
   | 'Paid'
   | 'Canceled'
 
+export type AuthTokenType = 'EmailVerification' | 'PasswordReset' | 'InviteAccept'
+
 export type AttachmentKind = 'Photo' | 'File'
 export type PaymentProvider = 'manual' | 'stripe'
 export type PaymentStatus = 'Pending' | 'Succeeded' | 'Failed' | 'Refunded'
@@ -117,6 +119,29 @@ export interface PaymentRecord {
   updatedAt: IsoDateTime
 }
 
+export interface AuthToken {
+  id: UUID
+  userId: UUID
+  type: AuthTokenType
+  tokenHash: string
+  expiresAt: IsoDateTime
+  consumedAt: IsoDateTime | null
+  createdAt: IsoDateTime
+  createdByIp: string | null
+  userAgent: string | null
+}
+
+export interface Session {
+  id: UUID
+  userId: UUID
+  refreshTokenHash: string
+  createdAt: IsoDateTime
+  lastUsedAt: IsoDateTime
+  revokedAt: IsoDateTime | null
+  ip: string | null
+  userAgent: string | null
+}
+
 export interface TicketDetails extends Ticket {
   comments: TicketComment[]
   attachments: TicketAttachment[]
@@ -152,6 +177,39 @@ export interface HealthResponse {
 export interface AuthResponse {
   accessToken: string
   user: User
+}
+
+export interface RegisterInput {
+  email: string
+  name: string
+  password: string
+  locationName: string
+  timezone: string
+  address?: string
+}
+
+export interface VerifyEmailRequestInput {
+  email: string
+}
+
+export interface VerifyEmailConfirmInput {
+  email: string
+  code: string
+}
+
+export interface ForgotPasswordInput {
+  email: string
+}
+
+export interface ResetPasswordInput {
+  email: string
+  code: string
+  newPassword: string
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string
+  newPassword: string
 }
 
 export interface InviteCompleteInput {

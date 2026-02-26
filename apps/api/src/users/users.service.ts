@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import { hash } from 'bcryptjs'
+import * as argon2 from 'argon2'
 import { randomUUID } from 'node:crypto'
 import { type Prisma } from '@prisma/client'
 import {
@@ -55,7 +55,7 @@ export class UsersService {
   }
 
   async create(input: CreateUserInput, locationId?: string) {
-    const passwordHash = await hash(input.password ?? 'ChangeMe123!', 12)
+    const passwordHash = await argon2.hash(input.password ?? 'ChangeMe123!', { type: argon2.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 })
 
     const user = await this.prisma.user.upsert({
       where: { email: input.email },
@@ -104,7 +104,7 @@ export class UsersService {
   }
 
   async invite(input: CreateUserInput, locationId: string): Promise<InviteResponse> {
-    const passwordHash = await hash(randomUUID(), 12)
+    const passwordHash = await argon2.hash(randomUUID(), { type: argon2.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 })
 
     const user = await this.prisma.user.upsert({
       where: { email: input.email },
@@ -216,9 +216,10 @@ export class UsersService {
         throw new BadRequestException('System deleted-user account cannot be removed')
       }
 
-      await tx.user.update({
-        where: { id: userId },
-        data: { refreshTokenHash: null }
+      // Revoke all sessions for the user being deleted
+      await tx.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() }
       })
 
       const replacementUserId = await this.getOrCreateDeletedUserSystemAccount(tx)
@@ -260,7 +261,7 @@ export class UsersService {
       return existingSystemUser.id
     }
 
-    const passwordHash = await hash(randomUUID(), 12)
+    const passwordHash = await argon2.hash(randomUUID(), { type: argon2.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 })
     const systemUser = await tx.user.create({
       data: {
         email: DELETED_USER_SYSTEM_EMAIL,

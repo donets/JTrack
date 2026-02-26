@@ -57,13 +57,89 @@ Demo credentials:
 
 ## Auth
 
-- Email/password login with JWT access + refresh tokens
-- Refresh token is cookie-first (`httpOnly` cookie)
-- Endpoints:
-  - `POST /auth/login`
-  - `POST /auth/refresh`
-  - `POST /auth/logout`
-  - `GET /auth/me`
+Full authentication system with email verification, password reset, and session management.
+
+- **Password hashing:** argon2id (19MiB / 2 iterations / 1 parallelism) with transparent bcrypt migration
+- **Tokens:** JWT access token (15m) + refresh token in HttpOnly cookie (30d) with rotation + reuse detection
+- **Auth tokens:** SHA-256 hashed one-time tokens for email verification and password reset
+- **Session model:** Dedicated `Session` table for refresh token rotation and revocation
+- **Email verification:** Required before login; anti-enumeration on all endpoints
+
+### Auth Endpoints
+
+| Endpoint | Access | Purpose |
+|----------|--------|---------|
+| `POST /auth/register` | Public | Create account + location, send verification email |
+| `POST /auth/verify-email/request` | Public | Resend verification email |
+| `POST /auth/verify-email/confirm` | Public | Confirm email with token |
+| `POST /auth/password/forgot` | Public | Request password reset email |
+| `POST /auth/password/reset` | Public | Reset password with token |
+| `POST /auth/password/change` | Authenticated | Change password (requires current password) |
+| `POST /auth/login` | Public | Email/password login |
+| `POST /auth/refresh` | Public | Rotate refresh token, get new access token |
+| `POST /auth/logout` | Authenticated | Revoke session |
+| `GET /auth/me` | Authenticated | Current user info |
+
+### Frontend Auth Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/login` | Sign in |
+| `/signup` | Create account |
+| `/forgot-password` | Request password reset |
+| `/reset-password?token=xxx` | Set new password |
+| `/verify-email?token=xxx` | Verify email |
+
+## Email Service (Resend)
+
+JTrack uses [Resend](https://resend.com) for transactional email delivery (verification, password reset, notifications).
+
+### Configuration
+
+Add these variables to your `.env` file:
+
+```env
+# Mail provider: "resend" (production), "console" (dev - logs to terminal), "noop" (disabled)
+MAIL_PROVIDER="console"
+
+# Sender address (must be verified in Resend dashboard for production)
+MAIL_FROM="JTrack <no-reply@yourdomain.com>"
+
+# Resend API key (required when MAIL_PROVIDER=resend)
+RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Optional: custom Resend API base URL
+RESEND_API_BASE_URL=""
+```
+
+### Setup Steps
+
+1. **Development:** Set `MAIL_PROVIDER="console"` — emails are logged to the terminal instead of sent. No Resend account needed.
+
+2. **Production with Resend:**
+   1. Create a free account at [resend.com](https://resend.com)
+   2. Add and verify your domain under **Domains** (Resend will provide DNS records for SPF, DKIM, and DMARC)
+   3. Create an API key under **API Keys**
+   4. Set in `.env`:
+      ```env
+      MAIL_PROVIDER="resend"
+      MAIL_FROM="YourApp <no-reply@yourdomain.com>"
+      RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      ```
+
+3. **Testing without email:** Set `MAIL_PROVIDER="noop"` — all email sends are silently skipped.
+
+### DNS Records (Production)
+
+When using Resend with your own domain, add the DNS records provided by Resend:
+
+| Type | Name | Value | Purpose |
+|------|------|-------|---------|
+| TXT | `@` | `v=spf1 include:...` | SPF |
+| CNAME | `resend._domainkey` | `...` | DKIM |
+| TXT | `_dmarc` | `v=DMARC1; p=...` | DMARC |
+
+Resend provides exact values in their dashboard after you add your domain.
 
 ## RBAC
 

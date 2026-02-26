@@ -10,8 +10,14 @@ async function bootstrap() {
 
   app.use(cookieParser())
 
+  const corsOrigin = process.env.WEB_ORIGIN?.split(',').map((item) => item.trim())
+
+  if (!corsOrigin && process.env.NODE_ENV !== 'development') {
+    throw new Error('WEB_ORIGIN must be set in non-development environments')
+  }
+
   app.enableCors({
-    origin: process.env.WEB_ORIGIN?.split(',').map((item) => item.trim()) ?? true,
+    origin: corsOrigin ?? true,
     credentials: true,
     allowedHeaders: ['content-type', 'authorization', 'x-location-id']
   })

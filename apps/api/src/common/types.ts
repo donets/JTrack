@@ -5,6 +5,7 @@ export interface JwtUser {
   sub: string
   email: string
   isAdmin: boolean
+  jti?: string
 }
 
 export interface AuthenticatedRequest extends Request {
