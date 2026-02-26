@@ -6,6 +6,10 @@
         <h1 class="text-2xl font-semibold">Sign in</h1>
       </div>
 
+      <div v-if="toast" class="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        {{ toast }}
+      </div>
+
       <label class="block space-y-1">
         <span class="text-sm text-slate-600">Email</span>
         <input
@@ -17,16 +21,31 @@
         />
       </label>
 
-      <label class="block space-y-1">
+      <label class="relative block space-y-1">
         <span class="text-sm text-slate-600">Password</span>
-        <input
-          v-model="password"
-          class="w-full rounded border border-slate-300 px-3 py-2"
-          autocomplete="current-password"
-          type="password"
-          required
-        />
+        <div class="relative">
+          <input
+            v-model="password"
+            class="w-full rounded border border-slate-300 px-3 py-2 pr-10"
+            autocomplete="current-password"
+            :type="showPassword ? 'text' : 'password'"
+            required
+          />
+          <button
+            type="button"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            @click="showPassword = !showPassword"
+          >
+            {{ showPassword ? '&#x1F441;' : '&#x1F441;&#xFE0F;&#x200D;&#x1F5E8;' }}
+          </button>
+        </div>
       </label>
+
+      <div class="text-right">
+        <NuxtLink to="/forgot-password" class="text-sm text-emerald-600 hover:underline">
+          Forgot password?
+        </NuxtLink>
+      </div>
 
       <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
 
@@ -38,7 +57,10 @@
         {{ submitting ? 'Signing in...' : 'Sign in' }}
       </button>
 
-      <p class="text-xs text-slate-500">Demo owner: owner@demo.local / password123</p>
+      <p class="text-center text-sm text-slate-500">
+        Don't have an account?
+        <NuxtLink to="/signup" class="text-emerald-600 hover:underline">Create account</NuxtLink>
+      </p>
     </form>
   </div>
 </template>
@@ -46,14 +68,25 @@
 <script setup lang="ts">
 const authStore = useAuthStore()
 const locationStore = useLocationStore()
+const route = useRoute()
 
 const email = ref('owner@demo.local')
 const password = ref('password123')
+const showPassword = ref(false)
 const error = ref<string | null>(null)
 const submitting = ref(false)
+const toast = ref<string | null>(null)
+
+onMounted(() => {
+  const toastParam = route.query.toast as string
+  if (toastParam) {
+    toast.value = toastParam
+  }
+})
 
 const submit = async () => {
   error.value = null
+  toast.value = null
   submitting.value = true
 
   try {

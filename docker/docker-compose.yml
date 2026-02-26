@@ -33,16 +33,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file:
+      - ../apps/api/.env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@jtrack:5432/jtrack?schema=public
-      JWT_ACCESS_SECRET: change-me-access
-      JWT_REFRESH_SECRET: change-me-refresh
-      JWT_ACCESS_TTL: 15m
-      JWT_REFRESH_TTL: 30d
       API_PORT: "3001"
       WEB_ORIGIN: http://localhost:3000
-      UPLOAD_DIR: ./uploads
-      STORAGE_PROVIDER: local
     ports:
       - "3001:3001"
     volumes:

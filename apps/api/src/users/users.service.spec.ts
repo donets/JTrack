@@ -1,12 +1,13 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import { hash } from 'bcryptjs'
+import * as argon2 from 'argon2'
 import { randomUUID } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { UsersService } from './users.service'
 
-vi.mock('bcryptjs', () => ({
+vi.mock('argon2', () => ({
+  argon2id: 2,
   hash: vi.fn()
 }))
 
@@ -14,7 +15,7 @@ vi.mock('node:crypto', () => ({
   randomUUID: vi.fn()
 }))
 
-const hashMock = vi.mocked(hash)
+const hashMock = vi.mocked(argon2.hash)
 const randomUuidMock = vi.mocked(randomUUID)
 const SYSTEM_EMAIL = 'system+deleted-user@jtrack.local'
 
@@ -26,6 +27,9 @@ describe('UsersService.remove', () => {
       update: ReturnType<typeof vi.fn>
       create: ReturnType<typeof vi.fn>
       delete: ReturnType<typeof vi.fn>
+    }
+    session: {
+      updateMany: ReturnType<typeof vi.fn>
     }
     userLocation: {
       deleteMany: ReturnType<typeof vi.fn>
@@ -59,6 +63,9 @@ describe('UsersService.remove', () => {
         create: vi.fn(),
         delete: vi.fn()
       },
+      session: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 })
+      },
       userLocation: {
         deleteMany: vi.fn()
       },
@@ -88,7 +95,7 @@ describe('UsersService.remove', () => {
 
     hashMock.mockReset()
     randomUuidMock.mockReset()
-    hashMock.mockResolvedValue('hashed-system-password')
+    hashMock.mockResolvedValue('hashed-system-password' as never)
     randomUuidMock.mockReturnValue('generated-system-password')
 
     service = new UsersService(
@@ -116,9 +123,9 @@ describe('UsersService.remove', () => {
     const result = await service.remove('user-1')
 
     expect(result).toEqual({ ok: true })
-    expect(tx.user.update).toHaveBeenCalledWith({
-      where: { id: 'user-1' },
-      data: { refreshTokenHash: null }
+    expect(tx.session.updateMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', revokedAt: null },
+      data: { revokedAt: expect.any(Date) }
     })
     expect(tx.ticket.updateMany).toHaveBeenCalledWith({
       where: { createdByUserId: 'user-1' },
@@ -162,7 +169,7 @@ describe('UsersService.remove', () => {
     await service.remove('user-1')
 
     expect(randomUuidMock).toHaveBeenCalledTimes(1)
-    expect(hashMock).toHaveBeenCalledWith('generated-system-password', 12)
+    expect(hashMock).toHaveBeenCalledWith('generated-system-password', expect.objectContaining({ type: 2 }))
     expect(tx.user.create).toHaveBeenCalledWith({
       data: {
         email: SYSTEM_EMAIL,
@@ -253,7 +260,7 @@ describe('UsersService.invite', () => {
 
   it('invite returns onboarding token and URL and does not use hardcoded password', async () => {
     randomUuidMock.mockReturnValue('generated-invite-secret')
-    hashMock.mockResolvedValue('generated-password-hash')
+    hashMock.mockResolvedValue('generated-password-hash' as never)
     prisma.user.upsert.mockResolvedValue({
       id: 'user-1',
       email: 'invitee@jtrack.local',
@@ -288,7 +295,7 @@ describe('UsersService.invite', () => {
       'loc-1'
     )
 
-    expect(hashMock).toHaveBeenCalledWith('generated-invite-secret', 12)
+    expect(hashMock).toHaveBeenCalledWith('generated-invite-secret', expect.objectContaining({ type: 2 }))
     expect(prisma.userLocation.upsert).toHaveBeenCalledWith({
       where: {
         userId_locationId: {

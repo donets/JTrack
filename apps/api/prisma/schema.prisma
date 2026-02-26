@@ -46,22 +46,64 @@ enum PaymentStatus {
   Refunded
 }
 
+enum AuthTokenType {
+  EmailVerification
+  PasswordReset
+  InviteAccept
+}
+
 model User {
-  id               String             @id @default(uuid()) @db.Uuid
-  email            String             @unique
-  passwordHash     String
-  refreshTokenHash String?
-  name             String
-  isAdmin          Boolean            @default(false)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  userLocations    UserLocation[]
-  createdTickets   Ticket[]           @relation("CreatedTickets")
-  assignedTickets  Ticket[]           @relation("AssignedTickets")
-  comments         TicketComment[]    @relation("CommentAuthor")
-  attachments      TicketAttachment[] @relation("AttachmentUploader")
+  id                String             @id @default(uuid()) @db.Uuid
+  email             String             @unique
+  passwordHash      String
+  name              String
+  isAdmin           Boolean            @default(false)
+  tokenVersion      Int                @default(0)
+  emailVerifiedAt   DateTime?
+  passwordChangedAt DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userLocations     UserLocation[]
+  sessions          Session[]
+  authTokens        AuthToken[]
+  createdTickets    Ticket[]           @relation("CreatedTickets")
+  assignedTickets   Ticket[]           @relation("AssignedTickets")
+  comments          TicketComment[]    @relation("CommentAuthor")
+  attachments       TicketAttachment[] @relation("AttachmentUploader")
 
   @@index([createdAt])
+}
+
+model AuthToken {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @db.Uuid
+  type        AuthTokenType
+  tokenHash   String
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  createdByIp String?
+  userAgent   String?
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId, type])
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  refreshTokenHash String
+  createdAt        DateTime  @default(now())
+  lastUsedAt       DateTime  @default(now())
+  revokedAt        DateTime?
+  ip               String?
+  userAgent        String?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshTokenHash])
 }
 
 model Location {

@@ -171,7 +171,7 @@ export class TicketsService {
     assignedToUserId: string | null
     title: string
     description: string | null
-    status: string
+    status: TicketStatus
     scheduledStartAt: Date | null
     scheduledEndAt: Date | null
     priority: string | null
