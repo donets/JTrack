@@ -227,7 +227,7 @@ layouts/default.vue (CSS Grid)
 ### Epic 3: Ticket Views Enhancement (20pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
-| 1 | JTR-48 | Refactor ticket list (JTable + filters) | 5pt |
+| 1 | JTR-48 | Refactor ticket list (JTable + filters) (done 2026-02-27) | 5pt |
 | 2 | JTR-49 | Ticket creation modal | 3pt |
 | 3 | JTR-50 | Ticket detail two-column layout | 5pt |
 | 4 | JTR-51 | Ticket status change workflow | 3pt |
