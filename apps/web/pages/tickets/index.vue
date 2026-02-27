@@ -124,7 +124,7 @@
 
     <div class="rounded-xl border border-slate-200 bg-white">
       <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-3">
-        <div class="w-44 shrink-0">
+        <div class="w-52 shrink-0">
           <JSearchInput v-model="searchQuery" placeholder="Search…" />
         </div>
         <div class="w-36 shrink-0">
