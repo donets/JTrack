@@ -3,55 +3,62 @@
     <div class="flex flex-col gap-6 lg:flex-row">
       <!-- Left column — main content -->
       <div class="min-w-0 flex-[3] space-y-6">
-        <JCard :padding="false">
-          <div class="px-4 py-3">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <template v-if="editing">
-                    <JInput
-                      v-model="editForm.title"
-                      placeholder="Ticket title"
-                    />
-                  </template>
-                  <h1 v-else class="text-xl font-bold text-ink">{{ ticket.title }}</h1>
-                  <JBadge :variant="statusVariant(ticket.status)">
-                    {{ ticket.status }}
-                  </JBadge>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <template v-if="editing">
-                  <JButton variant="secondary" @click="cancelEditing">Cancel</JButton>
-                  <JButton :loading="saving" @click="saveEdits">Save changes</JButton>
+        <div class="rounded-lg border border-slate-200 bg-white px-5 py-4">
+          <div class="mb-3 flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <input
+                v-if="editing"
+                v-model="editForm.title"
+                class="w-full bg-transparent text-xl font-bold text-ink outline-none placeholder:text-slate-300"
+                placeholder="Ticket title"
+              />
+              <h1
+                v-else
+                class="cursor-pointer text-xl font-bold text-ink"
+                @click="startEditing"
+              >
+                {{ ticket.title }}
+              </h1>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <template v-if="editing">
+                <JButton variant="secondary" size="sm" @click="cancelEditing">Cancel</JButton>
+                <JButton size="sm" :loading="saving" @click="saveEdits">Save</JButton>
+              </template>
+              <JButton v-else variant="ghost" size="sm" @click="startEditing">
+                <template #icon>
+                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                  </svg>
                 </template>
-                <JButton v-else @click="startEditing">
-                  <template #icon>
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                    </svg>
-                  </template>
-                  Edit Ticket
-                </JButton>
-              </div>
+                Edit
+              </JButton>
             </div>
           </div>
-          <div class="border-t border-slate-100 px-4 py-4">
-            <template v-if="editing">
-              <JTextarea
-                v-model="editForm.description"
-                placeholder="Add a description…"
-                :rows="6"
-              />
-            </template>
-            <template v-else>
-              <p v-if="ticket.description" class="whitespace-pre-wrap text-base leading-relaxed text-slate-700">
-                {{ ticket.description }}
-              </p>
-              <p v-else class="text-base italic text-slate-400">No description added yet.</p>
-            </template>
+          <div>
+            <textarea
+              v-if="editing"
+              v-model="editForm.description"
+              class="w-full resize-none bg-transparent text-base leading-relaxed text-slate-700 outline-none placeholder:text-slate-300"
+              placeholder="Add a description…"
+              rows="6"
+            />
+            <p
+              v-else-if="ticket.description"
+              class="cursor-pointer whitespace-pre-wrap text-base leading-relaxed text-slate-700"
+              @click="startEditing"
+            >
+              {{ ticket.description }}
+            </p>
+            <p
+              v-else
+              class="cursor-pointer text-base italic text-slate-300"
+              @click="startEditing"
+            >
+              Click to add a description…
+            </p>
           </div>
-        </JCard>
+        </div>
 
         <!-- Activity / Comments -->
         <JCard>
