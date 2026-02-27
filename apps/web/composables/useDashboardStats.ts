@@ -1,6 +1,12 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { PaymentRecord, Ticket, TicketComment, TicketStatus } from '@jtrack/shared'
 import type { TimelineItem } from '~/types/ui'
+import {
+  priorityToBadgeVariant,
+  statusToBadgeVariant,
+  statusToLabel,
+  type BadgeVariant
+} from '~/utils/ticket-status'
 
 interface LocationUser {
   id: string
@@ -8,8 +14,6 @@ interface LocationUser {
   role: string
   membershipStatus: string
 }
-
-type BadgeVariant = 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'
 
 type RxDoc<T> = {
   toJSON: () => T
@@ -112,56 +116,6 @@ const inRange = (
 }
 
 const formatTicketCode = (ticketId: string) => `#${ticketId.slice(0, 8).toUpperCase()}`
-
-const toStatusLabel = (status: TicketStatus) => {
-  if (status === 'InProgress') {
-    return 'In Progress'
-  }
-
-  return status
-}
-
-const statusToVariant = (status: TicketStatus): BadgeVariant => {
-  if (status === 'New') {
-    return 'sky'
-  }
-
-  if (status === 'Scheduled') {
-    return 'violet'
-  }
-
-  if (status === 'InProgress') {
-    return 'flame'
-  }
-
-  if (status === 'Done' || status === 'Invoiced' || status === 'Paid') {
-    return 'mint'
-  }
-
-  if (status === 'Canceled') {
-    return 'rose'
-  }
-
-  return 'mist'
-}
-
-const priorityToVariant = (priority: string | null): BadgeVariant => {
-  const normalized = priority?.toLowerCase()
-
-  if (normalized === 'high' || normalized === 'urgent') {
-    return 'rose'
-  }
-
-  if (normalized === 'medium') {
-    return 'flame'
-  }
-
-  if (normalized === 'low') {
-    return 'mist'
-  }
-
-  return 'mist'
-}
 
 const formatPriority = (priority: string | null) => {
   if (!priority) {
@@ -431,19 +385,19 @@ export const useDashboardStats = () => {
         key: 'New',
         label: 'New',
         count: activeTickets.value.filter((ticket) => ticket.status === 'New').length,
-        variant: 'sky'
+        variant: statusToBadgeVariant('New')
       },
       {
         key: 'Scheduled',
         label: 'Scheduled',
         count: activeTickets.value.filter((ticket) => ticket.status === 'Scheduled').length,
-        variant: 'violet'
+        variant: statusToBadgeVariant('Scheduled')
       },
       {
         key: 'InProgress',
         label: 'In Progress',
         count: activeTickets.value.filter((ticket) => ticket.status === 'InProgress').length,
-        variant: 'flame'
+        variant: statusToBadgeVariant('InProgress')
       },
       {
         key: 'Done',
@@ -466,7 +420,7 @@ export const useDashboardStats = () => {
         ticketCode: formatTicketCode(ticket.id),
         title: ticket.title,
         priorityLabel: formatPriority(ticket.priority),
-        priorityVariant: priorityToVariant(ticket.priority),
+        priorityVariant: priorityToBadgeVariant(ticket.priority),
         createdAt: ticket.createdAt,
         createdLabel: formatRelativeTime(ticket.createdAt, now.value)
       }))
@@ -560,7 +514,7 @@ export const useDashboardStats = () => {
           actor: {
             name: 'System'
           },
-          content: `${formatTicketCode(ticket.id)} moved to ${toStatusLabel(ticket.status)}`,
+          content: `${formatTicketCode(ticket.id)} moved to ${statusToLabel(ticket.status)}`,
           timestamp: ticket.updatedAt
         })
       }
@@ -641,8 +595,8 @@ export const useDashboardStats = () => {
         ticketCode: formatTicketCode(ticket.id),
         title: ticket.title,
         status: ticket.status,
-        statusLabel: toStatusLabel(ticket.status),
-        statusVariant: statusToVariant(ticket.status),
+        statusLabel: statusToLabel(ticket.status),
+        statusVariant: statusToBadgeVariant(ticket.status),
         timeLabel:
           ticket.scheduledStartAt && ticket.scheduledEndAt
             ? `${formatTime(ticket.scheduledStartAt)} - ${formatTime(ticket.scheduledEndAt)}`

@@ -232,7 +232,7 @@ layouts/default.vue (CSS Grid)
 | 3 | JTR-50 | Ticket detail two-column layout | 5pt |
 | 4 | JTR-51 | Ticket status change workflow | 3pt |
 | 5 | JTR-52 | Ticket edit modal + financial card | 3pt |
-| 6 | JTR-53 | Ticket status badge mapping utility | 1pt |
+| 6 | JTR-53 | Ticket status badge mapping utility (done 2026-02-27) | 1pt |
 
 ### Epic 4: Dashboard (11pt)
 | # | Linear | Task | Est |
