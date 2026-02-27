@@ -194,7 +194,7 @@ layouts/default.vue (CSS Grid)
 | 16 | JTR-38 | Create JTimeline (done 2026-02-27) | 2pt |
 | 17 | JTR-39 | Create JProgress + JCheckbox (done 2026-02-27) | 2pt |
 | 18 | JTR-40 | Create JDatePicker (done 2026-02-27) | 2pt |
-| 19 | JTR-41 | Create JTabs | 2pt |
+| 19 | JTR-41 | Create JTabs (done 2026-02-27) | 2pt |
 
 ### Epic 2: App Shell & Navigation (17pt)
 | # | Linear | Task | Est |
