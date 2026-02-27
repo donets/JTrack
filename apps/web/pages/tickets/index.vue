@@ -149,28 +149,29 @@
           <option value="Canceled">Canceled</option>
         </select>
       </div>
-      <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <table class="min-w-full divide-y divide-slate-200 text-base">
         <thead class="bg-slate-50">
           <tr>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Title</th>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Status</th>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Priority</th>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Updated</th>
+            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Title</th>
+            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Status</th>
+            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Priority</th>
+            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Updated</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          <tr v-for="ticket in visibleTickets" :key="ticket.id" class="hover:bg-slate-50">
-            <td class="px-4 py-3">
-              <NuxtLink :to="`/tickets/${ticket.id}`" class="font-medium text-emerald-700 hover:underline">
-                {{ ticket.title }}
-              </NuxtLink>
-            </td>
-            <td class="px-4 py-3">{{ ticket.status }}</td>
-            <td class="px-4 py-3">{{ ticket.priority ?? '-' }}</td>
-            <td class="px-4 py-3">{{ new Date(ticket.updatedAt).toLocaleString() }}</td>
+          <tr
+            v-for="ticket in visibleTickets"
+            :key="ticket.id"
+            class="cursor-pointer transition-colors hover:bg-slate-50"
+            @click="navigateTo(`/tickets/${ticket.id}`)"
+          >
+            <td class="px-5 py-4 font-medium text-slate-900">{{ ticket.title }}</td>
+            <td class="px-5 py-4 text-slate-600">{{ ticket.status }}</td>
+            <td class="px-5 py-4 text-slate-600">{{ ticket.priority ?? '-' }}</td>
+            <td class="px-5 py-4 text-slate-500">{{ new Date(ticket.updatedAt).toLocaleString() }}</td>
           </tr>
           <tr v-if="visibleTickets.length === 0">
-            <td class="px-4 py-6 text-center text-slate-500" colspan="4">No tickets in local store</td>
+            <td class="px-5 py-8 text-center text-slate-400" colspan="4">No tickets in local store</td>
           </tr>
         </tbody>
       </table>
