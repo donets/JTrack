@@ -89,6 +89,7 @@ const columns: TableColumn[] = [
 const activeTab = ref<'all' | 'active' | 'invited'>('all')
 const searchQuery = ref('')
 const inviteModalOpen = ref(false)
+const accessRedirected = ref(false)
 
 const canInviteMembers = computed(() => hasPrivilege('users.manage'))
 
@@ -175,7 +176,7 @@ const statusBadgeVariant = (status: UserLocationStatus) => {
 }
 
 const loadMembers = async () => {
-  if (!locationStore.activeLocationId) {
+  if (!locationStore.activeLocationId || !hasPrivilege('users.read')) {
     teamStore.members = []
     return
   }
@@ -191,10 +192,41 @@ const loadMembers = async () => {
 }
 
 onMounted(() => {
-  void loadMembers()
+  void enforceReadAccess().then((allowed) => {
+    if (allowed) {
+      void loadMembers()
+    }
+  })
 })
 
 watch(() => locationStore.activeLocationId, () => {
-  void loadMembers()
+  void enforceReadAccess().then((allowed) => {
+    if (allowed) {
+      void loadMembers()
+    }
+  })
 })
+
+const enforceReadAccess = async () => {
+  if (!locationStore.activeLocationId) {
+    return false
+  }
+
+  if (hasPrivilege('users.read')) {
+    return true
+  }
+
+  if (accessRedirected.value) {
+    return false
+  }
+
+  accessRedirected.value = true
+  show({
+    type: 'warning',
+    message: 'You do not have permission to view team pages'
+  })
+
+  await navigateTo('/dashboard')
+  return false
+}
 </script>

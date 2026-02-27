@@ -126,6 +126,7 @@ watchEffect(() => {
 const activeTab = ref<'jobs' | 'activity'>('jobs')
 const selectedRole = ref<RoleKey>('Technician')
 const roleUpdating = ref(false)
+const accessRedirected = ref(false)
 const assignedTickets = ref<Ticket[]>([])
 const activityItems = ref<TimelineItem[]>([])
 
@@ -224,7 +225,7 @@ const ticketStatusVariant = (status: string) => {
 }
 
 const loadMemberData = async () => {
-  if (!locationStore.activeLocationId) {
+  if (!locationStore.activeLocationId || !hasPrivilege('users.read')) {
     return
   }
 
@@ -253,7 +254,7 @@ const clearSubscriptions = () => {
 const subscribeToMemberData = () => {
   clearSubscriptions()
 
-  if (!locationStore.activeLocationId || !memberId.value) {
+  if (!locationStore.activeLocationId || !memberId.value || !hasPrivilege('users.read')) {
     assignedTickets.value = []
     activityItems.value = []
     return
@@ -354,16 +355,49 @@ watch(
 watch(
   () => [locationStore.activeLocationId, memberId.value],
   () => {
-    subscribeToMemberData()
+    void enforceReadAccess().then((allowed) => {
+      if (allowed) {
+        subscribeToMemberData()
+      } else {
+        clearSubscriptions()
+      }
+    })
   },
   { immediate: true }
 )
 
 onMounted(() => {
-  void loadMemberData()
+  void enforceReadAccess().then((allowed) => {
+    if (allowed) {
+      void loadMemberData()
+    }
+  })
 })
 
 onUnmounted(() => {
   clearSubscriptions()
 })
+
+const enforceReadAccess = async () => {
+  if (!locationStore.activeLocationId) {
+    return false
+  }
+
+  if (hasPrivilege('users.read')) {
+    return true
+  }
+
+  if (accessRedirected.value) {
+    return false
+  }
+
+  accessRedirected.value = true
+  show({
+    type: 'warning',
+    message: 'You do not have permission to view team pages'
+  })
+
+  await navigateTo('/dashboard')
+  return false
+}
 </script>
