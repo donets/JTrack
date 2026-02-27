@@ -8,23 +8,6 @@
         <span class="text-lg">⚡</span>
         <span :class="logoTextClasses">JTrack</span>
       </NuxtLink>
-      <button
-        type="button"
-        class="hidden rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white lg:inline-flex"
-        aria-label="Toggle sidebar"
-        @click="toggleCollapsed"
-      >
-        <svg
-          class="size-4 transition-transform"
-          :class="collapsed ? 'rotate-180' : ''"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-        </svg>
-      </button>
     </div>
 
     <nav class="flex-1 overflow-y-auto py-3">
@@ -49,14 +32,24 @@
       </section>
     </nav>
 
-    <div class="border-t border-slate-700 p-3">
-      <div :class="userCardClasses">
-        <JAvatar size="sm" :name="userName" />
-        <div :class="userTextClasses">
-          <p class="text-xs font-semibold text-white">{{ userName }}</p>
-          <p class="text-[11px] text-slate-400">{{ userRole }}</p>
-        </div>
-      </div>
+    <div class="hidden border-t border-slate-700 p-3 lg:block">
+      <button
+        type="button"
+        class="flex w-full items-center justify-center rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+        aria-label="Toggle sidebar"
+        @click="toggleCollapsed"
+      >
+        <svg
+          class="size-4 transition-transform"
+          :class="collapsed ? 'rotate-180' : ''"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+      </button>
     </div>
   </aside>
 
@@ -244,13 +237,6 @@ const sectionLabelClasses = computed(() => [
 ])
 
 const itemTextClasses = computed(() => [props.collapsed ? 'hidden' : 'hidden lg:inline'])
-
-const userCardClasses = computed(() => [
-  'mt-2 flex items-center gap-2 rounded-md bg-slate-800/70 px-2 py-2',
-  props.collapsed ? 'justify-center' : ''
-])
-
-const userTextClasses = computed(() => [props.collapsed ? 'hidden' : 'hidden lg:block'])
 
 const showItemTitle = (label: string) => (props.collapsed ? label : undefined)
 
