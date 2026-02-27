@@ -57,6 +57,28 @@ describe('ZodValidationPipe', () => {
     })
   })
 
+  it('accepts double-stringified JSON payloads', () => {
+    const pipe = new ZodValidationPipe(syncPullLikeSchema)
+
+    const parsed = pipe.transform(
+      JSON.stringify(
+        JSON.stringify({
+          locationId: 'loc-1',
+          lastPulledAt: null,
+          limit: 100,
+          cursor: null
+        })
+      )
+    )
+
+    expect(parsed).toEqual({
+      locationId: 'loc-1',
+      lastPulledAt: null,
+      limit: 100,
+      cursor: null
+    })
+  })
+
   it('throws bad request when payload is not valid for schema', () => {
     const pipe = new ZodValidationPipe(syncPullLikeSchema)
 

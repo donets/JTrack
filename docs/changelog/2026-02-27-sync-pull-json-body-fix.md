@@ -6,12 +6,12 @@
 ## What changed
 
 - Hardened API request validation in `ZodValidationPipe`:
-  - if initial schema parse fails and payload is a string, pipe now attempts `JSON.parse(...)` and re-validates
+  - string payloads are normalized via bounded `JSON.parse(...)` passes to handle JSON-string and double-string JSON bodies
   - this fixes `{"formErrors":["Expected object, received string"]}` for stringified sync payloads
 - Updated web API client body handling:
   - object/array payloads are now explicitly JSON-serialized
   - `content-type: application/json` and `accept: application/json` are set by default for JSON payloads
-- Added unit tests for pipe behavior with object payloads, JSON-string payloads, and invalid payloads.
+- Added unit tests for pipe behavior with object payloads, JSON-string payloads, double-string JSON payloads, and invalid payloads.
 
 ## Files
 
