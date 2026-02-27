@@ -186,7 +186,7 @@ layouts/default.vue (CSS Grid)
 | 8 | JTR-30 | Create JModal (done 2026-02-27) | 3pt |
 | 9 | JTR-31 | Create JToast system (done 2026-02-27) | 2pt |
 | 10 | JTR-32 | Create JTable (done 2026-02-27) | 3pt |
-| 11 | JTR-33 | Create JSearchInput | 1pt |
+| 11 | JTR-33 | Create JSearchInput (done 2026-02-27) | 1pt |
 | 12 | JTR-34 | Create JDropdown | 2pt |
 | 13 | JTR-35 | Create JSpinner + JSkeleton | 1pt |
 | 14 | JTR-36 | Create JEmptyState | 1pt |
