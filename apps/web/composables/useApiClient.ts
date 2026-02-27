@@ -5,6 +5,37 @@ interface RequestOptions {
   skipAuthRefresh?: boolean
 }
 
+const isBodyInitLike = (value: unknown) => {
+  if (typeof FormData !== 'undefined' && value instanceof FormData) {
+    return true
+  }
+
+  if (typeof Blob !== 'undefined' && value instanceof Blob) {
+    return true
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return true
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(value)) {
+    return true
+  }
+
+  if (typeof URLSearchParams !== 'undefined' && value instanceof URLSearchParams) {
+    return true
+  }
+
+  if (typeof ReadableStream !== 'undefined' && value instanceof ReadableStream) {
+    return true
+  }
+
+  return false
+}
+
+const shouldSerializeAsJson = (value: unknown) =>
+  value !== null && (typeof value === 'object' || Array.isArray(value)) && !isBodyInitLike(value)
+
 export const useApiClient = () => {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
@@ -33,7 +64,13 @@ export const useApiClient = () => {
     }
 
     if (options.body !== undefined) {
-      fetchOptions.body = options.body
+      if (shouldSerializeAsJson(options.body)) {
+        headers['content-type'] ??= 'application/json'
+        headers.accept ??= 'application/json'
+        fetchOptions.body = JSON.stringify(options.body)
+      } else {
+        fetchOptions.body = options.body
+      }
     }
 
     try {

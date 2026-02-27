@@ -92,7 +92,7 @@
 - Location delete with dependent business records: `409 Conflict`.
 - Health readiness check when DB is unavailable: `503 Service Unavailable`.
 - Invalid or already-used invite token: `401 Unauthorized`.
-- Validation is schema-based (Zod) and fails fast at controller boundary via `ZodValidationPipe`; service layer consumes already-validated typed inputs.
+- Validation is schema-based (Zod) and fails fast at controller boundary via `ZodValidationPipe`; pipe also attempts JSON parsing for string payloads before schema validation to tolerate legacy/double-serialized clients.
 - API response date serialization is centralized in `apps/api/src/common/date-serializer.ts` to keep all date fields consistently ISO formatted.
 
 ## 9. Non-Functional Requirements
