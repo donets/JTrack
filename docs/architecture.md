@@ -48,7 +48,7 @@ flowchart LR
 - `JwtAuthGuard`: validates bearer access token.
 - `LocationGuard`: enforces `x-location-id` + active membership; for admin bypass, writes synthetic `locationRole=Owner` into request context.
 - `PrivilegesGuard`: validates endpoint privilege set against role.
-- `ZodValidationPipe`: validates request payloads at controller boundary using shared schema contracts.
+- `ZodValidationPipe`: validates request payloads at controller boundary (bound at parameter level, e.g. `@Body(new ZodValidationPipe(...))`) using shared schema contracts and normalizes JSON-stringified (including double-stringified) bodies before schema parse.
 - `serializeDates` helper (`apps/api/src/common/date-serializer.ts`): centralizes `Date -> ISO string` conversion for API response mapping in service layer.
 
 ## 5. Data Architecture

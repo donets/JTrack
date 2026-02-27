@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UsePipes } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import {
   createLocationSchema,
   type CreateLocationInput,
@@ -22,17 +22,18 @@ export class LocationsController {
   }
 
   @Post()
-  @UsePipes(new ZodValidationPipe(createLocationSchema))
-  async create(@CurrentUser() user: JwtUser, @Body() body: CreateLocationInput) {
+  async create(
+    @CurrentUser() user: JwtUser,
+    @Body(new ZodValidationPipe(createLocationSchema)) body: CreateLocationInput
+  ) {
     return this.locationsService.create(user, body)
   }
 
   @Patch(':id')
-  @UsePipes(new ZodValidationPipe(updateLocationSchema))
   async update(
     @CurrentUser() user: JwtUser,
     @Param('id') locationId: string,
-    @Body() body: UpdateLocationInput
+    @Body(new ZodValidationPipe(updateLocationSchema)) body: UpdateLocationInput
   ) {
     return this.locationsService.update(user, locationId, body)
   }

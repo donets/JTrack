@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center px-4">
+  <div class="w-full max-w-sm">
     <form class="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow" @submit.prevent="submit">
       <div>
         <p class="text-xs uppercase tracking-[0.2em] text-slate-500">JTrack</p>
@@ -66,6 +66,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: 'auth'
+})
+
 const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const route = useRoute()
@@ -92,7 +96,7 @@ const submit = async () => {
   try {
     await authStore.login(email.value, password.value)
     await locationStore.loadLocations()
-    await navigateTo('/locations')
+    await navigateTo('/dashboard')
   } catch (err: any) {
     error.value = err?.data?.message ?? 'Unable to sign in'
   } finally {

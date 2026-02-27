@@ -1,75 +1,84 @@
 <template>
-  <AppShell>
-    <section class="space-y-5">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold">Tickets</h2>
-        <p class="text-sm text-slate-500">Data source: RxDB (offline-first)</p>
-      </div>
+  <section class="space-y-5">
+    <JPageHeader
+      title="Tickets"
+      description="Data source: RxDB (offline-first)."
+      :breadcrumbs="breadcrumbs"
+    />
 
-      <form class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-4" @submit.prevent="createTicket">
-        <input v-model="form.title" class="rounded border border-slate-300 px-3 py-2" placeholder="Title" required />
-        <input
-          v-model="form.description"
-          class="rounded border border-slate-300 px-3 py-2"
-          placeholder="Description"
-        />
-        <select v-model="form.priority" class="rounded border border-slate-300 px-3 py-2">
-          <option value="">Priority</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
+    <form class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-4" @submit.prevent="createTicket">
+      <input v-model="form.title" class="rounded border border-slate-300 px-3 py-2" placeholder="Title" required />
+      <input
+        v-model="form.description"
+        class="rounded border border-slate-300 px-3 py-2"
+        placeholder="Description"
+      />
+      <select v-model="form.priority" class="rounded border border-slate-300 px-3 py-2">
+        <option value="">Priority</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <button class="rounded bg-emerald-600 px-3 py-2 text-white" type="submit">Create ticket</button>
+    </form>
+
+    <div class="rounded-xl border border-slate-200 bg-white">
+      <div class="flex items-center justify-end border-b border-slate-100 px-4 py-3">
+        <select v-model="statusFilter" class="rounded border border-slate-300 px-3 py-2 text-sm">
+          <option value="">All statuses</option>
+          <option value="New">New</option>
+          <option value="Scheduled">Scheduled</option>
+          <option value="InProgress">In progress</option>
+          <option value="Done">Done</option>
+          <option value="Invoiced">Invoiced</option>
+          <option value="Paid">Paid</option>
+          <option value="Canceled">Canceled</option>
         </select>
-        <button class="rounded bg-emerald-600 px-3 py-2 text-white" type="submit">Create ticket</button>
-      </form>
-
-      <div class="rounded-xl border border-slate-200 bg-white">
-        <div class="flex items-center justify-end border-b border-slate-100 px-4 py-3">
-          <select v-model="statusFilter" class="rounded border border-slate-300 px-3 py-2 text-sm">
-            <option value="">All statuses</option>
-            <option value="New">New</option>
-            <option value="Scheduled">Scheduled</option>
-            <option value="InProgress">In progress</option>
-            <option value="Done">Done</option>
-            <option value="Invoiced">Invoiced</option>
-            <option value="Paid">Paid</option>
-            <option value="Canceled">Canceled</option>
-          </select>
-        </div>
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Title</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Status</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Priority</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Updated</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="ticket in visibleTickets" :key="ticket.id" class="hover:bg-slate-50">
-              <td class="px-4 py-3">
-                <NuxtLink :to="`/tickets/${ticket.id}`" class="font-medium text-emerald-700 hover:underline">
-                  {{ ticket.title }}
-                </NuxtLink>
-              </td>
-              <td class="px-4 py-3">{{ ticket.status }}</td>
-              <td class="px-4 py-3">{{ ticket.priority ?? '-' }}</td>
-              <td class="px-4 py-3">{{ new Date(ticket.updatedAt).toLocaleString() }}</td>
-            </tr>
-            <tr v-if="visibleTickets.length === 0">
-              <td class="px-4 py-6 text-center text-slate-500" colspan="4">No tickets in local store</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
-    </section>
-  </AppShell>
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium text-slate-600">Title</th>
+            <th class="px-4 py-3 text-left font-medium text-slate-600">Status</th>
+            <th class="px-4 py-3 text-left font-medium text-slate-600">Priority</th>
+            <th class="px-4 py-3 text-left font-medium text-slate-600">Updated</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr v-for="ticket in visibleTickets" :key="ticket.id" class="hover:bg-slate-50">
+            <td class="px-4 py-3">
+              <NuxtLink :to="`/tickets/${ticket.id}`" class="font-medium text-emerald-700 hover:underline">
+                {{ ticket.title }}
+              </NuxtLink>
+            </td>
+            <td class="px-4 py-3">{{ ticket.status }}</td>
+            <td class="px-4 py-3">{{ ticket.priority ?? '-' }}</td>
+            <td class="px-4 py-3">{{ new Date(ticket.updatedAt).toLocaleString() }}</td>
+          </tr>
+          <tr v-if="visibleTickets.length === 0">
+            <td class="px-4 py-6 text-center text-slate-500" colspan="4">No tickets in local store</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 </template>
 
 <script setup lang="ts">
+import type { BreadcrumbItem } from '~/types/ui'
+
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
 const db = useRxdb()
+const { setBreadcrumbs } = useBreadcrumbs()
+
+const breadcrumbs: BreadcrumbItem[] = [
+  { label: 'Dashboard', to: '/dashboard' },
+  { label: 'Tickets', to: '/tickets' }
+]
+
+setBreadcrumbs(breadcrumbs)
 
 const tickets = ref<any[]>([])
 let subscription: any = null

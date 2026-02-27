@@ -7,8 +7,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  UseGuards,
-  UsePipes
+  UseGuards
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
@@ -42,10 +41,10 @@ export class AuthController {
 
   private validateOrigin(request: Request): void {
     const origin = request.headers.origin
-    if (!origin) return // no Origin header (e.g. same-origin navigation) — allow
+    if (!origin) return
 
     const allowed = this.configService.get<string>('WEB_ORIGIN')
-    if (!allowed) return // not configured — skip validation
+    if (!allowed) return
 
     const allowedOrigins = allowed.split(',').map((o) => o.trim())
     if (!allowedOrigins.includes(origin)) {
@@ -53,29 +52,24 @@ export class AuthController {
     }
   }
 
-  // ── Register ───────────────────────────────────────────────────────
-
   @Public()
   @Post('register')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 900_000, limit: 5 } })
-  @UsePipes(new ZodValidationPipe(registerInputSchema))
   async register(
-    @Body() body: { email: string; name: string; password: string; locationName: string; timezone: string; address?: string },
+    @Body(new ZodValidationPipe(registerInputSchema))
+    body: { email: string; name: string; password: string; locationName: string; timezone: string; address?: string },
     @Req() request: Request
   ) {
     return this.authService.register(body, request.ip, request.headers['user-agent'])
   }
 
-  // ── Verify Email ───────────────────────────────────────────────────
-
   @Public()
   @Post('verify-email/request')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 900_000, limit: 10 } })
-  @UsePipes(new ZodValidationPipe(verifyEmailRequestInputSchema))
   async verifyEmailRequest(
-    @Body() body: { email: string },
+    @Body(new ZodValidationPipe(verifyEmailRequestInputSchema)) body: { email: string },
     @Req() request: Request
   ) {
     return this.authService.verifyEmailRequest(body, request.ip, request.headers['user-agent'])
@@ -85,20 +79,18 @@ export class AuthController {
   @Post('verify-email/confirm')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 900_000, limit: 10 } })
-  @UsePipes(new ZodValidationPipe(verifyEmailConfirmInputSchema))
-  async verifyEmailConfirm(@Body() body: { email: string; code: string }) {
+  async verifyEmailConfirm(
+    @Body(new ZodValidationPipe(verifyEmailConfirmInputSchema)) body: { email: string; code: string }
+  ) {
     return this.authService.verifyEmailConfirm(body)
   }
-
-  // ── Forgot / Reset Password ────────────────────────────────────────
 
   @Public()
   @Post('password/forgot')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 3_600_000, limit: 3 } })
-  @UsePipes(new ZodValidationPipe(forgotPasswordInputSchema))
   async forgotPassword(
-    @Body() body: { email: string },
+    @Body(new ZodValidationPipe(forgotPasswordInputSchema)) body: { email: string },
     @Req() request: Request
   ) {
     return this.authService.forgotPassword(body, request.ip, request.headers['user-agent'])
@@ -108,31 +100,28 @@ export class AuthController {
   @Post('password/reset')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 900_000, limit: 5 } })
-  @UsePipes(new ZodValidationPipe(resetPasswordInputSchema))
-  async resetPassword(@Body() body: { email: string; code: string; newPassword: string }) {
+  async resetPassword(
+    @Body(new ZodValidationPipe(resetPasswordInputSchema))
+    body: { email: string; code: string; newPassword: string }
+  ) {
     return this.authService.resetPassword(body)
   }
 
-  // ── Change Password (authenticated) ───────────────────────────────
-
   @Post('password/change')
-  @UsePipes(new ZodValidationPipe(changePasswordInputSchema))
   async changePassword(
     @CurrentUser() user: JwtUser,
-    @Body() body: { currentPassword: string; newPassword: string }
+    @Body(new ZodValidationPipe(changePasswordInputSchema))
+    body: { currentPassword: string; newPassword: string }
   ) {
     return this.authService.changePassword(user.sub, body)
   }
-
-  // ── Login ──────────────────────────────────────────────────────────
 
   @Public()
   @Post('login')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 900_000, limit: 10 } })
-  @UsePipes(new ZodValidationPipe(loginInputSchema))
   async login(
-    @Body() body: { email: string; password: string },
+    @Body(new ZodValidationPipe(loginInputSchema)) body: { email: string; password: string },
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response
   ) {
@@ -150,17 +139,14 @@ export class AuthController {
     }
   }
 
-  // ── Refresh ────────────────────────────────────────────────────────
-
   @Public()
   @Post('refresh')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  @UsePipes(new ZodValidationPipe(refreshInputSchema))
   async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-    @Body() body: RefreshInput
+    @Body(new ZodValidationPipe(refreshInputSchema)) body: RefreshInput
   ) {
     this.validateOrigin(request)
     const refreshToken = request.cookies?.refresh_token ?? body?.refreshToken
@@ -183,13 +169,10 @@ export class AuthController {
     }
   }
 
-  // ── Invite Complete ────────────────────────────────────────────────
-
   @Public()
   @Post('invite/complete')
-  @UsePipes(new ZodValidationPipe(inviteCompleteInputSchema))
   async completeInvite(
-    @Body() body: { token: string; password: string },
+    @Body(new ZodValidationPipe(inviteCompleteInputSchema)) body: { token: string; password: string },
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response
   ) {
@@ -207,8 +190,6 @@ export class AuthController {
     }
   }
 
-  // ── Logout ─────────────────────────────────────────────────────────
-
   @Post('logout')
   async logout(
     @CurrentUser() user: JwtUser,
@@ -220,8 +201,6 @@ export class AuthController {
     response.clearCookie('refresh_token', this.authService.getRefreshCookieOptions())
     return { ok: true }
   }
-
-  // ── Me ─────────────────────────────────────────────────────────────
 
   @Get('me')
   async me(@CurrentUser() user: JwtUser) {

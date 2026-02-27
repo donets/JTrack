@@ -4,6 +4,7 @@ export default {
   content: [
     './app.vue',
     './components/**/*.{vue,ts}',
+    './layouts/**/*.vue',
     './pages/**/*.vue',
     './composables/**/*.ts',
     './plugins/**/*.ts',

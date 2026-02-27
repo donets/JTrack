@@ -4,6 +4,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',
   ssr: false,
   modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss', '@vite-pwa/nuxt'],
+  components: [
+    {
+      path: '~/components',
+      pathPrefix: false
+    }
+  ],
   css: ['~/assets/css/main.css'],
   typescript: {
     strict: true,

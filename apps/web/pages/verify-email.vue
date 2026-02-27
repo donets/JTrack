@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center px-4">
+  <div class="w-full max-w-sm">
     <form
       v-if="!verified"
       class="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow"
@@ -70,6 +70,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: 'auth'
+})
+
 const config = useRuntimeConfig()
 const route = useRoute()
 

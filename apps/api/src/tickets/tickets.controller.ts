@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UsePipes } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
 import {
   createTicketSchema,
   type CreateTicketInput,
@@ -37,33 +37,30 @@ export class TicketsController {
 
   @Post()
   @RequirePrivileges(['tickets.write'])
-  @UsePipes(new ZodValidationPipe(createTicketSchema))
   async create(
     @CurrentLocation() locationId: string,
     @CurrentUser() user: JwtUser,
-    @Body() body: CreateTicketInput
+    @Body(new ZodValidationPipe(createTicketSchema)) body: CreateTicketInput
   ) {
     return this.ticketsService.create(locationId, user.sub, body)
   }
 
   @Patch(':id')
   @RequirePrivileges(['tickets.write'])
-  @UsePipes(new ZodValidationPipe(updateTicketSchema))
   async update(
     @CurrentLocation() locationId: string,
     @Param('id') id: string,
-    @Body() body: UpdateTicketInput
+    @Body(new ZodValidationPipe(updateTicketSchema)) body: UpdateTicketInput
   ) {
     return this.ticketsService.update(locationId, id, body)
   }
 
   @Patch(':id/status')
   @RequirePrivileges(['tickets.status.update'])
-  @UsePipes(new ZodValidationPipe(ticketStatusUpdateInputSchema))
   async transitionStatus(
     @CurrentLocation() locationId: string,
     @Param('id') id: string,
-    @Body() body: UpdateTicketStatusInput
+    @Body(new ZodValidationPipe(ticketStatusUpdateInputSchema)) body: UpdateTicketStatusInput
   ) {
     return this.ticketsService.transitionStatus(locationId, id, body.status)
   }

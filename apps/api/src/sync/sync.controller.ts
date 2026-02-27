@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UsePipes } from '@nestjs/common'
+import { Body, Controller, Post } from '@nestjs/common'
 import {
   syncPullRequestSchema,
   type SyncPullRequest,
@@ -16,15 +16,19 @@ export class SyncController {
 
   @Post('pull')
   @RequirePrivileges(['sync.run'])
-  @UsePipes(new ZodValidationPipe(syncPullRequestSchema))
-  async pull(@CurrentLocation() locationId: string, @Body() body: SyncPullRequest) {
+  async pull(
+    @CurrentLocation() locationId: string,
+    @Body(new ZodValidationPipe(syncPullRequestSchema)) body: SyncPullRequest
+  ) {
     return this.syncService.pull(body, locationId)
   }
 
   @Post('push')
   @RequirePrivileges(['sync.run'])
-  @UsePipes(new ZodValidationPipe(syncPushRequestSchema))
-  async push(@CurrentLocation() locationId: string, @Body() body: SyncPushRequest) {
+  async push(
+    @CurrentLocation() locationId: string,
+    @Body(new ZodValidationPipe(syncPushRequestSchema)) body: SyncPushRequest
+  ) {
     return this.syncService.push(body, locationId)
   }
 }

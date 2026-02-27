@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UsePipes } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
 import {
   createPaymentRecordSchema,
   type CreatePaymentRecordInput,
@@ -22,18 +22,19 @@ export class PaymentsController {
 
   @Post()
   @RequirePrivileges(['payments.write'])
-  @UsePipes(new ZodValidationPipe(createPaymentRecordSchema))
-  async create(@CurrentLocation() locationId: string, @Body() body: CreatePaymentRecordInput) {
+  async create(
+    @CurrentLocation() locationId: string,
+    @Body(new ZodValidationPipe(createPaymentRecordSchema)) body: CreatePaymentRecordInput
+  ) {
     return this.paymentsService.create(locationId, body)
   }
 
   @Patch(':id/status')
   @RequirePrivileges(['payments.write'])
-  @UsePipes(new ZodValidationPipe(paymentStatusUpdateInputSchema))
   async updateStatus(
     @CurrentLocation() locationId: string,
     @Param('id') id: string,
-    @Body() body: UpdatePaymentStatusInput
+    @Body(new ZodValidationPipe(paymentStatusUpdateInputSchema)) body: UpdatePaymentStatusInput
   ) {
     return this.paymentsService.updateStatus(locationId, id, body.status)
   }

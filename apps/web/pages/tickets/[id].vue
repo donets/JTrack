@@ -1,75 +1,76 @@
 <template>
-  <AppShell>
-    <section v-if="ticket" class="space-y-6">
-      <div>
-        <NuxtLink to="/tickets" class="text-sm text-emerald-700 hover:underline">← Back to tickets</NuxtLink>
-        <h2 class="mt-2 text-2xl font-semibold">{{ ticket.title }}</h2>
-        <p class="text-sm text-slate-600">Status: {{ ticket.status }}</p>
-        <p v-if="ticket.description" class="mt-2 text-slate-700">{{ ticket.description }}</p>
-      </div>
+  <section v-if="ticket" class="space-y-6">
+    <JPageHeader
+      :title="ticket.title"
+      :description="`Status: ${ticket.status}`"
+      :breadcrumbs="breadcrumbs"
+    />
 
-      <div class="grid gap-6 md:grid-cols-2">
-        <article class="rounded-xl border border-slate-200 bg-white p-4">
-          <h3 class="font-semibold">Comments</h3>
-          <form class="mt-3 flex gap-2" @submit.prevent="addComment">
-            <input
-              v-model="commentBody"
-              class="flex-1 rounded border border-slate-300 px-3 py-2"
-              placeholder="Write a comment"
-              required
-            />
-            <button class="rounded bg-ink px-3 py-2 text-white" type="submit">Add</button>
-          </form>
+    <p v-if="ticket.description" class="text-slate-700">{{ ticket.description }}</p>
 
-          <ul class="mt-4 space-y-2">
-            <li v-for="comment in comments" :key="comment.id" class="rounded border border-slate-100 bg-slate-50 p-3 text-sm">
-              <p>{{ comment.body }}</p>
-              <p class="mt-1 text-xs text-slate-500">{{ new Date(comment.createdAt).toLocaleString() }}</p>
-            </li>
-            <li v-if="comments.length === 0" class="text-sm text-slate-500">No comments yet</li>
-          </ul>
-        </article>
+    <div class="grid gap-6 md:grid-cols-2">
+      <article class="rounded-xl border border-slate-200 bg-white p-4">
+        <h3 class="font-semibold">Comments</h3>
+        <form class="mt-3 flex gap-2" @submit.prevent="addComment">
+          <input
+            v-model="commentBody"
+            class="flex-1 rounded border border-slate-300 px-3 py-2"
+            placeholder="Write a comment"
+            required
+          />
+          <button class="rounded bg-ink px-3 py-2 text-white" type="submit">Add</button>
+        </form>
 
-        <article class="rounded-xl border border-slate-200 bg-white p-4">
-          <h3 class="font-semibold">Attachments</h3>
+        <ul class="mt-4 space-y-2">
+          <li v-for="comment in comments" :key="comment.id" class="rounded border border-slate-100 bg-slate-50 p-3 text-sm">
+            <p>{{ comment.body }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ new Date(comment.createdAt).toLocaleString() }}</p>
+          </li>
+          <li v-if="comments.length === 0" class="text-sm text-slate-500">No comments yet</li>
+        </ul>
+      </article>
 
-          <div class="mt-3 flex flex-wrap gap-2">
-            <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
-            <button class="rounded bg-emerald-600 px-3 py-2 text-sm text-white" @click="openFileDialog">
-              Upload file
-            </button>
-            <button class="rounded border border-slate-300 px-3 py-2 text-sm" @click="capturePhoto">
-              Capture (mobile)
-            </button>
-          </div>
+      <article class="rounded-xl border border-slate-200 bg-white p-4">
+        <h3 class="font-semibold">Attachments</h3>
 
-          <ul class="mt-4 space-y-2">
-            <li
-              v-for="attachment in attachments"
-              :key="attachment.id"
-              class="rounded border border-slate-100 bg-slate-50 p-3 text-sm"
-            >
-              <template v-if="attachment.storageKey?.startsWith('pending/')">
-                <p class="text-amber-700">{{ attachment.storageKey }} (pending upload)</p>
-              </template>
-              <a v-else :href="attachmentUrl(attachment.url)" class="text-emerald-700 hover:underline" target="_blank">
-                {{ attachment.storageKey }}
-              </a>
-              <p class="text-xs text-slate-500">{{ attachment.mimeType }} · {{ attachment.size }} bytes</p>
-            </li>
-            <li v-if="attachments.length === 0" class="text-sm text-slate-500">No attachments yet</li>
-          </ul>
-        </article>
-      </div>
-    </section>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
+          <button class="rounded bg-emerald-600 px-3 py-2 text-sm text-white" @click="openFileDialog">
+            Upload file
+          </button>
+          <button class="rounded border border-slate-300 px-3 py-2 text-sm" @click="capturePhoto">
+            Capture (mobile)
+          </button>
+        </div>
 
-    <section v-else class="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
-      Ticket not found in local database
-    </section>
-  </AppShell>
+        <ul class="mt-4 space-y-2">
+          <li
+            v-for="attachment in attachments"
+            :key="attachment.id"
+            class="rounded border border-slate-100 bg-slate-50 p-3 text-sm"
+          >
+            <template v-if="attachment.storageKey?.startsWith('pending/')">
+              <p class="text-amber-700">{{ attachment.storageKey }} (pending upload)</p>
+            </template>
+            <a v-else :href="attachmentUrl(attachment.url)" class="text-emerald-700 hover:underline" target="_blank">
+              {{ attachment.storageKey }}
+            </a>
+            <p class="text-xs text-slate-500">{{ attachment.mimeType }} · {{ attachment.size }} bytes</p>
+          </li>
+          <li v-if="attachments.length === 0" class="text-sm text-slate-500">No attachments yet</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section v-else class="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
+    Ticket not found in local database
+  </section>
 </template>
 
 <script setup lang="ts">
+import type { BreadcrumbItem } from '~/types/ui'
+
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
@@ -77,6 +78,7 @@ const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
 const adapter = useAttachmentAdapter()
+const { setBreadcrumbs } = useBreadcrumbs()
 
 const ticketId = route.params.id as string
 
@@ -89,6 +91,25 @@ const fileInput = ref<HTMLInputElement | null>(null)
 let ticketSub: any = null
 let commentsSub: any = null
 let attachmentsSub: any = null
+
+const breadcrumbs = ref<BreadcrumbItem[]>([
+  { label: 'Dashboard', to: '/dashboard' },
+  { label: 'Tickets', to: '/tickets' },
+  { label: `#${ticketId}` }
+])
+
+watch(
+  () => ticket.value?.title,
+  (title) => {
+    breadcrumbs.value = [
+      { label: 'Dashboard', to: '/dashboard' },
+      { label: 'Tickets', to: '/tickets' },
+      { label: title || `#${ticketId}` }
+    ]
+    setBreadcrumbs(breadcrumbs.value)
+  },
+  { immediate: true }
+)
 
 const bindStreams = () => {
   ticketSub?.unsubscribe()

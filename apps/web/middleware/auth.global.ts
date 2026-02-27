@@ -12,7 +12,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (isPublicRoute) {
     if (authStore.isAuthenticated && to.path === '/login') {
-      return navigateTo('/locations')
+      return navigateTo('/dashboard')
     }
 
     return
