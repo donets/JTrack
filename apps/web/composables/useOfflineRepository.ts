@@ -62,23 +62,60 @@ export const useOfflineRepository = () => {
     const ticketId = input.id ?? crypto.randomUUID()
 
     const existing = await db.collections.tickets.findOne(ticketId).exec()
+    const existingTicket = existing?.toJSON() as Ticket | undefined
 
-    const ticket = {
+    const ticket: Ticket = {
       id: ticketId,
-      locationId,
-      createdByUserId: existing?.toJSON().createdByUserId ?? userId,
-      assignedToUserId: input.assignedToUserId ?? null,
-      title: input.title ?? 'Untitled Ticket',
-      description: input.description ?? null,
-      status: input.status ?? 'New',
-      scheduledStartAt: input.scheduledStartAt ?? null,
-      scheduledEndAt: input.scheduledEndAt ?? null,
-      priority: input.priority ?? null,
-      totalAmountCents: input.totalAmountCents ?? null,
-      currency: input.currency ?? 'EUR',
-      createdAt: existing?.toJSON().createdAt ?? now,
+      locationId: existingTicket?.locationId ?? locationId,
+      createdByUserId: existingTicket?.createdByUserId ?? userId,
+      assignedToUserId: existingTicket?.assignedToUserId ?? null,
+      title: existingTicket?.title ?? 'Untitled Ticket',
+      description: existingTicket?.description ?? null,
+      status: existingTicket?.status ?? 'New',
+      scheduledStartAt: existingTicket?.scheduledStartAt ?? null,
+      scheduledEndAt: existingTicket?.scheduledEndAt ?? null,
+      priority: existingTicket?.priority ?? null,
+      totalAmountCents: existingTicket?.totalAmountCents ?? null,
+      currency: existingTicket?.currency ?? 'EUR',
+      createdAt: existingTicket?.createdAt ?? now,
       updatedAt: now,
-      deletedAt: null
+      deletedAt: existingTicket?.deletedAt ?? null
+    }
+
+    if (input.title !== undefined) {
+      ticket.title = input.title
+    }
+
+    if (input.description !== undefined) {
+      ticket.description = input.description ?? null
+    }
+
+    if (input.status !== undefined) {
+      ticket.status = input.status
+    }
+
+    if (input.assignedToUserId !== undefined) {
+      ticket.assignedToUserId = input.assignedToUserId ?? null
+    }
+
+    if (input.scheduledStartAt !== undefined) {
+      ticket.scheduledStartAt = input.scheduledStartAt ?? null
+    }
+
+    if (input.scheduledEndAt !== undefined) {
+      ticket.scheduledEndAt = input.scheduledEndAt ?? null
+    }
+
+    if (input.priority !== undefined) {
+      ticket.priority = input.priority ?? null
+    }
+
+    if (input.totalAmountCents !== undefined) {
+      ticket.totalAmountCents = input.totalAmountCents ?? null
+    }
+
+    if (input.currency !== undefined) {
+      ticket.currency = input.currency
     }
 
     await db.collections.tickets.upsert(ticket)
