@@ -252,6 +252,13 @@ layouts/default.vue (CSS Grid)
 | 4 | JTR-62 | Create member detail page (done 2026-02-27) | 3pt |
 | 5 | JTR-63 | RBAC guards for team pages (done 2026-02-27) | 1pt |
 
+#### Team Follow-ups
+| # | Linear | Task | Est |
+|---|--------|------|-----|
+| 1 | JTR-90 | Enhance team management page | 3pt |
+| 2 | JTR-111 | Create team invitations tab (done 2026-02-27) | 2pt |
+| 3 | JTR-112 | Create RBAC roles matrix tab | 2pt |
+
 ### Epic 6: Kanban & Dispatch (27pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|

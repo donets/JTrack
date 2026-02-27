@@ -15,38 +15,69 @@
     <JCard>
       <div class="space-y-4">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <JTabs v-model="activeTab" :tabs="teamTabs" class="sm:max-w-[360px]" />
+          <JTabs v-model="sectionTab" :tabs="sectionTabs" class="sm:max-w-[360px]" />
           <div class="sm:w-[280px]">
             <JSearchInput
               v-model="searchQuery"
-              placeholder="Search by name or email"
+              :placeholder="sectionTab === 'members' ? 'Search by name or email' : 'Search invitations'"
             />
           </div>
         </div>
 
-        <JTable
-          :columns="columns"
-          :rows="rows"
-          :loading="teamStore.loading"
-          empty-text="No team members found"
-        >
-          <template #cell-member="{ row }">
-            <div class="flex items-center gap-3">
-              <JAvatar :name="row.name" size="sm" />
-              <NuxtLink :to="`/team/${row.id}`" class="font-semibold text-ink hover:text-mint hover:underline">
-                {{ row.name }}
-              </NuxtLink>
-            </div>
-          </template>
+        <template v-if="sectionTab === 'members'">
+          <JTabs v-model="memberFilterTab" :tabs="memberFilterTabs" class="sm:max-w-[360px]" />
 
+          <JTable
+            :columns="memberColumns"
+            :rows="memberRows"
+            :loading="teamStore.loading"
+            empty-text="No team members found"
+          >
+            <template #cell-member="{ row }">
+              <div class="flex items-center gap-3">
+                <JAvatar :name="row.name" size="sm" />
+                <NuxtLink :to="`/team/${row.id}`" class="font-semibold text-ink hover:text-mint hover:underline">
+                  {{ row.name }}
+                </NuxtLink>
+              </div>
+            </template>
+
+            <template #cell-role="{ row }">
+              <JBadge :variant="roleBadgeVariant(row.role)">{{ row.role }}</JBadge>
+            </template>
+
+            <template #cell-status="{ row }">
+              <JBadge :variant="statusBadgeVariant(row.membershipStatus)">
+                {{ row.statusLabel }}
+              </JBadge>
+            </template>
+          </JTable>
+        </template>
+
+        <JTable
+          v-else
+          :columns="invitationColumns"
+          :rows="invitationRows"
+          :loading="teamStore.loading"
+          empty-text="No pending invitations"
+        >
           <template #cell-role="{ row }">
             <JBadge :variant="roleBadgeVariant(row.role)">{{ row.role }}</JBadge>
           </template>
 
           <template #cell-status="{ row }">
-            <JBadge :variant="statusBadgeVariant(row.membershipStatus)">
-              {{ row.statusLabel }}
-            </JBadge>
+            <JBadge variant="sky">{{ row.status }}</JBadge>
+          </template>
+
+          <template #cell-actions="{ row }">
+            <div class="flex items-center justify-end gap-3 text-xs">
+              <button class="font-semibold text-sky hover:underline" @click="resendInvite(row.email)">
+                Resend
+              </button>
+              <button class="font-semibold text-rose-700 hover:underline" @click="revokeInvite(row.email)">
+                Revoke
+              </button>
+            </div>
           </template>
         </JTable>
       </div>
@@ -55,7 +86,7 @@
     <InviteMemberModal
       v-if="canInviteMembers"
       v-model="inviteModalOpen"
-      @invited="activeTab = 'invited'"
+      @invited="onInvited"
     />
   </section>
 </template>
@@ -78,7 +109,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 setBreadcrumbs(breadcrumbs)
 
-const columns: TableColumn[] = [
+const memberColumns: TableColumn[] = [
   { key: 'member', label: 'Member' },
   { key: 'email', label: 'Email' },
   { key: 'role', label: 'Role' },
@@ -86,14 +117,33 @@ const columns: TableColumn[] = [
   { key: 'lastActive', label: 'Last Active' }
 ]
 
-const activeTab = ref<'all' | 'active' | 'invited'>('all')
+const invitationColumns: TableColumn[] = [
+  { key: 'email', label: 'Email' },
+  { key: 'name', label: 'Name' },
+  { key: 'role', label: 'Role' },
+  { key: 'invitedDate', label: 'Invited Date' },
+  { key: 'status', label: 'Status' },
+  { key: 'actions', label: '', align: 'right', width: '120px' }
+]
+
+const sectionTab = ref<'members' | 'invitations'>('members')
+const memberFilterTab = ref<'all' | 'active' | 'invited'>('all')
 const searchQuery = ref('')
 const inviteModalOpen = ref(false)
 const accessRedirected = ref(false)
 
 const canInviteMembers = computed(() => hasPrivilege('users.manage'))
 
-const teamTabs = computed<TabItem[]>(() => [
+const sectionTabs = computed<TabItem[]>(() => [
+  { key: 'members', label: 'Members', count: teamStore.members.length },
+  {
+    key: 'invitations',
+    label: 'Invitations',
+    count: teamStore.members.filter((member) => member.membershipStatus === 'invited').length
+  }
+])
+
+const memberFilterTabs = computed<TabItem[]>(() => [
   { key: 'all', label: 'All', count: teamStore.members.length },
   {
     key: 'active',
@@ -124,11 +174,11 @@ const filteredMembers = computed(() => {
 
   return teamStore.members
     .filter((member) => {
-      if (activeTab.value === 'all') {
+      if (memberFilterTab.value === 'all') {
         return true
       }
 
-      return member.membershipStatus === activeTab.value
+      return member.membershipStatus === memberFilterTab.value
     })
     .filter((member) => {
       if (!query) {
@@ -139,7 +189,7 @@ const filteredMembers = computed(() => {
     })
 })
 
-const rows = computed(() =>
+const memberRows = computed(() =>
   filteredMembers.value.map((member) => ({
     id: member.id,
     name: member.name,
@@ -150,6 +200,28 @@ const rows = computed(() =>
     lastActive: new Date(member.updatedAt).toLocaleDateString()
   }))
 )
+
+const invitationRows = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+
+  return teamStore.members
+    .filter((member) => member.membershipStatus === 'invited')
+    .filter((member) => {
+      if (!query) {
+        return true
+      }
+
+      return member.name.toLowerCase().includes(query) || member.email.toLowerCase().includes(query)
+    })
+    .map((member) => ({
+      id: member.id,
+      email: member.email,
+      name: member.name,
+      role: member.role,
+      invitedDate: new Date(member.updatedAt).toLocaleDateString(),
+      status: 'Pending'
+    }))
+})
 
 const roleBadgeVariant = (role: RoleKey) => {
   if (role === 'Owner') {
@@ -173,6 +245,25 @@ const statusBadgeVariant = (status: UserLocationStatus) => {
   }
 
   return 'flame'
+}
+
+const onInvited = () => {
+  sectionTab.value = 'invitations'
+  memberFilterTab.value = 'invited'
+}
+
+const resendInvite = (email: string) => {
+  show({
+    type: 'info',
+    message: `Resend invite for ${email} is queued for backend support`
+  })
+}
+
+const revokeInvite = (email: string) => {
+  show({
+    type: 'warning',
+    message: `Revoke invite for ${email} is not implemented yet`
+  })
 }
 
 const loadMembers = async () => {
