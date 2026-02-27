@@ -90,15 +90,15 @@
               <JAvatar :name="comment.userId ?? 'User'" size="md" class="mt-0.5 shrink-0" />
               <div class="min-w-0 flex-1">
                 <div class="flex items-baseline gap-2">
-                  <span class="text-sm font-semibold text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
-                  <span class="text-xs text-slate-400" :title="formatTooltipDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</span>
+                  <span class="text-base font-semibold text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
+                  <span class="text-sm text-slate-400" :title="formatTooltipDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</span>
                 </div>
-                <p class="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{{ comment.body }}</p>
+                <p class="mt-1 whitespace-pre-wrap text-base leading-relaxed text-slate-600">{{ comment.body }}</p>
               </div>
             </article>
           </div>
           <div v-else class="px-5 py-8 text-center">
-            <p class="text-sm text-slate-400">No comments yet</p>
+            <p class="text-base text-slate-400">No comments yet</p>
           </div>
         </div>
 
@@ -110,11 +110,11 @@
         <JCard title="Details">
           <dl class="space-y-4">
             <div class="flex items-center justify-between">
-              <dt class="text-sm font-medium text-slate-500">Status</dt>
+              <dt class="text-base font-medium text-slate-500">Status</dt>
               <dd><JBadge :variant="statusVariant(ticket.status)">{{ ticket.status }}</JBadge></dd>
             </div>
             <div class="flex items-center justify-between">
-              <dt class="text-sm font-medium text-slate-500">Priority</dt>
+              <dt class="text-base font-medium text-slate-500">Priority</dt>
               <dd v-if="editingPriority">
                 <JSelect v-model="editForm.priority" :options="priorityOptions" placeholder="None" class="[&_select]:py-1 [&_select]:text-xs" @update:model-value="savePriority" />
               </dd>
@@ -125,11 +125,11 @@
               </dd>
             </div>
             <div class="flex items-center justify-between">
-              <dt class="text-sm font-medium text-slate-500">Created</dt>
+              <dt class="text-base font-medium text-slate-500">Created</dt>
               <dd class="text-base text-slate-700" :title="formatTooltipDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</dd>
             </div>
             <div class="flex items-center justify-between">
-              <dt class="text-sm font-medium text-slate-500">Updated</dt>
+              <dt class="text-base font-medium text-slate-500">Updated</dt>
               <dd class="text-base text-slate-700" :title="formatTooltipDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</dd>
             </div>
           </dl>
@@ -173,23 +173,23 @@
               </div>
               <div class="min-w-0 flex-1">
                 <template v-if="attachment.storageKey?.startsWith('pending/')">
-                  <p class="truncate text-sm font-medium text-amber-600">{{ attachment.storageKey }}</p>
-                  <p class="text-xs text-amber-500">Pending upload</p>
+                  <p class="truncate text-base font-medium text-amber-600">{{ attachment.storageKey }}</p>
+                  <p class="text-sm text-amber-500">Pending upload</p>
                 </template>
                 <template v-else>
                   <a
                     :href="attachmentUrl(attachment.url)"
-                    class="block truncate text-sm font-medium text-slate-900 hover:text-mint-700 hover:underline"
+                    class="block truncate text-base font-medium text-slate-900 hover:text-mint-700 hover:underline"
                     target="_blank"
                   >
                     {{ attachment.storageKey }}
                   </a>
-                  <p class="text-xs text-slate-400">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
+                  <p class="text-sm text-slate-400">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
                 </template>
               </div>
             </li>
           </ul>
-          <p v-else class="text-center text-sm text-slate-400">No attachments yet.</p>
+          <p v-else class="text-center text-base text-slate-400">No attachments yet.</p>
         </JCard>
       </div>
     </div>
