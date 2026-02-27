@@ -53,15 +53,14 @@
 
         <!-- Activity / Comments -->
         <JCard title="Activity">
-          <form class="mb-5 space-y-3" @submit.prevent="addComment">
+          <form class="mb-5 flex items-end gap-3" @submit.prevent="addComment">
             <JTextarea
               v-model="commentBody"
               placeholder="Write a comment…"
-              :rows="3"
+              :rows="2"
+              class="flex-1"
             />
-            <div class="flex justify-end">
-              <JButton type="submit" :disabled="!commentBody.trim()">Post comment</JButton>
-            </div>
+            <JButton type="submit" :disabled="!commentBody.trim()">Send</JButton>
           </form>
 
           <div v-if="comments.length" class="space-y-4 border-t border-slate-100 pt-5">
