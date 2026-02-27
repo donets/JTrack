@@ -44,6 +44,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: 'auth'
+})
+
 const authStore = useAuthStore()
 const locationStore = useLocationStore()
 
@@ -59,7 +63,7 @@ const submit = async () => {
   try {
     await authStore.login(email.value, password.value)
     await locationStore.loadLocations()
-    await navigateTo('/locations')
+    await navigateTo('/dashboard')
   } catch (err: any) {
     error.value = err?.data?.message ?? 'Unable to sign in'
   } finally {

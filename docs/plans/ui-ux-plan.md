@@ -217,12 +217,12 @@ layouts/default.vue (CSS Grid)
 ### Epic 2: App Shell & Navigation (17pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
-| 1 | JTR-42 | useLayoutState + useBreadcrumbs | 1pt |
-| 2 | JTR-43 | useRbacGuard | 1pt |
-| 3 | JTR-44 | AppSidebar | 5pt |
-| 4 | JTR-45 | AppTopbar | 4pt |
-| 5 | JTR-46 | AppBottomNav | 2pt |
-| 6 | JTR-47 | Default layout + page migration | 5pt |
+| 1 | JTR-42 | useLayoutState + useBreadcrumbs (done 2026-02-27) | 1pt |
+| 2 | JTR-43 | useRbacGuard (done 2026-02-27) | 1pt |
+| 3 | JTR-44 | AppSidebar (done 2026-02-27) | 5pt |
+| 4 | JTR-45 | AppTopbar (done 2026-02-27) | 4pt |
+| 5 | JTR-46 | AppBottomNav (done 2026-02-27) | 2pt |
+| 6 | JTR-47 | Default layout + page migration (done 2026-02-27) | 5pt |
 
 ### Epic 3: Ticket Views Enhancement (20pt)
 | # | Linear | Task | Est |
