@@ -14,7 +14,7 @@ JTrack — offline-first field-service CRM. Фронтенд (Nuxt 4 + Vue 3 + T
 **File**: `apps/web/tailwind.config.ts`
 - Добавить цвета: `sky`, `rose`, `violet` с light-вариантами
 - Обновить `mint`, `flame` на объекты с `DEFAULT` + `light`
-- Добавить spacing: `sidebar: 240px`, `sidebar-collapsed: 64px`, `topbar: 56px`
+- Добавить spacing: `sidebar: 240px`, `sidebar-collapsed: 64px`, `topbar: 56px`, `bottom-nav: 64px`
 
 ### 1.1 Layout Components (`components/ui/`)
 | Component | Props | Priority |
@@ -62,6 +62,17 @@ JTrack — offline-first field-service CRM. Фронтенд (Nuxt 4 + Vue 3 + T
 | `DispatchTimeGrid` | Dispatch board | P2 |
 | `CalendarGrid` | Calendar view | P2 |
 | `InvoiceLineItems` | Invoice detail | P2 |
+
+### 1.6 Review Follow-Up (2026-02-27)
+- Closed critical UI-kit review issues:
+  - `JTR-40`: fixed date-only timezone round-trip in `JDatePicker`
+  - `JTR-38`: aligned `JTimeline` with flat wireframe layout
+  - `JTR-36`: removed invalid nested interactive HTML in `JEmptyState`
+- Closed cross-cutting hardening tasks:
+  - replaced `getCurrentInstance().uid` with `useId()` in form controls
+  - added missing ARIA semantics (`JTabs`, `JTable`, `JDropdown`, `JToast`, form fields)
+  - added shared UI type exports in `apps/web/types/ui.ts`
+  - completed missing token variants `ink.light` and `mist.dark`
 
 ---
 
@@ -176,25 +187,32 @@ layouts/default.vue (CSS Grid)
 ### Epic 1: UI-Kit Foundation (28pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
-| 1 | JTR-23 | Extend Tailwind design tokens | 1pt |
-| 2 | JTR-24 | Create JButton | 2pt |
-| 3 | JTR-25 | Create JInput + JTextarea | 2pt |
-| 4 | JTR-26 | Create JSelect | 1pt |
-| 5 | JTR-27 | Create JBadge | 1pt |
-| 6 | JTR-28 | Create JAvatar | 1pt |
-| 7 | JTR-29 | Create JCard | 1pt |
-| 8 | JTR-30 | Create JModal | 3pt |
-| 9 | JTR-31 | Create JToast system | 2pt |
-| 10 | JTR-32 | Create JTable | 3pt |
-| 11 | JTR-33 | Create JSearchInput | 1pt |
-| 12 | JTR-34 | Create JDropdown | 2pt |
-| 13 | JTR-35 | Create JSpinner + JSkeleton | 1pt |
-| 14 | JTR-36 | Create JEmptyState | 1pt |
-| 15 | JTR-37 | Create JStatCard | 1pt |
-| 16 | JTR-38 | Create JTimeline | 2pt |
-| 17 | JTR-39 | Create JProgress + JCheckbox | 2pt |
-| 18 | JTR-40 | Create JDatePicker | 2pt |
-| 19 | JTR-41 | Create JTabs | 2pt |
+| 1 | JTR-23 | Extend Tailwind design tokens (done 2026-02-27) | 1pt |
+| 2 | JTR-24 | Create JButton (done 2026-02-27) | 2pt |
+| 3 | JTR-25 | Create JInput + JTextarea (done 2026-02-27) | 2pt |
+| 4 | JTR-26 | Create JSelect (done 2026-02-27) | 1pt |
+| 5 | JTR-27 | Create JBadge (done 2026-02-27) | 1pt |
+| 6 | JTR-28 | Create JAvatar (done 2026-02-27) | 1pt |
+| 7 | JTR-29 | Create JCard (done 2026-02-27) | 1pt |
+| 8 | JTR-30 | Create JModal (done 2026-02-27) | 3pt |
+| 9 | JTR-31 | Create JToast system (done 2026-02-27) | 2pt |
+| 10 | JTR-32 | Create JTable (done 2026-02-27) | 3pt |
+| 11 | JTR-33 | Create JSearchInput (done 2026-02-27) | 1pt |
+| 12 | JTR-34 | Create JDropdown (done 2026-02-27) | 2pt |
+| 13 | JTR-35 | Create JSpinner + JSkeleton (done 2026-02-27) | 1pt |
+| 14 | JTR-36 | Create JEmptyState (done 2026-02-27) | 1pt |
+| 15 | JTR-37 | Create JStatCard (done 2026-02-27) | 1pt |
+| 16 | JTR-38 | Create JTimeline (done 2026-02-27) | 2pt |
+| 17 | JTR-39 | Create JProgress + JCheckbox (done 2026-02-27) | 2pt |
+| 18 | JTR-40 | Create JDatePicker (done 2026-02-27) | 2pt |
+| 19 | JTR-41 | Create JTabs (done 2026-02-27) | 2pt |
+
+### Epic 1.1: Missing Design System Components (JTR-97)
+| # | Linear | Task | Est |
+|---|--------|------|-----|
+| 1 | JTR-121 | Create JPagination component (done 2026-02-27) | 1pt |
+| 2 | JTR-122 | Create JPageHeader component (done 2026-02-27) | 1pt |
+| 3 | JTR-97 | Add missing design system components (parent, done 2026-02-27) | 2pt |
 
 ### Epic 2: App Shell & Navigation (17pt)
 | # | Linear | Task | Est |
