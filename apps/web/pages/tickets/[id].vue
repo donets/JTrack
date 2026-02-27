@@ -55,7 +55,7 @@
         </JCard>
 
         <!-- Activity / Comments -->
-        <JCard title="Activity">
+        <JCard>
           <form class="mb-5 flex items-end gap-3" @submit.prevent="addComment">
             <JTextarea
               v-model="commentBody"
