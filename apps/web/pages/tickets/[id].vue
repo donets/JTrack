@@ -10,14 +10,14 @@
 
       <template #actions>
         <JButton size="sm" variant="secondary" disabled>Edit</JButton>
-        <JButton size="sm" variant="danger" :disabled="ticket.status === 'Canceled'" @click="cancelTicket">
+        <JButton size="sm" variant="danger" :disabled="!canCancel || updatingStatus" @click="cancelTicket">
           Cancel
         </JButton>
       </template>
     </JPageHeader>
 
     <div class="grid grid-cols-3 gap-2 md:hidden">
-      <JButton size="sm" :disabled="ticket.status === 'InProgress'" @click="updateTicketStatus('InProgress')">
+      <JButton size="sm" :disabled="!canStartJob || updatingStatus" @click="updateTicketStatus('InProgress')">
         Start Job
       </JButton>
       <JButton size="sm" variant="secondary">Navigate</JButton>
@@ -109,9 +109,9 @@
               <dd>
                 <div class="flex items-center gap-2">
                   <JBadge :variant="statusToBadgeVariant(ticket.status)">{{ statusToLabel(ticket.status) }}</JBadge>
-                  <JDropdown :items="statusDropdownItems" align="right">
+                  <JDropdown v-if="statusDropdownItems.length > 0" :items="statusDropdownItems" align="right">
                     <template #trigger>
-                      <JButton size="sm" variant="ghost">Change</JButton>
+                      <JButton size="sm" variant="ghost" :disabled="updatingStatus">Change</JButton>
                     </template>
                   </JDropdown>
                 </div>
@@ -206,17 +206,24 @@ interface LocationUser {
 }
 
 const ALL_STATUSES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
+const TECHNICIAN_TRANSITIONS: Partial<Record<TicketStatus, TicketStatus[]>> = {
+  New: ['InProgress'],
+  Scheduled: ['InProgress'],
+  InProgress: ['Done']
+}
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const authStore = useAuthStore()
 const db = useRxdb()
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
 const adapter = useAttachmentAdapter()
 const api = useApiClient()
+const toast = useToast()
 const { setBreadcrumbs } = useBreadcrumbs()
-const { hasPrivilege } = useRbacGuard()
+const { activeRole, hasPrivilege } = useRbacGuard()
 
 const ticketId = route.params.id as string
 
@@ -225,9 +232,19 @@ const comments = ref<TicketComment[]>([])
 const attachments = ref<TicketAttachment[]>([])
 const payments = ref<PaymentRecord[]>([])
 const users = ref<LocationUser[]>([])
+const statusEvents = ref<
+  Array<{
+    id: string
+    from: TicketStatus
+    to: TicketStatus
+    timestamp: string
+    actorName: string
+  }>
+>([])
 const commentBody = ref('')
 const submittingComment = ref(false)
 const uploadingAttachment = ref(false)
+const updatingStatus = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const checklistItems = reactive([
@@ -319,12 +336,39 @@ const balanceAmountLabel = computed(() => formatMoney(balanceAmountCents.value, 
 
 const completedChecklistCount = computed(() => checklistItems.filter((item) => item.done).length)
 
+const getAllowedTransitions = (current: TicketStatus) => {
+  if (activeRole.value === 'Owner') {
+    return ALL_STATUSES.filter((status) => status !== current)
+  }
+
+  if (activeRole.value === 'Manager') {
+    return ALL_STATUSES.filter((status) => status !== current && status !== 'Paid')
+  }
+
+  if (activeRole.value === 'Technician') {
+    return TECHNICIAN_TRANSITIONS[current] ?? []
+  }
+
+  return []
+}
+
+const allowedNextStatuses = computed(() => {
+  if (!ticket.value) {
+    return []
+  }
+
+  return getAllowedTransitions(ticket.value.status)
+})
+
+const canStartJob = computed(() => allowedNextStatuses.value.includes('InProgress'))
+const canCancel = computed(() => allowedNextStatuses.value.includes('Canceled'))
+
 const statusDropdownItems = computed<DropdownItem[]>(() => {
   if (!ticket.value) {
     return []
   }
 
-  return ALL_STATUSES.filter((status) => status !== ticket.value?.status).map((status) => ({
+  return allowedNextStatuses.value.map((status) => ({
     label: statusToLabel(status),
     action: () => updateTicketStatus(status)
   }))
@@ -343,18 +387,18 @@ const timelineItems = computed<TimelineItem[]>(() => {
       content: `${ticketCode.value} created`,
       timestamp: ticket.value.createdAt
     })
+  }
 
-    if (ticket.value.updatedAt !== ticket.value.createdAt) {
-      items.push({
-        id: `${ticket.value.id}-status-${ticket.value.updatedAt}`,
-        type: 'status_change',
-        actor: {
-          name: 'System'
-        },
-        content: `${ticketCode.value} set to ${statusToLabel(ticket.value.status)}`,
-        timestamp: ticket.value.updatedAt
-      })
-    }
+  for (const event of statusEvents.value) {
+    items.push({
+      id: event.id,
+      type: 'status_change',
+      actor: {
+        name: event.actorName
+      },
+      content: `${ticketCode.value} moved from ${statusToLabel(event.from)} to ${statusToLabel(event.to)}`,
+      timestamp: event.timestamp
+    })
   }
 
   for (const comment of comments.value) {
@@ -406,6 +450,7 @@ const bindStreams = () => {
   commentsSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
   paymentsSub?.unsubscribe()
+  statusEvents.value = []
 
   if (!locationStore.activeLocationId) {
     ticket.value = null
@@ -494,16 +539,54 @@ onUnmounted(() => {
 })
 
 const updateTicketStatus = async (status: TicketStatus) => {
-  if (!ticket.value || ticket.value.status === status) {
+  if (!ticket.value || ticket.value.status === status || updatingStatus.value) {
     return
   }
 
-  await repository.saveTicket({
-    id: ticket.value.id,
-    status
-  })
+  const currentStatus = ticket.value.status
+  const allowedTransitions = getAllowedTransitions(currentStatus)
 
-  await syncStore.syncNow()
+  if (!allowedTransitions.includes(status)) {
+    toast.show({
+      type: 'warning',
+      message: 'This status transition is not allowed for your role'
+    })
+    return
+  }
+
+  updatingStatus.value = true
+
+  try {
+    await repository.saveTicket({
+      id: ticket.value.id,
+      status
+    })
+
+    statusEvents.value = [
+      {
+        id: `status-event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        from: currentStatus,
+        to: status,
+        timestamp: new Date().toISOString(),
+        actorName: authStore.user?.name ?? 'You'
+      },
+      ...statusEvents.value
+    ]
+
+    await syncStore.syncNow()
+
+    toast.show({
+      type: 'success',
+      message: `Status updated to ${statusToLabel(status)}`
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to update ticket status'
+    })
+  } finally {
+    updatingStatus.value = false
+  }
 }
 
 const cancelTicket = async () => {
