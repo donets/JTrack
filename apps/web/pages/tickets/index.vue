@@ -4,23 +4,11 @@
       title="Tickets"
       description="Data source: RxDB (offline-first)."
       :breadcrumbs="breadcrumbs"
-    />
-
-    <form class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-4" @submit.prevent="createTicket">
-      <input v-model="form.title" class="rounded border border-slate-300 px-3 py-2" placeholder="Title" required />
-      <input
-        v-model="form.description"
-        class="rounded border border-slate-300 px-3 py-2"
-        placeholder="Description"
-      />
-      <select v-model="form.priority" class="rounded border border-slate-300 px-3 py-2">
-        <option value="">Priority</option>
-        <option value="low">Low</option>
-        <option value="medium">Medium</option>
-        <option value="high">High</option>
-      </select>
-      <button class="rounded bg-emerald-600 px-3 py-2 text-white" type="submit">Create ticket</button>
-    </form>
+    >
+      <template #actions>
+        <JButton size="sm" @click="openCreateModal">+ New Ticket</JButton>
+      </template>
+    </JPageHeader>
 
     <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <div class="grid gap-3 lg:grid-cols-4">
@@ -97,6 +85,60 @@
       :current-page="page"
       @update:current-page="onPageChange"
     />
+
+    <JModal v-model="createModalOpen" title="Create New Ticket" size="lg">
+      <form class="space-y-4" @submit.prevent="submitCreateTicket">
+        <JInput
+          v-model="createForm.title"
+          label="Title *"
+          placeholder="Brief description of the job"
+          :error="createErrors.title"
+        />
+
+        <JTextarea
+          v-model="createForm.description"
+          label="Description"
+          placeholder="Detailed notes, customer info, special instructions..."
+          :rows="3"
+        />
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JSelect v-model="createForm.priority" label="Priority" :options="createPriorityOptions" />
+          <JSelect v-model="createForm.assignee" label="Assign to" :options="createAssigneeOptions" />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JDatePicker
+            v-model="createForm.scheduledStartAt"
+            include-time
+            label="Scheduled start"
+            :error="createErrors.scheduledStartAt"
+          />
+          <JDatePicker
+            v-model="createForm.scheduledEndAt"
+            include-time
+            label="Scheduled end"
+            :error="createErrors.scheduledEndAt"
+          />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JInput
+            v-model="createForm.amount"
+            type="number"
+            label="Amount"
+            placeholder="0.00"
+            :error="createErrors.amount"
+          />
+          <JSelect v-model="createForm.currency" label="Currency" :options="currencyOptions" />
+        </div>
+      </form>
+
+      <template #footer>
+        <JButton variant="secondary" :disabled="createSubmitting" @click="closeCreateModal">Cancel</JButton>
+        <JButton :loading="createSubmitting" @click="submitCreateTicket">Create Ticket</JButton>
+      </template>
+    </JModal>
   </section>
 </template>
 
@@ -144,6 +186,7 @@ const repository = useOfflineRepository()
 const syncStore = useSyncStore()
 const api = useApiClient()
 const db = useRxdb()
+const toast = useToast()
 const { hasPrivilege } = useRbacGuard()
 const { setBreadcrumbs } = useBreadcrumbs()
 
@@ -167,13 +210,28 @@ const sortDirection = ref<SortDirection>('desc')
 const loadingUsers = ref(false)
 const isApplyingRouteQuery = ref(false)
 
-let ticketSubscription: { unsubscribe: () => void } | null = null
+const createModalOpen = ref(false)
+const createSubmitting = ref(false)
 
-const form = reactive({
+const createForm = reactive({
   title: '',
   description: '',
-  priority: ''
+  priority: 'medium',
+  assignee: '',
+  scheduledStartAt: '',
+  scheduledEndAt: '',
+  amount: '',
+  currency: 'EUR'
 })
+
+const createErrors = reactive({
+  title: '',
+  amount: '',
+  scheduledStartAt: '',
+  scheduledEndAt: ''
+})
+
+let ticketSubscription: { unsubscribe: () => void } | null = null
 
 const columns: TableColumn[] = [
   { key: 'ticketCode', label: '#', width: '100px' },
@@ -201,6 +259,18 @@ const perPageOptions = PER_PAGE_VALUES.map((value) => ({
   label: `Rows: ${value}`
 }))
 
+const createPriorityOptions = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' }
+]
+
+const currencyOptions = [
+  { value: 'EUR', label: 'EUR' },
+  { value: 'USD', label: 'USD' },
+  { value: 'GBP', label: 'GBP' }
+]
+
 const assigneeNameMap = computed(() => {
   const map = new Map<string, string>()
 
@@ -215,20 +285,36 @@ const assigneeNameMap = computed(() => {
   return map
 })
 
+const sortedTeamMembers = computed(() =>
+  [...teamMembers.value].sort((left, right) => left.name.localeCompare(right.name))
+)
+
 const assigneeOptions = computed(() => {
   const options = [
     { value: '', label: 'Assigned: Anyone' },
     { value: 'unassigned', label: 'Assigned: Unassigned' }
   ]
 
-  const sortedMembers = [...teamMembers.value].sort((left, right) => left.name.localeCompare(right.name))
-
-  for (const member of sortedMembers) {
+  for (const member of sortedTeamMembers.value) {
     options.push({ value: member.id, label: `Assigned: ${member.name}` })
   }
 
   if (authStore.user && !teamMembers.value.some((member) => member.id === authStore.user?.id)) {
     options.push({ value: authStore.user.id, label: `Assigned: ${authStore.user.name}` })
+  }
+
+  return options
+})
+
+const createAssigneeOptions = computed(() => {
+  const options = [{ value: '', label: '— Unassigned —' }]
+
+  for (const member of sortedTeamMembers.value) {
+    options.push({ value: member.id, label: member.name })
+  }
+
+  if (authStore.user && !teamMembers.value.some((member) => member.id === authStore.user?.id)) {
+    options.push({ value: authStore.user.id, label: authStore.user.name })
   }
 
   return options
@@ -585,19 +671,137 @@ const onPageChange = (nextPage: number) => {
   page.value = nextPage
 }
 
-const createTicket = async () => {
-  await repository.saveTicket({
-    title: form.title,
-    description: form.description || undefined,
-    priority: form.priority || undefined,
-    status: 'New'
-  })
+const resetCreateErrors = () => {
+  createErrors.title = ''
+  createErrors.amount = ''
+  createErrors.scheduledStartAt = ''
+  createErrors.scheduledEndAt = ''
+}
 
-  form.title = ''
-  form.description = ''
-  form.priority = ''
+const resetCreateForm = () => {
+  createForm.title = ''
+  createForm.description = ''
+  createForm.priority = 'medium'
+  createForm.assignee = ''
+  createForm.scheduledStartAt = ''
+  createForm.scheduledEndAt = ''
+  createForm.amount = ''
+  createForm.currency = 'EUR'
+}
 
-  await syncStore.syncNow()
+const parseAmountToCents = (value: string): number | null => {
+  const normalized = value.trim().replace(',', '.')
+
+  if (!normalized) {
+    return null
+  }
+
+  const amount = Number.parseFloat(normalized)
+
+  if (!Number.isFinite(amount) || amount < 0) {
+    return Number.NaN
+  }
+
+  return Math.round(amount * 100)
+}
+
+const validateCreateForm = () => {
+  resetCreateErrors()
+
+  let valid = true
+
+  if (!createForm.title.trim()) {
+    createErrors.title = 'Title is required'
+    valid = false
+  }
+
+  const parsedAmount = parseAmountToCents(createForm.amount)
+  if (Number.isNaN(parsedAmount)) {
+    createErrors.amount = 'Amount must be a valid non-negative number'
+    valid = false
+  }
+
+  const startTimestamp = createForm.scheduledStartAt ? new Date(createForm.scheduledStartAt).getTime() : null
+  const endTimestamp = createForm.scheduledEndAt ? new Date(createForm.scheduledEndAt).getTime() : null
+
+  if (startTimestamp !== null && Number.isNaN(startTimestamp)) {
+    createErrors.scheduledStartAt = 'Invalid start date'
+    valid = false
+  }
+
+  if (endTimestamp !== null && Number.isNaN(endTimestamp)) {
+    createErrors.scheduledEndAt = 'Invalid end date'
+    valid = false
+  }
+
+  if (
+    startTimestamp !== null &&
+    endTimestamp !== null &&
+    !Number.isNaN(startTimestamp) &&
+    !Number.isNaN(endTimestamp) &&
+    endTimestamp < startTimestamp
+  ) {
+    createErrors.scheduledEndAt = 'End date must be after start date'
+    valid = false
+  }
+
+  return valid
+}
+
+const openCreateModal = () => {
+  resetCreateErrors()
+  createModalOpen.value = true
+}
+
+const closeCreateModal = () => {
+  createModalOpen.value = false
+}
+
+const submitCreateTicket = async () => {
+  if (createSubmitting.value) {
+    return
+  }
+
+  if (!validateCreateForm()) {
+    return
+  }
+
+  const parsedAmount = parseAmountToCents(createForm.amount)
+
+  createSubmitting.value = true
+
+  try {
+    const ticket = await repository.saveTicket({
+      title: createForm.title.trim(),
+      description: createForm.description.trim() || undefined,
+      status: 'New',
+      priority: createForm.priority || undefined,
+      assignedToUserId: createForm.assignee || undefined,
+      scheduledStartAt: createForm.scheduledStartAt || undefined,
+      scheduledEndAt: createForm.scheduledEndAt || undefined,
+      totalAmountCents: parsedAmount === null ? undefined : parsedAmount,
+      currency: createForm.currency
+    })
+
+    resetCreateForm()
+    resetCreateErrors()
+    createModalOpen.value = false
+
+    toast.show({
+      type: 'success',
+      message: 'Ticket created successfully'
+    })
+
+    await syncStore.syncNow()
+    await navigateTo(`/tickets/${ticket.id}`)
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Unable to create ticket'
+    })
+  } finally {
+    createSubmitting.value = false
+  }
 }
 
 const resolveAssigneeName = (assigneeId: string) => assigneeNameMap.value.get(assigneeId) ?? `User ${assigneeId.slice(0, 8)}`
