@@ -124,7 +124,7 @@
 
     <div class="rounded-xl border border-slate-200 bg-white">
       <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-3">
-        <JSearchInput v-model="searchQuery" placeholder="Search tickets…" class="min-w-0 flex-1" />
+        <JSearchInput v-model="searchQuery" placeholder="Search tickets…" class="w-48" />
         <select v-model="statusFilter" class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky/30">
           <option value="">All statuses</option>
           <option value="New">New</option>
