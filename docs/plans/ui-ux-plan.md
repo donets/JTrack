@@ -183,7 +183,7 @@ layouts/default.vue (CSS Grid)
 | 5 | JTR-27 | Create JBadge (done 2026-02-27) | 1pt |
 | 6 | JTR-28 | Create JAvatar (done 2026-02-27) | 1pt |
 | 7 | JTR-29 | Create JCard (done 2026-02-27) | 1pt |
-| 8 | JTR-30 | Create JModal | 3pt |
+| 8 | JTR-30 | Create JModal (done 2026-02-27) | 3pt |
 | 9 | JTR-31 | Create JToast system | 2pt |
 | 10 | JTR-32 | Create JTable | 3pt |
 | 11 | JTR-33 | Create JSearchInput | 1pt |
