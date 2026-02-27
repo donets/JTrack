@@ -228,6 +228,8 @@ export interface CreateUserInput {
 export interface UpdateUserInput {
   name?: string
   isAdmin?: boolean
+  role?: RoleKey
+  membershipStatus?: UserLocationStatus
 }
 
 export interface InviteResponse {

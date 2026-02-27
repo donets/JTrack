@@ -22,11 +22,13 @@
         <legend class="text-sm font-semibold text-ink">Role</legend>
         <p class="mt-1 text-xs text-slate-500">Choose permission level for this location.</p>
 
-        <div class="mt-2 grid gap-2 sm:grid-cols-3">
+        <div class="mt-2 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Invite role">
           <button
             v-for="option in roleOptions"
             :key="option.role"
             type="button"
+            role="radio"
+            :aria-checked="form.role === option.role"
             :class="roleCardClasses(option.role)"
             @click="selectRole(option.role)"
           >
@@ -79,8 +81,9 @@ const errors = reactive({
   role: ''
 })
 
-const roleOptions: { role: RoleKey; description: string }[] = [
-  { role: 'Owner', description: 'Full access including billing and settings.' },
+type InviteRole = Extract<RoleKey, 'Manager' | 'Technician'>
+
+const roleOptions: { role: InviteRole; description: string }[] = [
   { role: 'Manager', description: 'Operations access without owner controls.' },
   { role: 'Technician', description: 'Field execution and ticket progress updates.' }
 ]
@@ -130,12 +133,12 @@ const validateForm = () => {
   return !errors.email && !errors.name && !errors.role
 }
 
-const selectRole = (role: RoleKey) => {
+const selectRole = (role: InviteRole) => {
   form.role = role
   errors.role = ''
 }
 
-const roleCardClasses = (role: RoleKey) => [
+const roleCardClasses = (role: InviteRole) => [
   'flex flex-col rounded-md border px-3 py-3 text-left transition-colors',
   form.role === role
     ? 'border-mint bg-mint-light/40'

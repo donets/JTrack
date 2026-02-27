@@ -4,7 +4,28 @@
       :title="member ? member.name : 'Team member'"
       description="Member profile, workload, and role management."
       :breadcrumbs="breadcrumbs"
-    />
+    >
+      <template #actions>
+        <JButton
+          v-if="member && canManageSettings"
+          variant="secondary"
+          :disabled="lifecycleUpdating"
+          :loading="lifecycleUpdating"
+          @click="toggleMembershipStatus"
+        >
+          {{ member.membershipStatus === 'suspended' ? 'Activate' : 'Suspend' }}
+        </JButton>
+        <JButton
+          v-if="member && canManageSettings"
+          variant="danger"
+          :disabled="lifecycleUpdating"
+          :loading="lifecycleUpdating"
+          @click="removeMember"
+        >
+          Remove
+        </JButton>
+      </template>
+    </JPageHeader>
 
     <JEmptyState
       v-if="!member && !teamStore.loading"
@@ -17,26 +38,66 @@
     <div v-else class="grid gap-4 xl:grid-cols-[2fr,1fr]">
       <JCard>
         <div class="space-y-4">
-          <JTabs v-model="activeTab" :tabs="detailTabs" class="max-w-[320px]" />
+          <JTabs
+            v-model="activeTab"
+            :tabs="detailTabs"
+            id-prefix="team-member-detail-tabs"
+            panel-id-prefix="team-member-detail-panel"
+            class="max-w-[380px]"
+          />
 
-          <JTable
+          <div
             v-if="activeTab === 'jobs'"
-            :columns="jobColumns"
-            :rows="jobRows"
-            empty-text="No assigned jobs yet"
+            id="team-member-detail-panel-jobs"
+            role="tabpanel"
+            aria-labelledby="team-member-detail-tabs-jobs"
           >
-            <template #cell-ticket="{ row }">
-              <NuxtLink :to="`/tickets/${row.id}`" class="font-semibold text-mint hover:underline">
-                {{ row.ticket }}
-              </NuxtLink>
-            </template>
+            <JTable
+              :columns="jobColumns"
+              :rows="jobRows"
+              empty-text="No assigned jobs yet"
+            >
+              <template #cell-ticket="{ row }">
+                <NuxtLink :to="`/tickets/${row.id}`" class="font-semibold text-mint hover:underline">
+                  {{ row.ticket }}
+                </NuxtLink>
+              </template>
 
-            <template #cell-status="{ row }">
-              <JBadge :variant="ticketStatusVariant(row.status)">{{ row.status }}</JBadge>
-            </template>
-          </JTable>
+              <template #cell-status="{ row }">
+                <JBadge :variant="ticketStatusVariant(row.status)">{{ row.status }}</JBadge>
+              </template>
+            </JTable>
+          </div>
 
-          <div v-else>
+          <div
+            v-else-if="activeTab === 'schedule'"
+            id="team-member-detail-panel-schedule"
+            role="tabpanel"
+            aria-labelledby="team-member-detail-tabs-schedule"
+          >
+            <JTable
+              :columns="scheduleColumns"
+              :rows="scheduleRows"
+              empty-text="No scheduled jobs"
+            >
+              <template #cell-ticket="{ row }">
+                <NuxtLink :to="`/tickets/${row.id}`" class="font-semibold text-mint hover:underline">
+                  {{ row.ticket }}
+                </NuxtLink>
+              </template>
+
+              <template #cell-status="{ row }">
+                <JBadge :variant="ticketStatusVariant(row.status)">{{ row.status }}</JBadge>
+              </template>
+            </JTable>
+          </div>
+
+          <div
+            v-else
+            id="team-member-detail-panel-timeLog"
+            role="tabpanel"
+            aria-labelledby="team-member-detail-tabs-timeLog"
+          >
             <JTimeline v-if="activityItems.length > 0" :items="activityItems" />
             <p v-else class="text-sm text-slate-500">No recent activity for this member.</p>
           </div>
@@ -55,7 +116,7 @@
 
           <div class="flex flex-wrap items-center gap-2">
             <JBadge :variant="roleBadgeVariant(member.role)">{{ member.role }}</JBadge>
-            <JBadge :variant="member.membershipStatus === 'active' ? 'mint' : 'flame'">
+            <JBadge :variant="membershipStatusBadgeVariant(member.membershipStatus)">
               {{ formatMembershipStatus(member.membershipStatus) }}
             </JBadge>
           </div>
@@ -75,19 +136,26 @@
             </div>
           </div>
 
-          <div v-if="canManageRole" class="space-y-2 rounded-md border border-slate-200 p-3">
+          <div v-if="canManageSettings" class="space-y-3 rounded-md border border-slate-200 p-3">
             <JSelect
               v-model="selectedRole"
               label="Role"
               :options="roleOptions"
             />
+
+            <JSelect
+              v-model="selectedStatus"
+              label="Status"
+              :options="statusOptions"
+            />
+
             <JButton
               variant="secondary"
-              :disabled="selectedRole === member.role || roleUpdating"
-              :loading="roleUpdating"
-              @click="updateRole"
+              :disabled="!hasSettingsChanges || settingsUpdating"
+              :loading="settingsUpdating"
+              @click="saveMemberSettings"
             >
-              Save Role
+              Save Settings
             </JButton>
           </div>
         </div>
@@ -100,6 +168,17 @@
 import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
 import type { RoleKey, Ticket, UserLocationStatus } from '@jtrack/shared'
 import type { BreadcrumbItem, TableColumn, TabItem, TimelineItem } from '~/types/ui'
+import {
+  formatMembershipStatus,
+  membershipStatusBadgeVariant,
+  roleBadgeVariant
+} from '~/utils/teamDisplay'
+
+type LocalComment = {
+  id: string
+  body: string
+  createdAt: string
+}
 
 const route = useRoute()
 const teamStore = useTeamStore()
@@ -109,6 +188,7 @@ const db = useRxdb()
 const { activeRole, hasPrivilege } = useRbacGuard()
 const { show } = useToast()
 const { setBreadcrumbs } = useBreadcrumbs()
+const { enforceReadAccess } = useTeamAccessGuard()
 
 const memberId = computed(() => String(route.params.id ?? ''))
 const member = computed(() => teamStore.members.find((item) => item.id === memberId.value) ?? null)
@@ -123,17 +203,19 @@ watchEffect(() => {
   setBreadcrumbs(breadcrumbs.value)
 })
 
-const activeTab = ref<'jobs' | 'activity'>('jobs')
+const activeTab = ref<'jobs' | 'schedule' | 'timeLog'>('jobs')
 const selectedRole = ref<RoleKey>('Technician')
-const roleUpdating = ref(false)
-const accessRedirected = ref(false)
+const selectedStatus = ref<UserLocationStatus>('active')
+const settingsUpdating = ref(false)
+const lifecycleUpdating = ref(false)
 const assignedTickets = ref<Ticket[]>([])
 const activityItems = ref<TimelineItem[]>([])
 
-const detailTabs: TabItem[] = [
-  { key: 'jobs', label: 'Jobs' },
-  { key: 'activity', label: 'Activity' }
-]
+const detailTabs = computed<TabItem[]>(() => [
+  { key: 'jobs', label: 'Jobs', count: jobRows.value.length },
+  { key: 'schedule', label: 'Schedule', count: scheduleRows.value.length },
+  { key: 'timeLog', label: 'Time Log', count: activityItems.value.length }
+])
 
 const jobColumns: TableColumn[] = [
   { key: 'ticket', label: 'Ticket' },
@@ -142,16 +224,42 @@ const jobColumns: TableColumn[] = [
   { key: 'date', label: 'Date' }
 ]
 
+const scheduleColumns: TableColumn[] = [
+  { key: 'ticket', label: 'Ticket' },
+  { key: 'title', label: 'Title' },
+  { key: 'scheduledAt', label: 'Scheduled At' },
+  { key: 'status', label: 'Status' }
+]
+
 const roleOptions = [
   { value: 'Owner', label: 'Owner' },
   { value: 'Manager', label: 'Manager' },
   { value: 'Technician', label: 'Technician' }
 ]
 
-const canManageRole = computed(
+const statusOptions = computed(() => {
+  const options = [
+    { value: 'active', label: 'Active' },
+    { value: 'suspended', label: 'Suspended' }
+  ]
+
+  if (member.value?.membershipStatus === 'invited') {
+    options.unshift({ value: 'invited', label: 'Invited' })
+  }
+
+  return options
+})
+
+const canManageSettings = computed(
   () =>
     (authStore.user?.isAdmin || activeRole.value === 'Owner') &&
     hasPrivilege('users.manage')
+)
+
+const hasSettingsChanges = computed(
+  () =>
+    Boolean(member.value) &&
+    (selectedRole.value !== member.value?.role || selectedStatus.value !== member.value?.membershipStatus)
 )
 
 const jobRows = computed(() =>
@@ -164,6 +272,20 @@ const jobRows = computed(() =>
       ? new Date(ticket.scheduledStartAt).toLocaleString()
       : new Date(ticket.updatedAt).toLocaleDateString()
   }))
+)
+
+const scheduleRows = computed(() =>
+  assignedTickets.value
+    .filter((ticket) => ticket.scheduledStartAt)
+    .map((ticket) => ({
+      id: ticket.id,
+      ticket: `#${ticket.id.slice(0, 6).toUpperCase()}`,
+      title: ticket.title,
+      status: ticket.status,
+      scheduledAt: ticket.scheduledStartAt
+        ? new Date(ticket.scheduledStartAt).toLocaleString()
+        : '—'
+    }))
 )
 
 const completedJobsCount = computed(
@@ -183,30 +305,6 @@ const activeSinceLabel = computed(() => {
     year: 'numeric'
   })
 })
-
-const formatMembershipStatus = (status: UserLocationStatus) => {
-  if (status === 'active') {
-    return 'Active'
-  }
-
-  if (status === 'invited') {
-    return 'Invited'
-  }
-
-  return 'Suspended'
-}
-
-const roleBadgeVariant = (role: RoleKey) => {
-  if (role === 'Owner') {
-    return 'violet'
-  }
-
-  if (role === 'Manager') {
-    return 'sky'
-  }
-
-  return 'mint'
-}
 
 const ticketStatusVariant = (status: string) => {
   if (status === 'Done' || status === 'Paid') {
@@ -241,8 +339,9 @@ const loadMemberData = async () => {
   }
 }
 
-let ticketsSubscription: any = null
-let commentsSubscription: any = null
+type RxSubscription = { unsubscribe: () => void }
+let ticketsSubscription: RxSubscription | null = null
+let commentsSubscription: RxSubscription | null = null
 
 const clearSubscriptions = () => {
   ticketsSubscription?.unsubscribe()
@@ -269,9 +368,9 @@ const subscribeToMemberData = () => {
       }
     })
     .$
-    .subscribe((docs: any[]) => {
+    .subscribe((docs: Array<{ toJSON: () => Ticket }>) => {
       const tickets = docs
-        .map((doc) => doc.toJSON() as Ticket)
+        .map((doc) => doc.toJSON())
         .sort((left, right) => (left.updatedAt < right.updatedAt ? 1 : -1))
 
       assignedTickets.value = tickets
@@ -299,9 +398,9 @@ const subscribeToMemberData = () => {
       }
     })
     .$
-    .subscribe((docs: any[]) => {
+    .subscribe((docs: Array<{ toJSON: () => LocalComment }>) => {
       const comments = docs.map((doc) => doc.toJSON())
-      const commentItems = comments.map((comment: any) => ({
+      const commentItems = comments.map((comment) => ({
         id: `comment-${comment.id}`,
         type: 'comment' as const,
         actor: {
@@ -317,26 +416,91 @@ const subscribeToMemberData = () => {
     })
 }
 
-const updateRole = async () => {
-  if (!member.value || selectedRole.value === member.value.role) {
+const saveMemberSettings = async () => {
+  if (!member.value || !hasSettingsChanges.value) {
     return
   }
 
-  roleUpdating.value = true
+  settingsUpdating.value = true
 
   try {
-    await teamStore.updateMemberRole(member.value.id, selectedRole.value)
+    await teamStore.updateMemberAccess(member.value.id, {
+      role: selectedRole.value,
+      membershipStatus: selectedStatus.value
+    })
     show({
       type: 'success',
-      message: `${member.value.name}'s role updated to ${selectedRole.value}`
+      message: `${member.value.name}'s settings were updated`
     })
   } catch {
     show({
       type: 'error',
-      message: teamStore.error ?? 'Failed to update role'
+      message: teamStore.error ?? 'Failed to update member settings'
     })
   } finally {
-    roleUpdating.value = false
+    settingsUpdating.value = false
+  }
+}
+
+const toggleMembershipStatus = async () => {
+  if (!member.value) {
+    return
+  }
+
+  const targetStatus: UserLocationStatus =
+    member.value.membershipStatus === 'suspended' ? 'active' : 'suspended'
+
+  const confirmed = window.confirm(
+    `${targetStatus === 'suspended' ? 'Suspend' : 'Activate'} ${member.value.name}?`
+  )
+
+  if (!confirmed) {
+    return
+  }
+
+  lifecycleUpdating.value = true
+
+  try {
+    await teamStore.updateMemberStatus(member.value.id, targetStatus)
+    show({
+      type: 'success',
+      message: `${member.value.name} is now ${formatMembershipStatus(targetStatus).toLowerCase()}`
+    })
+  } catch {
+    show({
+      type: 'error',
+      message: teamStore.error ?? 'Failed to update member status'
+    })
+  } finally {
+    lifecycleUpdating.value = false
+  }
+}
+
+const removeMember = async () => {
+  if (!member.value) {
+    return
+  }
+
+  if (!window.confirm(`Remove ${member.value.name} from the team?`)) {
+    return
+  }
+
+  lifecycleUpdating.value = true
+
+  try {
+    await teamStore.removeMember(member.value.id)
+    show({
+      type: 'success',
+      message: `${member.value.name} was removed`
+    })
+    await navigateTo('/team')
+  } catch {
+    show({
+      type: 'error',
+      message: teamStore.error ?? 'Failed to remove member'
+    })
+  } finally {
+    lifecycleUpdating.value = false
   }
 }
 
@@ -348,6 +512,7 @@ watch(
     }
 
     selectedRole.value = currentMember.role
+    selectedStatus.value = currentMember.membershipStatus
   },
   { immediate: true }
 )
@@ -377,27 +542,4 @@ onMounted(() => {
 onUnmounted(() => {
   clearSubscriptions()
 })
-
-const enforceReadAccess = async () => {
-  if (!locationStore.activeLocationId) {
-    return false
-  }
-
-  if (hasPrivilege('users.read')) {
-    return true
-  }
-
-  if (accessRedirected.value) {
-    return false
-  }
-
-  accessRedirected.value = true
-  show({
-    type: 'warning',
-    message: 'You do not have permission to view team pages'
-  })
-
-  await navigateTo('/dashboard')
-  return false
-}
 </script>

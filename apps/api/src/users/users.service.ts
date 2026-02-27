@@ -164,18 +164,74 @@ export class UsersService {
     }
   }
 
-  async update(userId: string, input: UpdateUserInput) {
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: input,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        isAdmin: true,
-        createdAt: true,
-        updatedAt: true
+  async update(userId: string, input: UpdateUserInput, locationId: string) {
+    const userData: Prisma.UserUpdateInput = {}
+
+    if (input.name !== undefined) {
+      userData.name = input.name
+    }
+
+    if (input.isAdmin !== undefined) {
+      userData.isAdmin = input.isAdmin
+    }
+
+    const hasMembershipUpdate = input.role !== undefined || input.membershipStatus !== undefined
+    const hasUserUpdate = Object.keys(userData).length > 0
+
+    const user = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const existingUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          isAdmin: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      })
+
+      if (!existingUser) {
+        throw new NotFoundException('User not found')
       }
+
+      if (hasMembershipUpdate) {
+        await tx.userLocation.upsert({
+          where: {
+            userId_locationId: {
+              userId,
+              locationId
+            }
+          },
+          update: {
+            ...(input.role !== undefined ? { role: input.role } : {}),
+            ...(input.membershipStatus !== undefined ? { status: input.membershipStatus } : {})
+          },
+          create: {
+            userId,
+            locationId,
+            role: input.role ?? 'Technician',
+            status: input.membershipStatus ?? 'active'
+          }
+        })
+      }
+
+      if (hasUserUpdate) {
+        return tx.user.update({
+          where: { id: userId },
+          data: userData,
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            isAdmin: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        })
+      }
+
+      return existingUser
     })
 
     return serializeDates(user)
