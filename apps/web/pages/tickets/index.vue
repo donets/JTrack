@@ -1,14 +1,5 @@
 <template>
-  <section class="space-y-5">
-    <JPageHeader title="Tickets">
-      <template #actions>
-        <div class="flex flex-1 items-center gap-3">
-          <JSearchInput v-model="searchQuery" placeholder="Search tickets…" class="w-full max-w-xs" />
-          <JButton @click="showModal = true">+ New Ticket</JButton>
-        </div>
-      </template>
-    </JPageHeader>
-
+  <section>
     <!-- Create Ticket Modal -->
     <Teleport to="body">
       <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center">
@@ -132,8 +123,9 @@
     </Teleport>
 
     <div class="rounded-xl border border-slate-200 bg-white">
-      <div class="flex items-center justify-end border-b border-slate-100 px-4 py-3">
-        <select v-model="statusFilter" class="rounded border border-slate-300 px-3 py-2 text-sm">
+      <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-3">
+        <JSearchInput v-model="searchQuery" placeholder="Search tickets…" class="min-w-0 flex-1" />
+        <select v-model="statusFilter" class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky/30">
           <option value="">All statuses</option>
           <option value="New">New</option>
           <option value="Scheduled">Scheduled</option>
@@ -143,6 +135,7 @@
           <option value="Paid">Paid</option>
           <option value="Canceled">Canceled</option>
         </select>
+        <JButton @click="showModal = true">+ New Ticket</JButton>
       </div>
       <table class="min-w-full divide-y divide-slate-200 text-base">
         <thead class="bg-slate-50">
