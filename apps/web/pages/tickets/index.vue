@@ -145,10 +145,20 @@
         <thead class="bg-slate-50">
           <tr>
             <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600" />
-            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Status</th>
-            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Priority</th>
-            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Created</th>
-            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Updated</th>
+            <th
+              v-for="col in sortableColumns"
+              :key="col.key"
+              class="cursor-pointer select-none px-5 py-3.5 text-left text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+              @click="toggleSort(col.key)"
+            >
+              <span class="inline-flex items-center gap-1">
+                {{ col.label }}
+                <svg v-if="sortKey === col.key" class="h-3.5 w-3.5" :class="sortDir === 'desc' ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+                <span v-else class="h-3.5 w-3.5" />
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
@@ -208,6 +218,53 @@ const form = reactive({
 })
 const statusFilter = ref('')
 const searchQuery = ref('')
+const sortKey = ref<'status' | 'priority' | 'createdAt' | 'updatedAt'>('updatedAt')
+const sortDir = ref<'asc' | 'desc'>('desc')
+
+const sortableColumns = [
+  { key: 'status' as const, label: 'Status' },
+  { key: 'priority' as const, label: 'Priority' },
+  { key: 'createdAt' as const, label: 'Created' },
+  { key: 'updatedAt' as const, label: 'Updated' }
+]
+
+function toggleSort(key: typeof sortKey.value) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = key === 'createdAt' || key === 'updatedAt' ? 'desc' : 'asc'
+  }
+}
+
+const statusOrder: Record<string, number> = {
+  New: 0, Scheduled: 1, InProgress: 2, Done: 3, Invoiced: 4, Paid: 5, Canceled: 6
+}
+
+const priorityOrder: Record<string, number> = {
+  high: 0, medium: 1, low: 2
+}
+
+function compareTickets(a: any, b: any): number {
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  const key = sortKey.value
+
+  if (key === 'status') {
+    return ((statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99)) * dir
+  }
+  if (key === 'priority') {
+    const ap = priorityOrder[(a.priority ?? '').toLowerCase()] ?? 99
+    const bp = priorityOrder[(b.priority ?? '').toLowerCase()] ?? 99
+    return (ap - bp) * dir
+  }
+  // createdAt / updatedAt — ISO string comparison
+  const av = a[key] ?? ''
+  const bv = b[key] ?? ''
+  if (av < bv) return -1 * dir
+  if (av > bv) return 1 * dir
+  return 0
+}
+
 const statusOptions = [
   { value: '', label: 'All statuses' },
   { value: 'New', label: 'New' },
@@ -225,7 +282,7 @@ const visibleTickets = computed(() => {
     .filter((ticket) => !ticket.deletedAt)
     .filter((ticket) => (statusFilter.value ? ticket.status === statusFilter.value : true))
     .filter((ticket) => !query || ticket.title?.toLowerCase().includes(query) || ticket.description?.toLowerCase().includes(query))
-    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+    .sort(compareTickets)
 })
 
 function statusVariant(s: string): 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist' {
