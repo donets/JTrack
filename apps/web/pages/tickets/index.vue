@@ -124,8 +124,8 @@
 
     <div class="rounded-xl border border-slate-200 bg-white">
       <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-3">
-        <JSearchInput v-model="searchQuery" placeholder="Search tickets…" class="w-48" />
-        <select v-model="statusFilter" class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky/30">
+        <JSearchInput v-model="searchQuery" placeholder="Search…" class="w-32" />
+        <select v-model="statusFilter" class="h-[34px] rounded-md border border-slate-200 bg-white px-3 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky/30">
           <option value="">All statuses</option>
           <option value="New">New</option>
           <option value="Scheduled">Scheduled</option>
@@ -135,7 +135,9 @@
           <option value="Paid">Paid</option>
           <option value="Canceled">Canceled</option>
         </select>
-        <JButton @click="showModal = true">+ New Ticket</JButton>
+        <div class="ml-auto">
+          <JButton @click="showModal = true">New Ticket</JButton>
+        </div>
       </div>
       <table class="min-w-full divide-y divide-slate-200 text-base">
         <thead class="bg-slate-50">
