@@ -120,7 +120,7 @@ sequenceDiagram
   - API/Web Dockerfiles use multi-stage builds (`deps` -> `builder` -> `runner`) to reduce runtime image size.
   - Docker build context filtering uses repository `.dockerignore`; docker-local mirror rules are stored in `docker/.dockerignore`.
   - Startup via `docker/docker-compose.yml` (`docker-compose up -d --build`).
-  - API container startup runs `prisma migrate deploy --schema apps/api/prisma/schema.prisma` before `node apps/api/dist/src/main.js`.
+  - API container startup runs `node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma` before `node apps/api/dist/src/main.js`.
   - DB service has network alias `jtrack`; API uses `postgresql://...@jtrack:5432/...`.
   - Legacy Prisma migration `20260223082027_init` is a no-op placeholder to keep migration chain valid in clean environments.
   - API TypeScript output is fixed to `apps/api/dist` (`apps/api/tsconfig.json` with explicit `outDir`).
@@ -129,7 +129,7 @@ sequenceDiagram
   - Backend (Render): `/Users/vlad/Projects/JTrack/render.yaml`
     - Deploys `jtrack-api` from `docker/Dockerfile.api`.
     - Uses Render Postgres `jtrack-db`.
-    - Uses `dockerCommand` to export `API_PORT` from Render `PORT`, apply Prisma migrations, and start `node apps/api/dist/src/main.js`.
+    - Uses `dockerCommand` to export `API_PORT` from Render `PORT`, run `node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma`, and start `node apps/api/dist/src/main.js`.
   - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
     - Publishes `apps/web/.output/public`.
