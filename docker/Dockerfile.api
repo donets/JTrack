@@ -43,4 +43,4 @@ COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_mod
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"]
+CMD ["sh", "-c", "node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma && if [ \"${SEED_DEMO_DATA:-false}\" = \"true\" ]; then node apps/api/dist/prisma/seed.js; fi && node apps/api/dist/src/main.js"]
