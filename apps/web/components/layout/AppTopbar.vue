@@ -25,22 +25,20 @@
       </nav>
       <span v-else class="min-w-0 truncate text-lg font-semibold text-ink">{{ pageTitle }}</span>
 
-      <div class="ml-auto flex items-center gap-2">
+      <div class="ml-auto flex items-stretch gap-2">
         <button
           type="button"
-          class="hidden rounded-md border border-mist-dark px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-mist sm:inline-flex"
+          class="hidden items-center gap-1.5 self-center rounded-md border border-mist-dark px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-mist sm:inline-flex"
           :disabled="syncStore.syncing"
           @click="syncNow"
         >
+          <span class="h-2 w-2 shrink-0 rounded-full" :class="syncDotClass" />
           {{ syncStore.syncing ? 'Syncing...' : 'Sync now' }}
         </button>
 
-        <div class="hidden items-center gap-2 sm:flex">
-          <span class="h-2.5 w-2.5 rounded-full" :class="syncDotClass" />
-          <span class="text-xs text-slate-500">{{ syncLabel }}</span>
-        </div>
+        <span class="border-l border-slate-200" />
 
-        <div ref="locationRef" class="relative">
+        <div ref="locationRef" class="relative flex items-center px-2">
           <button
             type="button"
             class="inline-flex items-center gap-1 text-sm text-slate-700 hover:text-ink"
@@ -67,7 +65,9 @@
           </ul>
         </div>
 
-        <JDropdown :items="userMenuItems" align="right">
+        <span class="border-l border-slate-200" />
+
+        <JDropdown class="self-center" :items="userMenuItems" align="right">
           <template #trigger>
             <button
               type="button"
@@ -162,25 +162,6 @@ const syncDotClass = computed(() => {
   return syncAgeMs.value < 60_000 ? 'bg-mint' : 'bg-flame'
 })
 
-const syncLabel = computed(() => {
-  if (!isOnline.value) {
-    return 'Offline'
-  }
-
-  if (syncStore.error) {
-    return syncStore.error
-  }
-
-  if (syncStore.syncing) {
-    return 'Sync in progress'
-  }
-
-  if (!syncStore.lastSyncedAt) {
-    return 'Never synced'
-  }
-
-  return `Last sync ${new Date(syncStore.lastSyncedAt).toLocaleTimeString()}`
-})
 
 const syncNow = async () => {
   await syncStore.syncNow()
