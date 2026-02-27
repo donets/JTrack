@@ -124,20 +124,13 @@
 
     <div class="rounded-xl border border-slate-200 bg-white">
       <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-3">
-        <div class="w-32 shrink-0">
+        <div class="w-44 shrink-0">
           <JSearchInput v-model="searchQuery" placeholder="Search…" />
         </div>
-        <select v-model="statusFilter" class="h-[34px] shrink-0 rounded-md border border-slate-200 bg-white px-3 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky/30">
-          <option value="">All statuses</option>
-          <option value="New">New</option>
-          <option value="Scheduled">Scheduled</option>
-          <option value="InProgress">In progress</option>
-          <option value="Done">Done</option>
-          <option value="Invoiced">Invoiced</option>
-          <option value="Paid">Paid</option>
-          <option value="Canceled">Canceled</option>
-        </select>
-        <JButton class="ml-auto shrink-0 whitespace-nowrap" @click="showModal = true">New Ticket</JButton>
+        <div class="w-36 shrink-0">
+          <JSelect v-model="statusFilter" :options="statusOptions" placeholder="All statuses" />
+        </div>
+        <JButton class="ml-auto" @click="showModal = true">New Ticket</JButton>
       </div>
       <table class="min-w-full divide-y divide-slate-200 text-base">
         <thead class="bg-slate-50">
@@ -206,6 +199,16 @@ const form = reactive({
 })
 const statusFilter = ref('')
 const searchQuery = ref('')
+const statusOptions = [
+  { value: '', label: 'All statuses' },
+  { value: 'New', label: 'New' },
+  { value: 'Scheduled', label: 'Scheduled' },
+  { value: 'InProgress', label: 'In progress' },
+  { value: 'Done', label: 'Done' },
+  { value: 'Invoiced', label: 'Invoiced' },
+  { value: 'Paid', label: 'Paid' },
+  { value: 'Canceled', label: 'Canceled' }
+]
 
 const visibleTickets = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
