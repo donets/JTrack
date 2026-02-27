@@ -116,7 +116,7 @@
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-base font-medium text-slate-500">Priority</dt>
-              <dd v-if="editingPriority">
+              <dd v-if="editingPriority" @focusout="editingPriority = false">
                 <JSelect v-model="editForm.priority" :options="priorityOptions" placeholder="None" class="[&_select]:py-1 [&_select]:text-xs" @update:model-value="savePriority" />
               </dd>
               <dd v-else>
