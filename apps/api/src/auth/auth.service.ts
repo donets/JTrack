@@ -580,10 +580,13 @@ export class AuthService {
   // ── Cookie Options ─────────────────────────────────────────────────
 
   getRefreshCookieOptions() {
+    const sameSite = this.getRefreshCookieSameSite()
+    const secure = sameSite === 'none' ? true : this.isSecureCookieEnabled()
+
     return {
       httpOnly: true,
-      sameSite: 'lax' as const,
-      secure: this.isSecureCookieEnabled(),
+      sameSite,
+      secure,
       path: '/auth',
       maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
     }
@@ -631,6 +634,24 @@ export class AuthService {
     }
 
     return this.configService.get<string>('NODE_ENV') === 'production'
+  }
+
+  private getRefreshCookieSameSite(): 'lax' | 'strict' | 'none' {
+    const raw = this.configService.get<string>('COOKIE_SAME_SITE')
+    if (!raw) {
+      return 'lax'
+    }
+
+    const normalized = raw.trim().toLowerCase()
+    if (normalized === 'none') {
+      return 'none'
+    }
+
+    if (normalized === 'strict') {
+      return 'strict'
+    }
+
+    return 'lax'
   }
 
   private jwtIssuer(): string {

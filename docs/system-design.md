@@ -99,8 +99,9 @@
 - Security:
   - bcrypt hash for passwords and stored refresh tokens.
   - invited users do not rely on hardcoded password; onboarding is completed through signed invite token and one-time membership activation that is atomically claimed in the same transaction as password update (prevents parallel token reuse race).
-  - refresh token cookie is `httpOnly`, `sameSite=lax`, path-scoped to `/auth`.
-  - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`).
+  - refresh token cookie is `httpOnly`, path-scoped to `/auth`.
+  - refresh token cookie `sameSite` attribute is controlled by `COOKIE_SAME_SITE` (default `lax`; use `none` for cross-site frontend/backend).
+  - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`); `SameSite=None` forces `secure=true`.
   - auth endpoints `/auth/login` and `/auth/refresh` are protected by request throttling.
 - Performance:
   - location/update-time indexes for sync and listing patterns.
