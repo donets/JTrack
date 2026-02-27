@@ -10,20 +10,20 @@
         ☰
       </button>
 
-      <nav v-if="breadcrumbs.length > 0" class="flex min-w-0 items-center truncate text-sm text-slate-500">
+      <nav v-if="breadcrumbs.length > 0" class="flex min-w-0 items-center truncate text-base text-slate-500">
         <template v-for="(item, index) in breadcrumbs" :key="`${item.label}-${index}`">
-          <span v-if="index > 0" class="px-1.5 text-slate-300">/</span>
+          <span v-if="index > 0" class="px-2 text-slate-300">/</span>
           <NuxtLink
             v-if="item.to && index < breadcrumbs.length - 1"
             :to="item.to"
-            class="hover:text-slate-700 hover:underline"
+            class="rounded px-1.5 py-0.5 hover:bg-slate-100 hover:text-slate-800"
           >
             {{ item.label }}
           </NuxtLink>
-          <span v-else class="font-medium text-slate-700">{{ item.label }}</span>
+          <span v-else class="px-1.5 py-0.5 font-semibold text-slate-800">{{ item.label }}</span>
         </template>
       </nav>
-      <span v-else class="min-w-0 truncate text-sm font-semibold text-ink md:text-base">{{ pageTitle }}</span>
+      <span v-else class="min-w-0 truncate text-base font-semibold text-ink">{{ pageTitle }}</span>
 
       <div class="ml-auto flex items-center gap-2">
         <button
