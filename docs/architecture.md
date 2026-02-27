@@ -136,7 +136,7 @@ sequenceDiagram
   - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
     - Publishes `apps/web/.output/public`.
-    - Routes `/` and `/login` are explicitly prerendered in Nuxt route rules to guarantee direct page reload entrypoints.
+    - Routes `/`, `/login`, and `/dashboard` are explicitly prerendered in Nuxt route rules to guarantee direct page reload entrypoints.
     - SPA fallback rewrite to `/index.html`.
 - Production target:
   - stateless API instances behind load balancer,

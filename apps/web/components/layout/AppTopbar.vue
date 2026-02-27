@@ -179,10 +179,19 @@ const switchLocation = async (locationId: string) => {
 }
 
 const logout = async () => {
-  await authStore.logout()
-  locationStore.clear()
-  syncStore.clearSyncData()
-  await destroyDatabase()
+  try {
+    await authStore.logout()
+  } finally {
+    locationStore.clear()
+    syncStore.clearSyncData()
+  }
+
+  try {
+    await destroyDatabase()
+  } catch (error) {
+    console.warn('[auth] failed to destroy local database during logout', error)
+  }
+
   await navigateTo('/login')
 }
 
