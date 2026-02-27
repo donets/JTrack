@@ -1,9 +1,6 @@
 <template>
   <section v-if="ticket" class="space-y-6">
-    <JPageHeader
-      :title="editing ? '' : ticket.title"
-      :breadcrumbs="breadcrumbs"
-    >
+    <JPageHeader :title="editing ? '' : ticket.title">
       <template v-if="editing" #title>
         <input
           v-model="editForm.title"
@@ -12,70 +9,80 @@
         />
       </template>
       <template #status>
-        <JBadge :variant="statusVariant(ticket.status)" size="sm">
+        <JBadge :variant="statusVariant(ticket.status)">
           {{ ticket.status }}
         </JBadge>
       </template>
       <template #actions>
         <div class="flex items-center gap-2">
           <template v-if="editing">
-            <JButton variant="secondary" size="sm" @click="cancelEditing">Cancel</JButton>
-            <JButton size="sm" :loading="saving" @click="saveEdits">Save</JButton>
+            <JButton variant="secondary" @click="cancelEditing">Cancel</JButton>
+            <JButton :loading="saving" @click="saveEdits">Save changes</JButton>
           </template>
-          <JButton v-else variant="secondary" size="sm" @click="startEditing">Edit</JButton>
+          <JButton v-else variant="secondary" @click="startEditing">
+            <template #icon>
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+              </svg>
+            </template>
+            Edit ticket
+          </JButton>
         </div>
       </template>
     </JPageHeader>
 
     <div class="flex flex-col gap-6 lg:flex-row">
       <!-- Left column — main content -->
-      <div class="min-w-0 flex-[3] space-y-5">
+      <div class="min-w-0 flex-[3] space-y-6">
         <!-- Description -->
         <JCard title="Description">
           <template v-if="editing">
             <JTextarea
               v-model="editForm.description"
               placeholder="Add a description…"
-              :rows="5"
+              :rows="6"
             />
           </template>
           <template v-else>
-            <p v-if="ticket.description" class="whitespace-pre-wrap text-sm text-slate-700">
+            <p v-if="ticket.description" class="whitespace-pre-wrap text-base leading-relaxed text-slate-700">
               {{ ticket.description }}
             </p>
-            <p v-else class="text-sm italic text-slate-400">No description</p>
+            <p v-else class="text-base italic text-slate-400">No description added yet.</p>
           </template>
         </JCard>
 
         <!-- Activity / Comments -->
         <JCard title="Activity">
-          <form class="flex gap-2" @submit.prevent="addComment">
+          <form class="mb-5 space-y-3" @submit.prevent="addComment">
             <JTextarea
               v-model="commentBody"
               placeholder="Write a comment…"
-              :rows="2"
-              class="flex-1"
+              :rows="3"
             />
-            <JButton type="submit" size="sm" class="self-end">Send</JButton>
+            <div class="flex justify-end">
+              <JButton type="submit" :disabled="!commentBody.trim()">Post comment</JButton>
+            </div>
           </form>
 
-          <ul class="mt-4 space-y-3">
-            <li
+          <div v-if="comments.length" class="space-y-4 border-t border-slate-100 pt-5">
+            <article
               v-for="comment in comments"
               :key="comment.id"
-              class="flex gap-3"
+              class="flex gap-4"
             >
-              <JAvatar :name="comment.userId ?? 'User'" size="sm" class="mt-0.5 shrink-0" />
-              <div class="min-w-0 flex-1">
-                <div class="flex items-baseline gap-2">
-                  <span class="text-sm font-medium text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
-                  <span class="text-xs text-slate-400">{{ formatDate(comment.createdAt) }}</span>
+              <JAvatar :name="comment.userId ?? 'User'" size="md" class="mt-1 shrink-0" />
+              <div class="min-w-0 flex-1 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                <div class="mb-1.5 flex items-center gap-2">
+                  <span class="text-sm font-semibold text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
+                  <span class="text-sm text-slate-400">{{ formatDate(comment.createdAt) }}</span>
                 </div>
-                <p class="mt-0.5 text-sm text-slate-700">{{ comment.body }}</p>
+                <p class="text-base leading-relaxed text-slate-700">{{ comment.body }}</p>
               </div>
-            </li>
-            <li v-if="comments.length === 0" class="text-sm text-slate-400">No comments yet</li>
-          </ul>
+            </article>
+          </div>
+          <p v-else class="border-t border-slate-100 pt-5 text-center text-base text-slate-400">
+            No comments yet. Start the conversation above.
+          </p>
         </JCard>
 
         <!-- Attachments -->
@@ -83,78 +90,79 @@
           <template #action>
             <div class="flex gap-2">
               <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
-              <JButton variant="secondary" size="sm" @click="openFileDialog">Upload</JButton>
-              <JButton variant="secondary" size="sm" @click="capturePhoto">Capture</JButton>
+              <JButton variant="secondary" size="sm" @click="openFileDialog">
+                <template #icon>
+                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                </template>
+                Upload
+              </JButton>
+              <JButton variant="secondary" size="sm" @click="capturePhoto">
+                <template #icon>
+                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                  </svg>
+                </template>
+                Capture
+              </JButton>
             </div>
           </template>
 
-          <ul v-if="attachments.length" class="space-y-2">
+          <ul v-if="attachments.length" class="divide-y divide-slate-100">
             <li
               v-for="attachment in attachments"
               :key="attachment.id"
-              class="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm"
+              class="flex items-center gap-4 py-3 first:pt-0 last:pb-0"
             >
-              <svg class="size-5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
-              </svg>
+              <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                <svg class="size-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                </svg>
+              </div>
               <div class="min-w-0 flex-1">
                 <template v-if="attachment.storageKey?.startsWith('pending/')">
-                  <p class="truncate font-medium text-amber-600">{{ attachment.storageKey }}</p>
-                  <JBadge variant="flame" size="sm">Pending upload</JBadge>
+                  <p class="truncate text-base font-medium text-amber-600">{{ attachment.storageKey }}</p>
+                  <p class="mt-0.5 text-sm text-amber-500">Pending upload</p>
                 </template>
                 <template v-else>
                   <a
                     :href="attachmentUrl(attachment.url)"
-                    class="block truncate font-medium text-mint-700 hover:underline"
+                    class="block truncate text-base font-medium text-slate-900 hover:text-mint-700 hover:underline"
                     target="_blank"
                   >
                     {{ attachment.storageKey }}
                   </a>
+                  <p class="mt-0.5 text-sm text-slate-400">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
                 </template>
-                <p class="text-xs text-slate-400">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
               </div>
             </li>
           </ul>
-          <p v-else class="text-sm italic text-slate-400">No attachments</p>
+          <p v-else class="text-center text-base text-slate-400">No attachments yet.</p>
         </JCard>
       </div>
 
       <!-- Right column — sidebar -->
-      <div class="w-full space-y-5 lg:max-w-[300px]">
+      <div class="w-full space-y-6 lg:max-w-[320px]">
         <!-- Details -->
         <JCard title="Details">
-          <dl class="space-y-3 text-sm">
+          <dl class="space-y-4">
             <div class="flex items-center justify-between">
-              <dt class="text-slate-500">Status</dt>
-              <dd><JBadge :variant="statusVariant(ticket.status)" size="sm">{{ ticket.status }}</JBadge></dd>
+              <dt class="text-sm font-medium text-slate-500">Status</dt>
+              <dd><JBadge :variant="statusVariant(ticket.status)">{{ ticket.status }}</JBadge></dd>
             </div>
             <div class="flex items-center justify-between">
-              <dt class="text-slate-500">Priority</dt>
-              <dd><JBadge :variant="priorityVariant(ticket.priority)" size="sm">{{ ticket.priority ?? 'None' }}</JBadge></dd>
+              <dt class="text-sm font-medium text-slate-500">Priority</dt>
+              <dd><JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge></dd>
             </div>
             <div class="flex items-center justify-between">
-              <dt class="text-slate-500">Created</dt>
-              <dd class="text-slate-700">{{ formatDate(ticket.createdAt) }}</dd>
+              <dt class="text-sm font-medium text-slate-500">Created</dt>
+              <dd class="text-base text-slate-700">{{ formatDate(ticket.createdAt) }}</dd>
             </div>
             <div class="flex items-center justify-between">
-              <dt class="text-slate-500">Updated</dt>
-              <dd class="text-slate-700">{{ formatDate(ticket.updatedAt) }}</dd>
-            </div>
-          </dl>
-        </JCard>
-
-        <!-- Financial -->
-        <JCard title="Financial">
-          <dl class="space-y-3 text-sm">
-            <div class="flex items-center justify-between">
-              <dt class="text-slate-500">Amount</dt>
-              <dd class="font-medium text-slate-900">
-                {{ ticket.totalAmountCents ? formatCurrency(ticket.totalAmountCents, ticket.currency) : '—' }}
-              </dd>
-            </div>
-            <div class="flex items-center justify-between">
-              <dt class="text-slate-500">Currency</dt>
-              <dd class="text-slate-700">{{ ticket.currency ?? '—' }}</dd>
+              <dt class="text-sm font-medium text-slate-500">Updated</dt>
+              <dd class="text-base text-slate-700">{{ formatDate(ticket.updatedAt) }}</dd>
             </div>
           </dl>
         </JCard>
@@ -162,8 +170,8 @@
     </div>
   </section>
 
-  <section v-else class="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
-    Ticket not found in local database
+  <section v-else class="rounded-xl border border-slate-200 bg-white p-8 text-center text-base text-slate-500">
+    Ticket not found in local database.
   </section>
 </template>
 
@@ -196,21 +204,15 @@ let ticketSub: any = null
 let commentsSub: any = null
 let attachmentsSub: any = null
 
-const breadcrumbs = ref<BreadcrumbItem[]>([
-  { label: 'Dashboard', to: '/dashboard' },
-  { label: 'Tickets', to: '/tickets' },
-  { label: `#${ticketId}` }
-])
-
 watch(
   () => ticket.value?.title,
   (title) => {
-    breadcrumbs.value = [
+    const items: BreadcrumbItem[] = [
       { label: 'Dashboard', to: '/dashboard' },
       { label: 'Tickets', to: '/tickets' },
       { label: title || `#${ticketId}` }
     ]
-    setBreadcrumbs(breadcrumbs.value)
+    setBreadcrumbs(items)
   },
   { immediate: true }
 )
@@ -406,14 +408,6 @@ function formatDate(iso: string | null | undefined): string {
     hour: '2-digit',
     minute: '2-digit'
   })
-}
-
-function formatCurrency(cents: number, currency?: string): string {
-  const amount = cents / 100
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: currency || 'USD'
-  }).format(amount)
 }
 
 function formatBytes(bytes: number | null | undefined): string {
