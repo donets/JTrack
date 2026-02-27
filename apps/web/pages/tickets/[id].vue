@@ -25,7 +25,7 @@
                 <JButton variant="secondary" size="sm" @click="cancelEditing">Cancel</JButton>
                 <JButton size="sm" :loading="saving" @click="saveEdits">Save</JButton>
               </template>
-              <JButton v-else variant="ghost" size="sm" @click="startEditing">
+              <JButton v-else variant="secondary" size="sm" @click="startEditing">
                 <template #icon>
                   <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -62,14 +62,14 @@
 
         <!-- Activity / Comments -->
         <JCard>
-          <form class="mb-5 flex items-end gap-3" @submit.prevent="addComment">
+          <form class="mb-5 flex items-start gap-3" @submit.prevent="addComment">
             <JTextarea
               v-model="commentBody"
               placeholder="Write a comment…"
-              :rows="2"
+              :rows="1"
               class="flex-1"
             />
-            <JButton type="submit" :disabled="!commentBody.trim()">Send</JButton>
+            <JButton type="submit" class="mt-[1px]" :disabled="!commentBody.trim()">Send</JButton>
           </form>
 
           <div v-if="comments.length" class="space-y-4 border-t border-slate-100 pt-5">
@@ -106,7 +106,10 @@
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Priority</dt>
-              <dd><JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge></dd>
+              <dd v-if="editing" class="w-28">
+                <JSelect v-model="editForm.priority" :options="priorityOptions" placeholder="None" />
+              </dd>
+              <dd v-else><JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge></dd>
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Created</dt>
@@ -207,7 +210,13 @@ const fileInput = ref<HTMLInputElement | null>(null)
 // Inline editing state
 const editing = ref(false)
 const saving = ref(false)
-const editForm = reactive({ title: '', description: '' })
+const editForm = reactive({ title: '', description: '', priority: '' })
+const priorityOptions = [
+  { value: '', label: 'None' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' }
+]
 
 let ticketSub: any = null
 let commentsSub: any = null
@@ -233,6 +242,7 @@ watch(
     if (t && !editing.value) {
       editForm.title = t.title ?? ''
       editForm.description = t.description ?? ''
+      editForm.priority = t.priority ?? ''
     }
   },
   { immediate: true }
@@ -306,12 +316,14 @@ onUnmounted(() => {
 function startEditing() {
   editForm.title = ticket.value?.title ?? ''
   editForm.description = ticket.value?.description ?? ''
+  editForm.priority = ticket.value?.priority ?? ''
   editing.value = true
 }
 
 function cancelEditing() {
   editForm.title = ticket.value?.title ?? ''
   editForm.description = ticket.value?.description ?? ''
+  editForm.priority = ticket.value?.priority ?? ''
   editing.value = false
 }
 
@@ -322,7 +334,8 @@ async function saveEdits() {
     await repository.saveTicket({
       id: ticket.value.id,
       title: editForm.title,
-      description: editForm.description
+      description: editForm.description,
+      priority: editForm.priority || undefined
     })
     editing.value = false
     await syncStore.syncNow()
