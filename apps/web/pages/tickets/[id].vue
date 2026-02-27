@@ -19,13 +19,13 @@
             <JButton variant="secondary" @click="cancelEditing">Cancel</JButton>
             <JButton :loading="saving" @click="saveEdits">Save changes</JButton>
           </template>
-          <JButton v-else variant="secondary" @click="startEditing">
+          <JButton v-else @click="startEditing">
             <template #icon>
               <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
               </svg>
             </template>
-            Edit ticket
+            Edit Ticket
           </JButton>
         </div>
       </template>
@@ -85,62 +85,6 @@
           </p>
         </JCard>
 
-        <!-- Attachments -->
-        <JCard title="Attachments">
-          <template #action>
-            <div class="flex gap-2">
-              <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
-              <JButton variant="secondary" size="sm" @click="openFileDialog">
-                <template #icon>
-                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                  </svg>
-                </template>
-                Upload
-              </JButton>
-              <JButton variant="secondary" size="sm" @click="capturePhoto">
-                <template #icon>
-                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                  </svg>
-                </template>
-                Capture
-              </JButton>
-            </div>
-          </template>
-
-          <ul v-if="attachments.length" class="divide-y divide-slate-100">
-            <li
-              v-for="attachment in attachments"
-              :key="attachment.id"
-              class="flex items-center gap-4 py-3 first:pt-0 last:pb-0"
-            >
-              <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                <svg class="size-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
-                </svg>
-              </div>
-              <div class="min-w-0 flex-1">
-                <template v-if="attachment.storageKey?.startsWith('pending/')">
-                  <p class="truncate text-base font-medium text-amber-600">{{ attachment.storageKey }}</p>
-                  <p class="mt-0.5 text-sm text-amber-500">Pending upload</p>
-                </template>
-                <template v-else>
-                  <a
-                    :href="attachmentUrl(attachment.url)"
-                    class="block truncate text-base font-medium text-slate-900 hover:text-mint-700 hover:underline"
-                    target="_blank"
-                  >
-                    {{ attachment.storageKey }}
-                  </a>
-                  <p class="mt-0.5 text-sm text-slate-400">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
-                </template>
-              </div>
-            </li>
-          </ul>
-          <p v-else class="text-center text-base text-slate-400">No attachments yet.</p>
-        </JCard>
       </div>
 
       <!-- Right column — sidebar -->
@@ -158,13 +102,70 @@
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Created</dt>
-              <dd class="text-base text-slate-700">{{ formatDate(ticket.createdAt) }}</dd>
+              <dd class="text-base text-slate-700" :title="formatDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</dd>
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Updated</dt>
-              <dd class="text-base text-slate-700">{{ formatDate(ticket.updatedAt) }}</dd>
+              <dd class="text-base text-slate-700" :title="formatDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</dd>
             </div>
           </dl>
+        </JCard>
+
+        <!-- Attachments -->
+        <JCard title="Attachments">
+          <template #action>
+            <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
+            <div class="flex gap-1.5">
+              <JButton variant="ghost" size="sm" @click="openFileDialog">
+                <template #icon>
+                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                </template>
+                Upload
+              </JButton>
+              <JButton variant="ghost" size="sm" @click="capturePhoto">
+                <template #icon>
+                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                  </svg>
+                </template>
+                Capture
+              </JButton>
+            </div>
+          </template>
+
+          <ul v-if="attachments.length" class="space-y-2">
+            <li
+              v-for="attachment in attachments"
+              :key="attachment.id"
+              class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2"
+            >
+              <div class="flex size-8 shrink-0 items-center justify-center rounded bg-slate-200">
+                <svg class="size-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                </svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <template v-if="attachment.storageKey?.startsWith('pending/')">
+                  <p class="truncate text-sm font-medium text-amber-600">{{ attachment.storageKey }}</p>
+                  <p class="text-xs text-amber-500">Pending upload</p>
+                </template>
+                <template v-else>
+                  <a
+                    :href="attachmentUrl(attachment.url)"
+                    class="block truncate text-sm font-medium text-slate-900 hover:text-mint-700 hover:underline"
+                    target="_blank"
+                  >
+                    {{ attachment.storageKey }}
+                  </a>
+                  <p class="text-xs text-slate-400">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
+                </template>
+              </div>
+            </li>
+          </ul>
+          <p v-else class="text-center text-sm text-slate-400">No attachments yet.</p>
         </JCard>
       </div>
     </div>
@@ -408,6 +409,22 @@ function formatDate(iso: string | null | undefined): string {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return 'just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`
+  const years = Math.floor(months / 12)
+  return `${years} year${years === 1 ? '' : 's'} ago`
 }
 
 function formatBytes(bytes: number | null | undefined): string {

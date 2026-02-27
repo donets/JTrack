@@ -11,12 +11,19 @@
       </button>
 
       <div class="min-w-0">
-        <p v-if="breadcrumbs.length > 0" class="truncate text-xs text-slate-500">
-          <span v-for="(item, index) in breadcrumbs" :key="`${item.label}-${index}`">
+        <nav v-if="breadcrumbs.length > 0" class="flex items-center truncate text-xs text-slate-500">
+          <template v-for="(item, index) in breadcrumbs" :key="`${item.label}-${index}`">
             <span v-if="index > 0" class="px-1">/</span>
-            {{ item.label }}
-          </span>
-        </p>
+            <NuxtLink
+              v-if="item.to && index < breadcrumbs.length - 1"
+              :to="item.to"
+              class="hover:text-slate-700 hover:underline"
+            >
+              {{ item.label }}
+            </NuxtLink>
+            <span v-else>{{ item.label }}</span>
+          </template>
+        </nav>
         <h1 class="truncate text-sm font-semibold text-ink md:text-base">{{ pageTitle }}</h1>
       </div>
 
