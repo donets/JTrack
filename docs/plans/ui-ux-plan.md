@@ -246,7 +246,7 @@ layouts/default.vue (CSS Grid)
 ### Epic 5: Team Management (13pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
-| 1 | JTR-59 | Create useTeamStore | 3pt |
+| 1 | JTR-59 | Create useTeamStore (done 2026-02-27) | 3pt |
 | 2 | JTR-60 | Create team list page | 3pt |
 | 3 | JTR-61 | Create invite member modal | 3pt |
 | 4 | JTR-62 | Create member detail page | 3pt |
