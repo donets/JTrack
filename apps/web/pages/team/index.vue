@@ -6,7 +6,7 @@
       :breadcrumbs="breadcrumbs"
     >
       <template #actions>
-        <JButton v-if="canInviteMembers" variant="primary" @click="inviteModalOpen = true">
+        <JButton v-if="showInviteAction" variant="primary" @click="inviteModalOpen = true">
           + Invite Member
         </JButton>
       </template>
@@ -174,6 +174,7 @@ const inviteModalOpen = ref(false)
 const accessRedirected = ref(false)
 
 const canInviteMembers = computed(() => hasPrivilege('users.manage'))
+const showInviteAction = computed(() => canInviteMembers.value && sectionTab.value !== 'roles')
 
 const sectionTabs = computed<TabItem[]>(() => [
   { key: 'members', label: 'Members', count: teamStore.members.length },
@@ -346,6 +347,14 @@ watch(() => locationStore.activeLocationId, () => {
       void loadMembers()
     }
   })
+})
+
+watch(sectionTab, (value) => {
+  searchQuery.value = ''
+
+  if (value !== 'members') {
+    memberFilterTab.value = 'all'
+  }
 })
 
 const enforceReadAccess = async () => {
