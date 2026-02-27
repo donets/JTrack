@@ -9,9 +9,8 @@
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
                   <template v-if="editing">
-                    <input
+                    <JInput
                       v-model="editForm.title"
-                      class="w-full border-b-2 border-mint-500 bg-transparent text-xl font-bold text-slate-900 outline-none placeholder:text-slate-400"
                       placeholder="Ticket title"
                     />
                   </template>
