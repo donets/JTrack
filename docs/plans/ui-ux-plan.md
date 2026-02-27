@@ -248,7 +248,7 @@ layouts/default.vue (CSS Grid)
 |---|--------|------|-----|
 | 1 | JTR-59 | Create useTeamStore (done 2026-02-27) | 3pt |
 | 2 | JTR-60 | Create team list page (done 2026-02-27) | 3pt |
-| 3 | JTR-61 | Create invite member modal | 3pt |
+| 3 | JTR-61 | Create invite member modal (done 2026-02-27) | 3pt |
 | 4 | JTR-62 | Create member detail page | 3pt |
 | 5 | JTR-63 | RBAC guards for team pages | 1pt |
 

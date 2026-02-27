@@ -52,14 +52,11 @@
       </div>
     </JCard>
 
-    <JModal v-model="inviteModalOpen" title="Invite Team Member" size="sm">
-      <p class="text-sm text-slate-600">
-        Invite form UI and API integration are implemented in `JTR-61`.
-      </p>
-      <template #footer>
-        <JButton variant="secondary" @click="inviteModalOpen = false">Close</JButton>
-      </template>
-    </JModal>
+    <InviteMemberModal
+      v-if="canInviteMembers"
+      v-model="inviteModalOpen"
+      @invited="activeTab = 'invited'"
+    />
   </section>
 </template>
 
