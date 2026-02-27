@@ -190,7 +190,7 @@ layouts/default.vue (CSS Grid)
 | 12 | JTR-34 | Create JDropdown (done 2026-02-27) | 2pt |
 | 13 | JTR-35 | Create JSpinner + JSkeleton (done 2026-02-27) | 1pt |
 | 14 | JTR-36 | Create JEmptyState (done 2026-02-27) | 1pt |
-| 15 | JTR-37 | Create JStatCard | 1pt |
+| 15 | JTR-37 | Create JStatCard (done 2026-02-27) | 1pt |
 | 16 | JTR-38 | Create JTimeline | 2pt |
 | 17 | JTR-39 | Create JProgress + JCheckbox | 2pt |
 | 18 | JTR-40 | Create JDatePicker | 2pt |
