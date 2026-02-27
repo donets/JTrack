@@ -257,7 +257,7 @@ layouts/default.vue (CSS Grid)
 |---|--------|------|-----|
 | 1 | JTR-90 | Enhance team management page | 3pt |
 | 2 | JTR-111 | Create team invitations tab (done 2026-02-27) | 2pt |
-| 3 | JTR-112 | Create RBAC roles matrix tab | 2pt |
+| 3 | JTR-112 | Create RBAC roles matrix tab (done 2026-02-27) | 2pt |
 
 ### Epic 6: Kanban & Dispatch (27pt)
 | # | Linear | Task | Est |

@@ -55,7 +55,7 @@
         </template>
 
         <JTable
-          v-else
+          v-else-if="sectionTab === 'invitations'"
           :columns="invitationColumns"
           :rows="invitationRows"
           :loading="teamStore.loading"
@@ -80,6 +80,47 @@
             </div>
           </template>
         </JTable>
+
+        <div v-else class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  Privilege
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <JBadge variant="violet">Owner</JBadge>
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <JBadge variant="sky">Manager</JBadge>
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <JBadge variant="mint">Technician</JBadge>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="privilege in privilegeRows" :key="privilege">
+                <td class="px-4 py-2 font-mono text-xs text-ink">{{ privilege }}</td>
+                <td class="px-4 py-2 text-center">
+                  <span :class="matrixValueClass(hasRolePrivilege('Owner', privilege))">
+                    {{ hasRolePrivilege('Owner', privilege) ? '✓' : '—' }}
+                  </span>
+                </td>
+                <td class="px-4 py-2 text-center">
+                  <span :class="matrixValueClass(hasRolePrivilege('Manager', privilege))">
+                    {{ hasRolePrivilege('Manager', privilege) ? '✓' : '—' }}
+                  </span>
+                </td>
+                <td class="px-4 py-2 text-center">
+                  <span :class="matrixValueClass(hasRolePrivilege('Technician', privilege))">
+                    {{ hasRolePrivilege('Technician', privilege) ? '✓' : '—' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </JCard>
 
@@ -93,7 +134,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import type { RoleKey, UserLocationStatus } from '@jtrack/shared'
+import { privilegeKeys, rolePrivileges, type PrivilegeKey, type RoleKey, type UserLocationStatus } from '@jtrack/shared'
 import type { BreadcrumbItem, TableColumn, TabItem } from '~/types/ui'
 
 const teamStore = useTeamStore()
@@ -126,7 +167,7 @@ const invitationColumns: TableColumn[] = [
   { key: 'actions', label: '', align: 'right', width: '120px' }
 ]
 
-const sectionTab = ref<'members' | 'invitations'>('members')
+const sectionTab = ref<'members' | 'invitations' | 'roles'>('members')
 const memberFilterTab = ref<'all' | 'active' | 'invited'>('all')
 const searchQuery = ref('')
 const inviteModalOpen = ref(false)
@@ -140,7 +181,8 @@ const sectionTabs = computed<TabItem[]>(() => [
     key: 'invitations',
     label: 'Invitations',
     count: teamStore.members.filter((member) => member.membershipStatus === 'invited').length
-  }
+  },
+  { key: 'roles', label: 'Roles' }
 ])
 
 const memberFilterTabs = computed<TabItem[]>(() => [
@@ -223,6 +265,8 @@ const invitationRows = computed(() => {
     }))
 })
 
+const privilegeRows = privilegeKeys
+
 const roleBadgeVariant = (role: RoleKey) => {
   if (role === 'Owner') {
     return 'violet'
@@ -265,6 +309,12 @@ const revokeInvite = (email: string) => {
     message: `Revoke invite for ${email} is not implemented yet`
   })
 }
+
+const hasRolePrivilege = (role: RoleKey, privilege: PrivilegeKey) =>
+  rolePrivileges[role].includes(privilege)
+
+const matrixValueClass = (granted: boolean) =>
+  granted ? 'text-sm font-semibold text-mint' : 'text-sm text-slate-400'
 
 const loadMembers = async () => {
   if (!locationStore.activeLocationId || !hasPrivilege('users.read')) {
