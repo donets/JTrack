@@ -201,7 +201,7 @@ const showModal = ref(false)
 const form = reactive({
   title: '',
   description: '',
-  priority: '',
+  priority: 'medium',
   scheduledStartAt: '',
   scheduledEndAt: '',
   amount: '',
