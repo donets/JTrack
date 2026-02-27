@@ -106,8 +106,8 @@
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Priority</dt>
-              <dd v-if="editing" class="w-28">
-                <JSelect v-model="editForm.priority" :options="priorityOptions" placeholder="None" />
+              <dd v-if="editing">
+                <JSelect v-model="editForm.priority" :options="priorityOptions" placeholder="None" class="[&_select]:py-1 [&_select]:text-xs" />
               </dd>
               <dd v-else><JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge></dd>
             </div>
