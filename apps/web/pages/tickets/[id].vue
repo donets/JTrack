@@ -101,10 +101,14 @@
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Priority</dt>
-              <dd v-if="editing">
-                <JSelect v-model="editForm.priority" :options="priorityOptions" placeholder="None" class="[&_select]:py-1 [&_select]:text-xs" />
+              <dd v-if="editingPriority">
+                <JSelect v-model="editForm.priority" :options="priorityOptions" placeholder="None" class="[&_select]:py-1 [&_select]:text-xs" @update:model-value="savePriority" />
               </dd>
-              <dd v-else><JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge></dd>
+              <dd v-else>
+                <button type="button" class="cursor-pointer" @click="startEditingPriority">
+                  <JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge>
+                </button>
+              </dd>
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Created</dt>
@@ -205,6 +209,7 @@ const descriptionInput = ref<HTMLTextAreaElement | null>(null)
 
 // Inline editing state
 const editing = ref(false)
+const editingPriority = ref(false)
 const saving = ref(false)
 const editForm = reactive({ title: '', description: '', priority: '' })
 const priorityOptions = [
@@ -238,6 +243,8 @@ watch(
     if (t && !editing.value) {
       editForm.title = t.title ?? ''
       editForm.description = t.description ?? ''
+    }
+    if (t && !editingPriority.value) {
       editForm.priority = t.priority ?? ''
     }
   },
@@ -319,7 +326,6 @@ function autoResizeDescription() {
 function startEditing() {
   editForm.title = ticket.value?.title ?? ''
   editForm.description = ticket.value?.description ?? ''
-  editForm.priority = ticket.value?.priority ?? ''
   editing.value = true
   nextTick(autoResizeDescription)
 }
@@ -327,7 +333,6 @@ function startEditing() {
 function cancelEditing() {
   editForm.title = ticket.value?.title ?? ''
   editForm.description = ticket.value?.description ?? ''
-  editForm.priority = ticket.value?.priority ?? ''
   editing.value = false
 }
 
@@ -338,14 +343,28 @@ async function saveEdits() {
     await repository.saveTicket({
       id: ticket.value.id,
       title: editForm.title,
-      description: editForm.description,
-      priority: editForm.priority || undefined
+      description: editForm.description
     })
     editing.value = false
     await syncStore.syncNow()
   } finally {
     saving.value = false
   }
+}
+
+function startEditingPriority() {
+  editForm.priority = ticket.value?.priority ?? ''
+  editingPriority.value = true
+}
+
+async function savePriority(value: string) {
+  if (!ticket.value) return
+  editingPriority.value = false
+  await repository.saveTicket({
+    id: ticket.value.id,
+    priority: value || undefined
+  })
+  await syncStore.syncNow()
 }
 
 // --- Comments & Attachments (unchanged logic) ---
