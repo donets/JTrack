@@ -176,8 +176,8 @@ layouts/default.vue (CSS Grid)
 ### Epic 1: UI-Kit Foundation (28pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
-| 1 | JTR-23 | Extend Tailwind design tokens | 1pt |
-| 2 | JTR-24 | Create JButton | 2pt |
+| 1 | JTR-23 | Extend Tailwind design tokens (done 2026-02-27) | 1pt |
+| 2 | JTR-24 | Create JButton (done 2026-02-27) | 2pt |
 | 3 | JTR-25 | Create JInput + JTextarea | 2pt |
 | 4 | JTR-26 | Create JSelect | 1pt |
 | 5 | JTR-27 | Create JBadge | 1pt |
