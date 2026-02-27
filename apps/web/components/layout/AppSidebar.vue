@@ -3,11 +3,28 @@
     :class="desktopSidebarClasses"
     aria-label="Primary navigation"
   >
-    <div class="flex h-topbar items-center border-b border-slate-700 px-4">
+    <div class="flex h-topbar items-center justify-between border-b border-slate-700 px-4">
       <NuxtLink to="/dashboard" class="flex items-center gap-2 text-white">
         <span class="text-lg">⚡</span>
         <span :class="logoTextClasses">JTrack</span>
       </NuxtLink>
+      <button
+        type="button"
+        class="hidden rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white lg:inline-flex"
+        aria-label="Toggle sidebar"
+        @click="toggleCollapsed"
+      >
+        <svg
+          class="size-4 transition-transform"
+          :class="collapsed ? 'rotate-180' : ''"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+      </button>
     </div>
 
     <nav class="flex-1 overflow-y-auto py-3">
@@ -33,17 +50,6 @@
     </nav>
 
     <div class="border-t border-slate-700 p-3">
-      <button
-        type="button"
-        :class="collapseButtonClasses"
-        @click="toggleCollapsed"
-      >
-        <span class="text-sm">⇆</span>
-        <span :class="itemTextClasses">
-          {{ collapsed ? 'Expand' : 'Collapse' }}
-        </span>
-      </button>
-
       <div :class="userCardClasses">
         <JAvatar size="sm" :name="userName" />
         <div :class="userTextClasses">
@@ -238,11 +244,6 @@ const sectionLabelClasses = computed(() => [
 ])
 
 const itemTextClasses = computed(() => [props.collapsed ? 'hidden' : 'hidden lg:inline'])
-
-const collapseButtonClasses = computed(() => [
-  'hidden w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-slate-300',
-  'hover:bg-slate-800 hover:text-white lg:flex'
-])
 
 const userCardClasses = computed(() => [
   'mt-2 flex items-center gap-2 rounded-md bg-slate-800/70 px-2 py-2',
