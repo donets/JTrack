@@ -200,7 +200,7 @@ layouts/default.vue (CSS Grid)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
 | 1 | JTR-121 | Create JPagination component (done 2026-02-27) | 1pt |
-| 2 | JTR-122 | Create JPageHeader component | 1pt |
+| 2 | JTR-122 | Create JPageHeader component (done 2026-02-27) | 1pt |
 | 3 | JTR-97 | Add missing design system components (parent) | 2pt |
 
 ### Epic 2: App Shell & Navigation (17pt)
