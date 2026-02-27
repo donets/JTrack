@@ -1,16 +1,11 @@
 <template>
   <section class="space-y-5">
-    <JPageHeader
-      title="Tickets"
-      :breadcrumbs="breadcrumbs"
-    >
+    <JPageHeader title="Tickets">
       <template #actions>
-        <button
-          class="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-ink/90"
-          @click="showModal = true"
-        >
-          + New Ticket
-        </button>
+        <div class="flex flex-1 items-center gap-3">
+          <JSearchInput v-model="searchQuery" placeholder="Search tickets…" class="w-full max-w-xs" />
+          <JButton @click="showModal = true">+ New Ticket</JButton>
+        </div>
       </template>
     </JPageHeader>
 
@@ -155,6 +150,7 @@
             <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Title</th>
             <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Status</th>
             <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Priority</th>
+            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Created</th>
             <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Updated</th>
           </tr>
         </thead>
@@ -166,12 +162,15 @@
             @click="navigateTo(`/tickets/${ticket.id}`)"
           >
             <td class="px-5 py-4 font-medium text-slate-900">{{ ticket.title }}</td>
-            <td class="px-5 py-4 text-slate-600">{{ ticket.status }}</td>
+            <td class="px-5 py-4">
+              <JBadge :variant="statusVariant(ticket.status)">{{ ticket.status }}</JBadge>
+            </td>
             <td class="px-5 py-4 text-slate-600">{{ ticket.priority ?? '-' }}</td>
-            <td class="px-5 py-4 text-slate-500">{{ new Date(ticket.updatedAt).toLocaleString() }}</td>
+            <td class="px-5 py-4 text-slate-500" :title="formatTooltipDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</td>
+            <td class="px-5 py-4 text-slate-500" :title="formatTooltipDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</td>
           </tr>
           <tr v-if="visibleTickets.length === 0">
-            <td class="px-5 py-8 text-center text-slate-400" colspan="4">No tickets in local store</td>
+            <td class="px-5 py-8 text-center text-slate-400" colspan="5">No tickets found</td>
           </tr>
         </tbody>
       </table>
@@ -209,13 +208,50 @@ const form = reactive({
   currency: 'EUR'
 })
 const statusFilter = ref('')
+const searchQuery = ref('')
 
-const visibleTickets = computed(() =>
-  tickets.value
+const visibleTickets = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim()
+  return tickets.value
     .filter((ticket) => !ticket.deletedAt)
     .filter((ticket) => (statusFilter.value ? ticket.status === statusFilter.value : true))
+    .filter((ticket) => !query || ticket.title?.toLowerCase().includes(query) || ticket.description?.toLowerCase().includes(query))
     .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
-)
+})
+
+function statusVariant(s: string): 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist' {
+  const map: Record<string, 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'> = {
+    New: 'sky', Scheduled: 'violet', InProgress: 'flame',
+    Done: 'mint', Invoiced: 'sky', Paid: 'mint', Canceled: 'mist'
+  }
+  return map[s] ?? 'mist'
+}
+
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return 'just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`
+  const years = Math.floor(months / 12)
+  return `${years} year${years === 1 ? '' : 's'} ago`
+}
+
+function formatTooltipDate(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const day = d.toLocaleDateString('en-US', { weekday: 'long' })
+  const month = d.toLocaleDateString('en-US', { month: 'short' })
+  const date = d.getDate()
+  const hour = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return `${day} ${month} ${date}, ${hour}`
+}
 
 const subscribeToTickets = () => {
   subscription?.unsubscribe()
