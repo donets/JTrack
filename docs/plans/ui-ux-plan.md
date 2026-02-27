@@ -14,7 +14,7 @@ JTrack — offline-first field-service CRM. Фронтенд (Nuxt 4 + Vue 3 + T
 **File**: `apps/web/tailwind.config.ts`
 - Добавить цвета: `sky`, `rose`, `violet` с light-вариантами
 - Обновить `mint`, `flame` на объекты с `DEFAULT` + `light`
-- Добавить spacing: `sidebar: 240px`, `sidebar-collapsed: 64px`, `topbar: 56px`
+- Добавить spacing: `sidebar: 240px`, `sidebar-collapsed: 64px`, `topbar: 56px`, `bottom-nav: 64px`
 
 ### 1.1 Layout Components (`components/ui/`)
 | Component | Props | Priority |
