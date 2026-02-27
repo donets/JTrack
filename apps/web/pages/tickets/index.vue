@@ -140,7 +140,7 @@
       <table class="min-w-full divide-y divide-slate-200 text-base">
         <thead class="bg-slate-50">
           <tr>
-            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Title</th>
+            <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600" />
             <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Status</th>
             <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Priority</th>
             <th class="px-5 py-3.5 text-left text-sm font-medium text-slate-600">Created</th>
