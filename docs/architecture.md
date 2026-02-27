@@ -38,7 +38,7 @@ flowchart LR
 - `auth`: login/refresh/logout/me, invite onboarding completion, JWT issuance, refresh token rotation.
 - `rbac`: role/privilege resolution and access checks.
 - `locations`: tenant container lifecycle.
-- `users`: membership and operator management.
+- `users`: membership and operator management (including per-location role/status updates through `PATCH /users/:id` with `x-location-id` context).
 - `tickets`, `comments`, `attachments`, `payments`: core domain CRUD.
 - `sync`: delta pull/push and conflict handling.
 - `health`: readiness/liveness probe endpoint with DB connectivity check.

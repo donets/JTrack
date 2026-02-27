@@ -506,7 +506,7 @@ paths:
                   - $ref: '#/components/schemas/User'
     patch:
       tags: [Users]
-      summary: Update user
+      summary: Update user profile and/or location membership access
       parameters:
         - $ref: '#/components/parameters/XLocationId'
         - $ref: '#/components/parameters/PathId'
@@ -1293,6 +1293,10 @@ components:
           minLength: 1
         isAdmin:
           type: boolean
+        role:
+          $ref: '#/components/schemas/RoleKey'
+        membershipStatus:
+          $ref: '#/components/schemas/UserLocationStatus'
 
     InviteResponse:
       type: object

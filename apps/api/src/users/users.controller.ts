@@ -48,9 +48,10 @@ export class UsersController {
   @RequirePrivileges(['users.manage'])
   async update(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(updateUserSchema)) body: UpdateUserInput
+    @Body(new ZodValidationPipe(updateUserSchema)) body: UpdateUserInput,
+    @CurrentLocation() locationId: string
   ) {
-    return this.usersService.update(id, body)
+    return this.usersService.update(id, body, locationId)
   }
 
   @Delete(':id')

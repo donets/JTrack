@@ -11,6 +11,7 @@ export type TableColumn = {
   sortable?: boolean
   align?: 'left' | 'center' | 'right'
   width?: string
+  rowHeader?: boolean
 }
 
 export type TimelineEventType = 'comment' | 'status_change' | 'payment' | 'attachment'
