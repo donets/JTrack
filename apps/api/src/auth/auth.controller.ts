@@ -6,8 +6,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  UseGuards,
-  UsePipes
+  UseGuards
 } from '@nestjs/common'
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 import type { Request, Response } from 'express'
@@ -38,9 +37,8 @@ export class AuthController {
       limit: 10
     }
   })
-  @UsePipes(new ZodValidationPipe(loginInputSchema))
   async login(
-    @Body() body: { email: string; password: string },
+    @Body(new ZodValidationPipe(loginInputSchema)) body: { email: string; password: string },
     @Res({ passthrough: true }) response: Response
   ) {
     const result = await this.authService.login(body)
@@ -66,11 +64,10 @@ export class AuthController {
       limit: 10
     }
   })
-  @UsePipes(new ZodValidationPipe(refreshInputSchema))
   async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-    @Body() body: RefreshInput
+    @Body(new ZodValidationPipe(refreshInputSchema)) body: RefreshInput
   ) {
     const refreshToken = request.cookies?.refresh_token ?? body?.refreshToken
 
@@ -94,9 +91,8 @@ export class AuthController {
 
   @Public()
   @Post('invite/complete')
-  @UsePipes(new ZodValidationPipe(inviteCompleteInputSchema))
   async completeInvite(
-    @Body() body: { token: string; password: string },
+    @Body(new ZodValidationPipe(inviteCompleteInputSchema)) body: { token: string; password: string },
     @Res({ passthrough: true }) response: Response
   ) {
     const result = await this.authService.completeInvite(body)

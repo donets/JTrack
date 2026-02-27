@@ -7,7 +7,6 @@ import {
   Post,
   Put,
   Query,
-  UsePipes
 } from '@nestjs/common'
 import {
   createAttachmentMetadataSchema,
@@ -30,25 +29,25 @@ export class AttachmentsController {
 
   @Post('presign')
   @RequirePrivileges(['attachments.write'])
-  @UsePipes(new ZodValidationPipe(presignInputSchema))
-  async presign(@Body() body: PresignInput) {
+  async presign(@Body(new ZodValidationPipe(presignInputSchema)) body: PresignInput) {
     return this.attachmentsService.presign(body)
   }
 
   @Put('upload/:storageKey')
   @RequirePrivileges(['attachments.write'])
-  @UsePipes(new ZodValidationPipe(uploadInputSchema))
-  async upload(@Param('storageKey') storageKey: string, @Body() body: UploadInput) {
+  async upload(
+    @Param('storageKey') storageKey: string,
+    @Body(new ZodValidationPipe(uploadInputSchema)) body: UploadInput
+  ) {
     return this.attachmentsService.upload(storageKey, body)
   }
 
   @Post('metadata')
   @RequirePrivileges(['attachments.write'])
-  @UsePipes(new ZodValidationPipe(createAttachmentMetadataSchema))
   async createMetadata(
     @CurrentLocation() locationId: string,
     @CurrentUser() user: JwtUser,
-    @Body() body: CreateAttachmentMetadataInput
+    @Body(new ZodValidationPipe(createAttachmentMetadataSchema)) body: CreateAttachmentMetadataInput
   ) {
     return this.attachmentsService.createMetadata(locationId, user.sub, body)
   }

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UsePipes } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import {
   createUserSchema,
   type CreateUserInput,
@@ -22,15 +22,19 @@ export class UsersController {
 
   @Post()
   @RequirePrivileges(['users.manage'])
-  @UsePipes(new ZodValidationPipe(createUserSchema))
-  async create(@Body() body: CreateUserInput, @CurrentLocation() locationId: string) {
+  async create(
+    @Body(new ZodValidationPipe(createUserSchema)) body: CreateUserInput,
+    @CurrentLocation() locationId: string
+  ) {
     return this.usersService.create(body, locationId)
   }
 
   @Post('invite')
   @RequirePrivileges(['users.manage'])
-  @UsePipes(new ZodValidationPipe(createUserSchema))
-  async invite(@Body() body: CreateUserInput, @CurrentLocation() locationId: string) {
+  async invite(
+    @Body(new ZodValidationPipe(createUserSchema)) body: CreateUserInput,
+    @CurrentLocation() locationId: string
+  ) {
     return this.usersService.invite(body, locationId)
   }
 
@@ -42,8 +46,10 @@ export class UsersController {
 
   @Patch(':id')
   @RequirePrivileges(['users.manage'])
-  @UsePipes(new ZodValidationPipe(updateUserSchema))
-  async update(@Param('id') id: string, @Body() body: UpdateUserInput) {
+  async update(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateUserSchema)) body: UpdateUserInput
+  ) {
     return this.usersService.update(id, body)
   }
 
