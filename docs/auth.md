@@ -302,6 +302,8 @@ Sliding window counter (Redis or in-memory with TTL for MVP).
 - Single-column centered card layout, max 400px wide
 - Show/hide password toggle (eye icon)
 - Inline validation on blur, not on every keystroke
+- Route guard behavior: all non-public app routes redirect unauthenticated users to `/login?redirect=<original-path>`.
+- If access token refresh fails on an authenticated page request, client redirects to `/login?redirect=<current-path>`.
 - After signup: redirect to "Check your email" screen with email displayed and "Resend" button (rate-limited to 1 per 60s)
 - After password reset request: same "Check your email" screen
 - After successful reset: auto-redirect to login with toast "Password updated. Sign in with your new password."

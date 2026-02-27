@@ -88,6 +88,22 @@ onMounted(() => {
   }
 })
 
+const resolveRedirectTarget = () => {
+  const redirectParam = route.query.redirect
+  const redirectRaw = Array.isArray(redirectParam) ? redirectParam[0] : redirectParam
+
+  if (!redirectRaw || typeof redirectRaw !== 'string') {
+    return '/dashboard'
+  }
+
+  // Allow only same-origin relative application routes.
+  if (!redirectRaw.startsWith('/')) {
+    return '/dashboard'
+  }
+
+  return redirectRaw
+}
+
 const submit = async () => {
   error.value = null
   toast.value = null
@@ -96,7 +112,7 @@ const submit = async () => {
   try {
     await authStore.login(email.value, password.value)
     await locationStore.loadLocations()
-    await navigateTo('/dashboard')
+    await navigateTo(resolveRedirectTarget())
   } catch (err: any) {
     error.value = err?.data?.message ?? 'Unable to sign in'
   } finally {

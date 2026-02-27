@@ -1,4 +1,4 @@
-const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email']
+import { isPublicRoute } from '~/utils/public-routes'
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = useAuthStore()
@@ -8,9 +8,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     await authStore.bootstrap()
   }
 
-  const isPublicRoute = PUBLIC_ROUTES.some((route) => to.path === route)
-
-  if (isPublicRoute) {
+  if (isPublicRoute(to.path)) {
     if (authStore.isAuthenticated && to.path === '/login') {
       return navigateTo('/dashboard')
     }
@@ -19,7 +17,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (!authStore.isAuthenticated) {
-    return navigateTo('/login')
+    return navigateTo({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
   }
 
   if (!locationStore.loaded) {
