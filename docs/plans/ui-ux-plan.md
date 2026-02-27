@@ -237,7 +237,7 @@ layouts/default.vue (CSS Grid)
 ### Epic 4: Dashboard (11pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
-| 1 | JTR-54 | Create dashboard page route | 1pt |
+| 1 | JTR-54 | Create dashboard page route (done 2026-02-27) | 1pt |
 | 2 | JTR-55 | Create useDashboardStats composable | 3pt |
 | 3 | JTR-56 | Build owner/manager dashboard | 3pt |
 | 4 | JTR-57 | Build technician day view | 3pt |
