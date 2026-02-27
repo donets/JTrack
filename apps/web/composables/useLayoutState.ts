@@ -1,9 +1,7 @@
-import { ref } from 'vue'
-
-const sidebarCollapsed = ref(false)
-const mobileDrawerOpen = ref(false)
-
 export function useLayoutState() {
+  const sidebarCollapsed = useState<boolean>('layout-sidebar-collapsed', () => false)
+  const mobileDrawerOpen = useState<boolean>('layout-mobile-drawer-open', () => false)
+
   const setSidebarCollapsed = (collapsed: boolean) => {
     sidebarCollapsed.value = collapsed
   }

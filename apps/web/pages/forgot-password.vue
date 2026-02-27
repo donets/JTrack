@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center px-4">
+  <div class="w-full max-w-sm">
     <!-- Step 1: Enter email -->
     <form
       v-if="step === 'email'"
@@ -147,6 +147,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: 'auth'
+})
+
 const config = useRuntimeConfig()
 
 const step = ref<'email' | 'code' | 'done'>('email')

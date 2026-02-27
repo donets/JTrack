@@ -1,5 +1,9 @@
 <template>
-  <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-mist-dark bg-white md:hidden" aria-label="Mobile navigation">
+  <nav
+    class="fixed inset-x-0 bottom-0 z-30 border-t border-mist-dark bg-white md:hidden"
+    style="padding-bottom: env(safe-area-inset-bottom)"
+    aria-label="Mobile navigation"
+  >
     <ul class="grid h-bottom-nav grid-cols-5">
       <li v-for="item in routeItems" :key="item.to" class="h-full">
         <NuxtLink :to="item.to" :class="linkClasses(item.to)">

@@ -92,6 +92,8 @@ const { breadcrumbs, title } = useBreadcrumbs()
 const { openMobileDrawer } = useLayoutState()
 
 const isOnline = ref(true)
+const now = ref(Date.now())
+let syncAgeTimer: ReturnType<typeof setInterval> | null = null
 
 const formatRouteTitle = (path: string) => {
   const parts = path.split('/').filter(Boolean)
@@ -120,11 +122,15 @@ const syncAgeMs = computed(() => {
     return null
   }
 
-  return Math.max(0, Date.now() - syncStore.lastSyncedAt)
+  return Math.max(0, now.value - syncStore.lastSyncedAt)
 })
 
 const syncDotClass = computed(() => {
-  if (!isOnline.value || syncStore.error) {
+  if (!isOnline.value) {
+    return 'bg-flame'
+  }
+
+  if (syncStore.error) {
     return 'bg-rose'
   }
 
@@ -190,6 +196,13 @@ const locationItems = computed<DropdownItem[]>(() =>
 
 const userMenuItems = computed<DropdownItem[]>(() => [
   {
+    label: 'Profile',
+    icon: '👤',
+    action: async () => {
+      await navigateTo('/settings')
+    }
+  },
+  {
     label: 'Locations',
     icon: '📍',
     action: async () => {
@@ -211,6 +224,9 @@ const setOnlineStatus = () => {
 onMounted(() => {
   setOnlineStatus()
   if (import.meta.client) {
+    syncAgeTimer = setInterval(() => {
+      now.value = Date.now()
+    }, 15_000)
     window.addEventListener('online', setOnlineStatus)
     window.addEventListener('offline', setOnlineStatus)
   }
@@ -218,6 +234,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (import.meta.client) {
+    if (syncAgeTimer) {
+      clearInterval(syncAgeTimer)
+      syncAgeTimer = null
+    }
     window.removeEventListener('online', setOnlineStatus)
     window.removeEventListener('offline', setOnlineStatus)
   }

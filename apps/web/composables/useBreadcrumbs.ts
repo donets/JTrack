@@ -1,9 +1,9 @@
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { BreadcrumbItem } from '~/types/ui'
 
-const breadcrumbs = ref<BreadcrumbItem[]>([])
-
 export function useBreadcrumbs() {
+  const breadcrumbs = useState<BreadcrumbItem[]>('layout-breadcrumbs', () => [])
+
   const setBreadcrumbs = (items: BreadcrumbItem[]) => {
     breadcrumbs.value = [...items]
   }

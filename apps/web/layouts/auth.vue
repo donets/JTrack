@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-mist text-ink">
+  <div class="flex min-h-screen items-center justify-center bg-mist px-4 text-ink">
     <slot />
     <JToast />
   </div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center px-4">
+  <div class="w-full max-w-sm">
     <form class="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow" @submit.prevent="submit">
       <div>
         <p class="text-xs uppercase tracking-[0.2em] text-slate-500">JTrack</p>

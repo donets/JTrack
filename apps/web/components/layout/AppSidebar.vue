@@ -171,7 +171,7 @@ const sidebarSections: SidebarSection[] = [
     label: 'Finance',
     items: [
       { label: 'Quotes', icon: '📝', to: '/quotes', privilege: 'billing.manage' },
-      { label: 'Invoices', icon: '💰', to: '/invoices', privilege: 'payments.read' }
+      { label: 'Invoices', icon: '💰', to: '/invoicing', privilege: 'payments.read' }
     ]
   },
   {
@@ -257,15 +257,15 @@ const itemClasses = (path: string) => [
   'group flex items-center gap-3 px-4 py-2 text-sm transition-colors',
   props.collapsed ? 'justify-center lg:justify-center' : 'justify-center lg:justify-start',
   isRouteActive(path)
-    ? 'border-l-2 border-mint bg-slate-800 text-white'
-    : 'border-l-2 border-transparent text-slate-300 hover:bg-slate-800 hover:text-white'
+    ? 'border-l-[3px] border-mint bg-slate-800 text-white'
+    : 'border-l-[3px] border-transparent text-slate-300 hover:bg-slate-800 hover:text-white'
 ]
 
 const mobileItemClasses = (path: string) => [
   'flex items-center gap-3 px-4 py-2 text-sm transition-colors',
   isRouteActive(path)
-    ? 'border-l-2 border-mint bg-slate-800 text-white'
-    : 'border-l-2 border-transparent text-slate-300 hover:bg-slate-800 hover:text-white'
+    ? 'border-l-[3px] border-mint bg-slate-800 text-white'
+    : 'border-l-[3px] border-transparent text-slate-300 hover:bg-slate-800 hover:text-white'
 ]
 
 const closeMobileDrawer = () => {
