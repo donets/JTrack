@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { roleKeys, rolePrivileges } from '@jtrack/shared'
-import { hash } from 'bcryptjs'
+import * as argon2 from 'argon2'
 
 const prisma = new PrismaClient()
 
@@ -40,37 +40,48 @@ async function syncRolesAndPrivileges() {
 }
 
 async function seedDemoData() {
-  const adminPasswordHash = await hash('password123', 12)
+  const argon2Options = {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1
+  } as const
+
+  const adminPasswordHash = await argon2.hash('password123', argon2Options)
 
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@jtrack.local' },
     update: {
       name: 'JTrack Internal Admin',
       isAdmin: true,
-      passwordHash: adminPasswordHash
+      passwordHash: adminPasswordHash,
+      emailVerifiedAt: new Date()
     },
     create: {
       email: 'admin@jtrack.local',
       name: 'JTrack Internal Admin',
       isAdmin: true,
-      passwordHash: adminPasswordHash
+      passwordHash: adminPasswordHash,
+      emailVerifiedAt: new Date()
     }
   })
 
-  const ownerPasswordHash = await hash('password123', 12)
+  const ownerPasswordHash = await argon2.hash('password123', argon2Options)
 
   const ownerUser = await prisma.user.upsert({
     where: { email: 'owner@demo.local' },
     update: {
       name: 'Demo Owner',
       isAdmin: false,
-      passwordHash: ownerPasswordHash
+      passwordHash: ownerPasswordHash,
+      emailVerifiedAt: new Date()
     },
     create: {
       email: 'owner@demo.local',
       name: 'Demo Owner',
       isAdmin: false,
-      passwordHash: ownerPasswordHash
+      passwordHash: ownerPasswordHash,
+      emailVerifiedAt: new Date()
     }
   })
 

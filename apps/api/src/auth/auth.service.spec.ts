@@ -1,15 +1,21 @@
 import { UnauthorizedException } from '@nestjs/common'
-import { compare, hash } from 'bcryptjs'
+import { createHash } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthService } from './auth.service'
 
-vi.mock('bcryptjs', () => ({
-  compare: vi.fn(),
-  hash: vi.fn()
+vi.mock('argon2', () => ({
+  argon2id: 2,
+  hash: vi.fn().mockResolvedValue('argon2-hashed'),
+  verify: vi.fn().mockResolvedValue(true)
 }))
 
-const compareMock = vi.mocked(compare)
-const hashMock = vi.mocked(hash)
+vi.mock('bcryptjs', () => ({
+  compare: vi.fn().mockResolvedValue(false)
+}))
+
+function sha256(raw: string): string {
+  return createHash('sha256').update(raw).digest('hex')
+}
 
 describe('AuthService', () => {
   let service: AuthService
@@ -17,6 +23,13 @@ describe('AuthService', () => {
     user: {
       findUnique: ReturnType<typeof vi.fn>
       update: ReturnType<typeof vi.fn>
+    }
+    session: {
+      create: ReturnType<typeof vi.fn>
+      findFirst: ReturnType<typeof vi.fn>
+      findUnique: ReturnType<typeof vi.fn>
+      update: ReturnType<typeof vi.fn>
+      updateMany: ReturnType<typeof vi.fn>
     }
     userLocation: {
       updateMany: ReturnType<typeof vi.fn>
@@ -31,12 +44,24 @@ describe('AuthService', () => {
     getOrThrow: ReturnType<typeof vi.fn>
     get: ReturnType<typeof vi.fn>
   }
+  let mailService: {
+    sendVerificationCode: ReturnType<typeof vi.fn>
+    sendPasswordResetCode: ReturnType<typeof vi.fn>
+    sendPasswordChangedNotification: ReturnType<typeof vi.fn>
+  }
 
   beforeEach(() => {
     prisma = {
       user: {
         findUnique: vi.fn(),
         update: vi.fn()
+      },
+      session: {
+        create: vi.fn(),
+        findFirst: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn()
       },
       userLocation: {
         updateMany: vi.fn()
@@ -54,26 +79,37 @@ describe('AuthService', () => {
       get: vi.fn()
     }
 
-    compareMock.mockReset()
-    hashMock.mockReset()
+    mailService = {
+      sendVerificationCode: vi.fn().mockResolvedValue(undefined),
+      sendPasswordResetCode: vi.fn().mockResolvedValue(undefined),
+      sendPasswordChangedNotification: vi.fn().mockResolvedValue(undefined)
+    }
 
-    service = new AuthService(prisma as never, jwtService as never, configService as never)
+    service = new AuthService(
+      prisma as never,
+      jwtService as never,
+      configService as never,
+      mailService as never
+    )
 
     prisma.$transaction.mockImplementation(
       async (
-        callback: (tx: {
-          user: { update: typeof prisma.user.update }
-          userLocation: { updateMany: typeof prisma.userLocation.updateMany }
-        }) => Promise<unknown>
-      ) =>
-        callback({
-          user: {
-            update: prisma.user.update
-          },
-          userLocation: {
-            updateMany: prisma.userLocation.updateMany
-          }
-        })
+        callbackOrArray:
+          | ((tx: {
+              user: { update: typeof prisma.user.update }
+              userLocation: { updateMany: typeof prisma.userLocation.updateMany }
+            }) => Promise<unknown>)
+          | unknown[]
+      ) => {
+        if (typeof callbackOrArray === 'function') {
+          return callbackOrArray({
+            user: { update: prisma.user.update },
+            userLocation: { updateMany: prisma.userLocation.updateMany }
+          })
+        }
+        // batch transaction (array of promises) — resolve them
+        return Promise.all(callbackOrArray)
+      }
     )
   })
 
@@ -87,24 +123,31 @@ describe('AuthService', () => {
       })
     ).rejects.toBeInstanceOf(UnauthorizedException)
 
-    expect(prisma.user.update).not.toHaveBeenCalled()
+    expect(prisma.session.create).not.toHaveBeenCalled()
   })
 
-  it('returns tokens and persists refresh hash on login', async () => {
+  it('returns tokens and creates session on login', async () => {
     const now = new Date('2026-02-24T09:00:00.000Z')
     prisma.user.findUnique.mockResolvedValue({
       id: 'user-1',
       email: 'tech@jtrack.local',
       name: 'Tech',
       isAdmin: false,
-      passwordHash: 'stored-password-hash',
-      refreshTokenHash: null,
+      passwordHash: 'argon2-stored-hash',
+      tokenVersion: 0,
+      emailVerifiedAt: now,
       createdAt: now,
       updatedAt: now
     })
-    compareMock.mockResolvedValue(true)
+
+    prisma.session.create.mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      refreshTokenHash: ''
+    })
+
     jwtService.signAsync.mockResolvedValueOnce('access-1').mockResolvedValueOnce('refresh-1')
-    hashMock.mockResolvedValue('refresh-hash-1')
+    prisma.session.update.mockResolvedValue({})
     prisma.user.update.mockResolvedValue({})
 
     const result = await service.login({
@@ -124,46 +167,68 @@ describe('AuthService', () => {
         updatedAt: now.toISOString()
       }
     })
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: 'user-1' },
-      data: { refreshTokenHash: 'refresh-hash-1' }
+
+    expect(prisma.session.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'user-1',
+        refreshTokenHash: ''
+      })
     })
   })
 
-  it('refresh rejects invalid refresh token hashes', async () => {
-    jwtService.verifyAsync.mockResolvedValue({ sub: 'user-1' })
-    prisma.user.findUnique.mockResolvedValue({
-      id: 'user-1',
-      email: 'tech@jtrack.local',
-      name: 'Tech',
-      isAdmin: false,
-      passwordHash: 'stored-password-hash',
-      refreshTokenHash: 'stored-refresh-hash',
-      createdAt: new Date('2026-02-24T09:00:00.000Z'),
-      updatedAt: new Date('2026-02-24T09:00:00.000Z')
-    })
-    compareMock.mockResolvedValue(false)
+  it('refresh rejects when session not found by jti', async () => {
+    jwtService.verifyAsync.mockResolvedValue({ sub: 'user-1', jti: 'session-1' })
+    prisma.session.findUnique.mockResolvedValue(null)
 
     await expect(service.refresh('refresh-raw-token')).rejects.toBeInstanceOf(UnauthorizedException)
   })
 
+  it('refresh detects reuse when hash mismatches on non-revoked session', async () => {
+    const now = new Date()
+    jwtService.verifyAsync.mockResolvedValue({ sub: 'user-1', jti: 'session-1' })
+    prisma.session.findUnique.mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      refreshTokenHash: 'old-hash-that-does-not-match',
+      revokedAt: null,
+      lastUsedAt: now,
+      createdAt: now
+    })
+    prisma.session.updateMany.mockResolvedValue({ count: 2 })
+
+    await expect(service.refresh('refresh-raw-token')).rejects.toBeInstanceOf(UnauthorizedException)
+
+    // All sessions for the user should be revoked
+    expect(prisma.session.updateMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', revokedAt: null },
+      data: { revokedAt: expect.any(Date) }
+    })
+  })
+
   it('refresh rotates token pair and returns serialized user', async () => {
     const now = new Date('2026-02-24T09:00:00.000Z')
-    jwtService.verifyAsync.mockResolvedValue({ sub: 'user-1' })
+    const tokenHash = sha256('refresh-raw-token')
+
+    jwtService.verifyAsync.mockResolvedValue({ sub: 'user-1', jti: 'session-1' })
+    prisma.session.findUnique.mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      refreshTokenHash: tokenHash,
+      revokedAt: null,
+      lastUsedAt: now,
+      createdAt: now
+    })
     prisma.user.findUnique.mockResolvedValue({
       id: 'user-1',
       email: 'manager@jtrack.local',
       name: 'Manager',
       isAdmin: true,
-      passwordHash: 'stored-password-hash',
-      refreshTokenHash: 'stored-refresh-hash',
+      tokenVersion: 0,
       createdAt: now,
       updatedAt: now
     })
-    compareMock.mockResolvedValue(true)
     jwtService.signAsync.mockResolvedValueOnce('access-2').mockResolvedValueOnce('refresh-2')
-    hashMock.mockResolvedValue('refresh-hash-2')
-    prisma.user.update.mockResolvedValue({})
+    prisma.session.update.mockResolvedValue({})
 
     const result = await service.refresh('refresh-raw-token')
 
@@ -177,6 +242,14 @@ describe('AuthService', () => {
         isAdmin: true,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString()
+      }
+    })
+
+    expect(prisma.session.update).toHaveBeenCalledWith({
+      where: { id: 'session-1' },
+      data: {
+        refreshTokenHash: sha256('refresh-2'),
+        lastUsedAt: expect.any(Date)
       }
     })
   })
@@ -202,16 +275,22 @@ describe('AuthService', () => {
       type: 'invite'
     })
     prisma.userLocation.updateMany.mockResolvedValue({ count: 1 })
-    hashMock.mockResolvedValueOnce('new-password-hash').mockResolvedValueOnce('refresh-hash-3')
     prisma.user.update.mockResolvedValue({
       id: 'user-1',
       email: 'invitee@jtrack.local',
       name: 'Invitee',
       isAdmin: false,
+      tokenVersion: 0,
       createdAt: now,
       updatedAt: now
     })
+    prisma.session.create.mockResolvedValue({
+      id: 'session-2',
+      userId: 'user-1',
+      refreshTokenHash: ''
+    })
     jwtService.signAsync.mockResolvedValueOnce('access-3').mockResolvedValueOnce('refresh-3')
+    prisma.session.update.mockResolvedValue({})
 
     const result = await service.completeInvite({
       token: 'invite-token',
@@ -232,12 +311,13 @@ describe('AuthService', () => {
     })
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      data: { passwordHash: 'new-password-hash', refreshTokenHash: null },
+      data: { passwordHash: 'argon2-hashed', emailVerifiedAt: expect.any(Date) },
       select: {
         id: true,
         email: true,
         name: true,
         isAdmin: true,
+        tokenVersion: true,
         createdAt: true,
         updatedAt: true
       }
@@ -249,6 +329,12 @@ describe('AuthService', () => {
         status: 'invited'
       },
       data: { status: 'active' }
+    })
+    expect(prisma.session.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'user-1',
+        refreshTokenHash: ''
+      })
     })
   })
 

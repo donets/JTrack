@@ -7,16 +7,7 @@
     </p>
 
     <div v-if="action" class="mt-5">
-      <NuxtLink
-        v-if="action.to && !action.onClick"
-        :to="action.to"
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent bg-mint px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-mint/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky/40"
-      >
-        {{ action.label }}
-      </NuxtLink>
-
       <JButton
-        v-else
         type="button"
         variant="primary"
         @click="handleAction"
@@ -42,6 +33,17 @@ const props = defineProps<{
 }>()
 
 const handleAction = async () => {
-  await props.action?.onClick?.()
+  if (!props.action) {
+    return
+  }
+
+  if (props.action.onClick) {
+    await props.action.onClick()
+    return
+  }
+
+  if (props.action.to) {
+    await navigateTo(props.action.to)
+  }
 }
 </script>

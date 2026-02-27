@@ -63,10 +63,12 @@ const toInputValue = (source?: string) => {
   }
 
   if (!props.includeTime) {
-    const dateOnlyMatch = source.match(/^(\d{4}-\d{2}-\d{2})/)
+    const dateOnlyMatch = source.match(/^(\d{4}-\d{2}-\d{2})$/)
     if (dateOnlyMatch?.[1]) {
       return dateOnlyMatch[1]
     }
+
+    // Fallback keeps compatibility with full datetime strings passed into date-only mode.
   }
 
   const date = new Date(source)

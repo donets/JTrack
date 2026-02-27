@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
 import { ThrottlerModule } from '@nestjs/throttler'
 import { AuthModule } from './auth/auth.module'
+import { MailModule } from './mail/mail.module'
 import { JwtAuthGuard } from './auth/jwt-auth.guard'
 import { PrismaModule } from './prisma/prisma.module'
 import { LocationGuard } from './rbac/location.guard'
@@ -19,7 +20,10 @@ import { HealthModule } from './health/health.module'
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env', '../../.env']
+    }),
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,
@@ -27,6 +31,7 @@ import { HealthModule } from './health/health.module'
       }
     ]),
     PrismaModule,
+    MailModule,
     AuthModule,
     RbacModule,
     UsersModule,
