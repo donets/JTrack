@@ -9,12 +9,12 @@
               <input
                 v-if="editing"
                 v-model="editForm.title"
-                class="w-full bg-transparent text-xl font-bold text-ink outline-none placeholder:text-slate-300"
+                class="w-full bg-transparent text-xl font-bold leading-normal text-ink outline-none placeholder:text-slate-300"
                 placeholder="Ticket title"
               />
               <h1
                 v-else
-                class="cursor-pointer text-xl font-bold text-ink"
+                class="cursor-pointer text-xl font-bold leading-normal text-ink"
                 @click="startEditing"
               >
                 {{ ticket.title }}
@@ -22,8 +22,8 @@
             </div>
             <div class="flex shrink-0 items-center gap-2">
               <template v-if="editing">
-                <JButton variant="secondary" size="sm" @click="cancelEditing">Cancel</JButton>
-                <JButton size="sm" :loading="saving" @click="saveEdits">Save</JButton>
+                <JButton variant="secondary" @click="cancelEditing">Cancel</JButton>
+                <JButton :loading="saving" @click="saveEdits">Save</JButton>
               </template>
               <JButton v-else @click="startEditing">Edit Ticket</JButton>
             </div>
@@ -31,10 +31,12 @@
           <div>
             <textarea
               v-if="editing"
+              ref="descriptionInput"
               v-model="editForm.description"
               class="w-full resize-none bg-transparent text-base leading-relaxed text-slate-700 outline-none placeholder:text-slate-300"
               placeholder="Add a description…"
-              rows="6"
+              rows="1"
+              @input="autoResizeDescription"
             />
             <p
               v-else-if="ticket.description"
@@ -199,6 +201,7 @@ const comments = ref<any[]>([])
 const attachments = ref<any[]>([])
 const commentBody = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
+const descriptionInput = ref<HTMLTextAreaElement | null>(null)
 
 // Inline editing state
 const editing = ref(false)
@@ -306,11 +309,19 @@ onUnmounted(() => {
 
 // --- Inline editing ---
 
+function autoResizeDescription() {
+  const el = descriptionInput.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
 function startEditing() {
   editForm.title = ticket.value?.title ?? ''
   editForm.description = ticket.value?.description ?? ''
   editForm.priority = ticket.value?.priority ?? ''
   editing.value = true
+  nextTick(autoResizeDescription)
 }
 
 function cancelEditing() {
