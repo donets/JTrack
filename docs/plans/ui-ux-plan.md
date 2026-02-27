@@ -240,7 +240,7 @@ layouts/default.vue (CSS Grid)
 | 1 | JTR-54 | Create dashboard page route (done 2026-02-27) | 1pt |
 | 2 | JTR-55 | Create useDashboardStats composable (done 2026-02-27) | 3pt |
 | 3 | JTR-56 | Build owner/manager dashboard (done 2026-02-27) | 3pt |
-| 4 | JTR-57 | Build technician day view | 3pt |
+| 4 | JTR-57 | Build technician day view (done 2026-02-27) | 3pt |
 | 5 | JTR-58 | Role-based dashboard switching | 1pt |
 
 ### Epic 5: Team Management (13pt)

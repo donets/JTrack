@@ -11,15 +11,7 @@
     </JPageHeader>
 
     <OwnerManagerDashboard />
-
-    <JCard title="Technician View">
-      <article class="rounded-lg border border-mist-dark bg-slate-50/70 p-4">
-        <h2 class="text-sm font-semibold text-ink">My Day (Coming Next)</h2>
-        <p class="mt-2 text-sm text-slate-600">
-          The technician-focused "My Day" dashboard is implemented in the next Epic Dashboard task.
-        </p>
-      </article>
-    </JCard>
+    <TechnicianDashboard />
   </section>
 </template>
 
