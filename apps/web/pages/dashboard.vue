@@ -10,22 +10,15 @@
       </template>
     </JPageHeader>
 
-    <JCard title="Dashboard Views">
-      <div class="grid gap-4 lg:grid-cols-2">
-        <article class="rounded-lg border border-mist-dark bg-slate-50/70 p-4">
-          <h2 class="text-sm font-semibold text-ink">Owner / Manager View</h2>
-          <p class="mt-2 text-sm text-slate-600">
-            KPI cards, status distribution, unassigned tickets, team availability, and recent activity.
-          </p>
-        </article>
+    <OwnerManagerDashboard />
 
-        <article class="rounded-lg border border-mist-dark bg-slate-50/70 p-4">
-          <h2 class="text-sm font-semibold text-ink">Technician View</h2>
-          <p class="mt-2 text-sm text-slate-600">
-            "My Day" widgets with next job focus and today schedule for the current technician.
-          </p>
-        </article>
-      </div>
+    <JCard title="Technician View">
+      <article class="rounded-lg border border-mist-dark bg-slate-50/70 p-4">
+        <h2 class="text-sm font-semibold text-ink">My Day (Coming Next)</h2>
+        <p class="mt-2 text-sm text-slate-600">
+          The technician-focused "My Day" dashboard is implemented in the next Epic Dashboard task.
+        </p>
+      </article>
     </JCard>
   </section>
 </template>
