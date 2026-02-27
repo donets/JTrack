@@ -56,37 +56,38 @@
         </div>
 
         <!-- Activity / Comments -->
-        <JCard>
-          <form class="mb-5 flex items-start gap-3" @submit.prevent="addComment">
+        <div class="rounded-lg border border-slate-200 bg-white">
+          <form class="flex items-start gap-3 border-b border-slate-100 px-5 py-4" @submit.prevent="addComment">
+            <JAvatar :name="currentUserName" size="md" class="mt-[1px] shrink-0" />
             <JTextarea
               v-model="commentBody"
-              placeholder="Write a comment…"
+              placeholder="Leave a comment…"
               :rows="1"
               class="flex-1"
             />
-            <JButton type="submit" class="mt-[1px]" :disabled="!commentBody.trim()">Send</JButton>
+            <JButton type="submit" class="mt-[1px]" :disabled="!commentBody.trim()">Post</JButton>
           </form>
 
-          <div v-if="comments.length" class="space-y-4 border-t border-slate-100 pt-5">
+          <div v-if="comments.length" class="divide-y divide-slate-100">
             <article
               v-for="comment in comments"
               :key="comment.id"
-              class="flex gap-4"
+              class="flex gap-3 px-5 py-4"
             >
-              <JAvatar :name="comment.userId ?? 'User'" size="md" class="mt-1 shrink-0" />
-              <div class="min-w-0 flex-1 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
-                <div class="mb-1.5 flex items-center gap-2">
+              <JAvatar :name="comment.userId ?? 'User'" size="md" class="mt-0.5 shrink-0" />
+              <div class="min-w-0 flex-1">
+                <div class="flex items-baseline gap-2">
                   <span class="text-sm font-semibold text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
-                  <span class="text-sm text-slate-400" :title="formatTooltipDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</span>
+                  <span class="text-xs text-slate-400" :title="formatTooltipDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</span>
                 </div>
-                <p class="text-base leading-relaxed text-slate-700">{{ comment.body }}</p>
+                <p class="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{{ comment.body }}</p>
               </div>
             </article>
           </div>
-          <p v-else class="border-t border-slate-100 pt-5 text-center text-base text-slate-400">
-            No comments yet. Start the conversation above.
-          </p>
-        </JCard>
+          <div v-else class="px-5 py-8 text-center">
+            <p class="text-sm text-slate-400">No comments yet</p>
+          </div>
+        </div>
 
       </div>
 
@@ -192,10 +193,13 @@ import type { BreadcrumbItem } from '~/types/ui'
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
+const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
 const adapter = useAttachmentAdapter()
+
+const currentUserName = computed(() => authStore.user?.name ?? 'User')
 const { setBreadcrumbs } = useBreadcrumbs()
 
 const ticketId = route.params.id as string
