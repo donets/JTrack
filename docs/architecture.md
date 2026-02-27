@@ -134,8 +134,8 @@ sequenceDiagram
     - API port resolution supports `API_PORT` and falls back to Render `PORT`.
   - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
-    - In Vercel environment (`NITRO_PRESET=vercel-static`) publishes `apps/web/.vercel/output/static`.
-    - Root route `/` is explicitly prerendered in Nuxt route rules to guarantee static entrypoint generation.
+    - Publishes `apps/web/.output/public`.
+    - Routes `/` and `/login` are explicitly prerendered in Nuxt route rules to guarantee direct page reload entrypoints.
     - SPA fallback rewrite to `/index.html`.
 - Production target:
   - stateless API instances behind load balancer,
