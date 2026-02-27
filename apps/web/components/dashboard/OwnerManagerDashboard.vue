@@ -6,13 +6,13 @@
         label="Due Today"
         :value="ownerManager.dueToday"
         icon="⏰"
-        :value-color="ownerManager.dueToday > 0 ? '#f97316' : undefined"
+        :value-color="ownerManager.dueToday > 0 ? 'var(--warning)' : undefined"
       />
       <JStatCard
         label="Completed (MTD)"
         :value="ownerManager.completedMtd"
         icon="✅"
-        :value-color="ownerManager.completedMtd > 0 ? '#10b981' : undefined"
+        :value-color="ownerManager.completedMtd > 0 ? 'var(--accent)' : undefined"
       />
       <JStatCard label="Revenue (MTD)" :value="ownerManager.revenueMtdLabel" icon="💶" />
     </div>
@@ -25,7 +25,11 @@
       <div class="space-y-4">
         <JCard title="Job Status Distribution">
           <div v-if="visibleDistribution.length > 0" class="space-y-3">
-            <div class="flex h-7 overflow-hidden rounded-md border border-mist-dark bg-mist">
+            <div
+              class="flex h-7 overflow-hidden rounded-md border border-mist-dark bg-mist"
+              role="img"
+              :aria-label="statusDistributionAriaLabel"
+            >
               <div
                 v-for="segment in visibleDistribution"
                 :key="segment.key"
@@ -71,7 +75,7 @@
                 :to="`/tickets/${row.id}`"
                 class="text-xs font-semibold text-mint hover:underline"
               >
-                Open
+                Assign
               </NuxtLink>
             </template>
           </JTable>
@@ -137,6 +141,14 @@ const unassignedRows = computed(() =>
 const visibleDistribution = computed(() =>
   ownerManager.value.statusDistribution.filter((segment) => segment.count > 0)
 )
+
+const statusDistributionAriaLabel = computed(() => {
+  const summary = ownerManager.value.statusDistribution
+    .map((segment) => `${segment.label} ${segment.count}`)
+    .join(', ')
+
+  return `Ticket status distribution: ${summary}`
+})
 
 const segmentBarClass = (variant: string) => {
   if (variant === 'sky') {

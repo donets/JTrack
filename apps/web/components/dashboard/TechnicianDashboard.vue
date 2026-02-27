@@ -6,13 +6,13 @@
         label="Completed"
         :value="technician.completed"
         icon="✅"
-        :value-color="technician.completed > 0 ? '#10b981' : undefined"
+        :value-color="technician.completed > 0 ? 'var(--accent)' : undefined"
       />
       <JStatCard
         label="Remaining"
         :value="technician.remaining"
         icon="📌"
-        :value-color="technician.remaining > 0 ? '#f97316' : undefined"
+        :value-color="technician.remaining > 0 ? 'var(--warning)' : undefined"
       />
     </div>
 
@@ -99,6 +99,7 @@ import type { TableColumn } from '~/types/ui'
 const { technician } = useDashboardStats()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
+const toast = useToast()
 
 const startingJob = ref(false)
 
@@ -134,6 +135,11 @@ const startNextJob = async () => {
       status: 'InProgress'
     })
     await syncStore.syncNow()
+  } catch (error) {
+    toast.show({
+      type: 'error',
+      message: error instanceof Error ? error.message : 'Failed to start job'
+    })
   } finally {
     startingJob.value = false
   }
