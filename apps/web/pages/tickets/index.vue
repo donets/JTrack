@@ -160,7 +160,9 @@
             <td class="px-5 py-4">
               <JBadge :variant="statusVariant(ticket.status)">{{ ticket.status }}</JBadge>
             </td>
-            <td class="px-5 py-4 text-slate-600">{{ ticket.priority ?? '-' }}</td>
+            <td class="px-5 py-4">
+              <JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge>
+            </td>
             <td class="px-5 py-4 text-slate-500" :title="formatTooltipDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</td>
             <td class="px-5 py-4 text-slate-500" :title="formatTooltipDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</td>
           </tr>
@@ -220,6 +222,14 @@ function statusVariant(s: string): 'mint' | 'flame' | 'sky' | 'rose' | 'violet' 
     Done: 'mint', Invoiced: 'sky', Paid: 'mint', Canceled: 'mist'
   }
   return map[s] ?? 'mist'
+}
+
+function priorityVariant(p: string | null | undefined): 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist' {
+  if (!p) return 'mist'
+  const map: Record<string, 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'> = {
+    high: 'rose', medium: 'flame', low: 'mist'
+  }
+  return map[p.toLowerCase()] ?? 'mist'
 }
 
 function timeAgo(iso: string | null | undefined): string {
