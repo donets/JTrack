@@ -127,8 +127,17 @@
         <div class="w-52 shrink-0">
           <JSearchInput v-model="searchQuery" placeholder="Search…" />
         </div>
-        <div class="w-36 shrink-0">
-          <JSelect v-model="statusFilter" :options="statusOptions" placeholder="All statuses" />
+        <div class="w-44 shrink-0">
+          <JListbox v-model="statusFilter" :options="statusOptions" placeholder="All statuses">
+            <template #selected="{ option }">
+              <JBadge v-if="option.value" :variant="statusVariant(option.value)">{{ option.label }}</JBadge>
+              <span v-else>{{ option.label }}</span>
+            </template>
+            <template #option="{ option }">
+              <JBadge v-if="option.value" :variant="statusVariant(option.value)">{{ option.label }}</JBadge>
+              <span v-else class="text-sm text-slate-600">{{ option.label }}</span>
+            </template>
+          </JListbox>
         </div>
         <JButton class="ml-auto" @click="showModal = true">New Ticket</JButton>
       </div>

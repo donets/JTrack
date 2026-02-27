@@ -82,7 +82,7 @@
               <div class="min-w-0 flex-1 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <div class="mb-1.5 flex items-center gap-2">
                   <span class="text-sm font-semibold text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
-                  <span class="text-sm text-slate-400">{{ formatDate(comment.createdAt) }}</span>
+                  <span class="text-sm text-slate-400" :title="formatTooltipDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</span>
                 </div>
                 <p class="text-base leading-relaxed text-slate-700">{{ comment.body }}</p>
               </div>
@@ -113,11 +113,11 @@
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Created</dt>
-              <dd class="text-base text-slate-700" :title="formatDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</dd>
+              <dd class="text-base text-slate-700" :title="formatTooltipDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</dd>
             </div>
             <div class="flex items-center justify-between">
               <dt class="text-sm font-medium text-slate-500">Updated</dt>
-              <dd class="text-base text-slate-700" :title="formatDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</dd>
+              <dd class="text-base text-slate-700" :title="formatTooltipDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</dd>
             </div>
           </dl>
         </JCard>
@@ -421,15 +421,14 @@ function priorityVariant(p: string | null | undefined): 'mint' | 'flame' | 'sky'
   return map[p.toLowerCase()] ?? 'mist'
 }
 
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+function formatTooltipDate(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const day = d.toLocaleDateString('en-US', { weekday: 'long' })
+  const month = d.toLocaleDateString('en-US', { month: 'short' })
+  const date = d.getDate()
+  const hour = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return `${day} ${month} ${date}, ${hour}`
 }
 
 function timeAgo(iso: string | null | undefined): string {
