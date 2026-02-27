@@ -82,21 +82,26 @@
             </div>
           </form>
 
-          <div v-if="comments.length" class="divide-y divide-slate-100">
-            <article
-              v-for="comment in comments"
-              :key="comment.id"
-              class="flex gap-3 px-5 py-4"
-            >
-              <JAvatar :name="comment.userId ?? 'User'" size="md" class="mt-0.5 shrink-0" />
-              <div class="min-w-0 flex-1">
-                <div class="flex items-baseline gap-2">
-                  <span class="text-base font-semibold text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
-                  <span class="text-sm text-slate-400" :title="formatTooltipDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</span>
+          <div v-if="comments.length" class="px-5 py-4">
+            <div class="relative space-y-5 pl-5 before:absolute before:bottom-0 before:left-[15px] before:top-0 before:w-px before:bg-slate-200">
+              <article
+                v-for="comment in comments"
+                :key="comment.id"
+                class="relative"
+              >
+                <div class="absolute -left-5 top-0.5">
+                  <JAvatar :name="comment.userId ?? 'User'" size="sm" />
                 </div>
-                <p class="mt-1 whitespace-pre-wrap text-base leading-relaxed text-slate-600">{{ comment.body }}</p>
-              </div>
-            </article>
+                <div class="pl-4">
+                  <p class="text-sm text-slate-500">
+                    <span class="font-semibold text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
+                    <span class="mx-1">commented</span>
+                    <span :title="formatTooltipDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</span>
+                  </p>
+                  <p class="mt-1.5 whitespace-pre-wrap text-base leading-relaxed text-slate-700">{{ comment.body }}</p>
+                </div>
+              </article>
+            </div>
           </div>
           <div v-else class="px-5 py-8 text-center">
             <p class="text-base text-slate-400">No comments yet</p>
