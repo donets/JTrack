@@ -179,7 +179,7 @@ layouts/default.vue (CSS Grid)
 | 1 | JTR-23 | Extend Tailwind design tokens (done 2026-02-27) | 1pt |
 | 2 | JTR-24 | Create JButton (done 2026-02-27) | 2pt |
 | 3 | JTR-25 | Create JInput + JTextarea (done 2026-02-27) | 2pt |
-| 4 | JTR-26 | Create JSelect | 1pt |
+| 4 | JTR-26 | Create JSelect (done 2026-02-27) | 1pt |
 | 5 | JTR-27 | Create JBadge | 1pt |
 | 6 | JTR-28 | Create JAvatar | 1pt |
 | 7 | JTR-29 | Create JCard | 1pt |
