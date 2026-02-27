@@ -40,13 +40,31 @@
           <span class="text-xs text-slate-500">{{ syncLabel }}</span>
         </div>
 
-        <div class="w-40 md:w-48">
-          <JSelect
-            :model-value="locationStore.activeLocationId ?? ''"
-            :options="locationOptions"
-            placeholder="Select location"
-            @update:model-value="switchLocation"
-          />
+        <div ref="locationRef" class="relative">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 text-sm text-slate-700 hover:text-ink"
+            @click="locationOpen = !locationOpen"
+          >
+            <span class="max-w-[160px] truncate">{{ activeLocationName }}</span>
+            <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <ul
+            v-if="locationOpen"
+            class="absolute right-0 z-40 mt-2 min-w-[180px] rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+          >
+            <li
+              v-for="loc in locationStore.memberships"
+              :key="loc.id"
+              class="cursor-pointer px-3 py-2 text-sm hover:bg-slate-50"
+              :class="loc.id === locationStore.activeLocationId ? 'font-medium text-ink' : 'text-slate-600'"
+              @click="switchLocation(loc.id); locationOpen = false"
+            >
+              {{ loc.name }}
+            </li>
+          </ul>
         </div>
 
         <JDropdown :items="userMenuItems" align="right">
@@ -103,10 +121,16 @@ const formatRouteTitle = (path: string) => {
 }
 
 const userName = computed(() => authStore.user?.name ?? 'User')
+const activeLocationName = computed(() => locationStore.activeLocation?.name ?? 'Select location')
 
-const locationOptions = computed(() =>
-  locationStore.memberships.map((m) => ({ value: m.id, label: m.name }))
-)
+const locationOpen = ref(false)
+const locationRef = ref<HTMLElement | null>(null)
+
+const onClickOutsideLocation = (e: MouseEvent) => {
+  if (locationOpen.value && locationRef.value && !locationRef.value.contains(e.target as Node)) {
+    locationOpen.value = false
+  }
+}
 
 const pageTitle = computed(() => title.value || formatRouteTitle(route.path))
 
@@ -221,6 +245,7 @@ onMounted(() => {
     }, 15_000)
     window.addEventListener('online', setOnlineStatus)
     window.addEventListener('offline', setOnlineStatus)
+    document.addEventListener('mousedown', onClickOutsideLocation)
   }
 })
 
@@ -232,6 +257,7 @@ onUnmounted(() => {
     }
     window.removeEventListener('online', setOnlineStatus)
     window.removeEventListener('offline', setOnlineStatus)
+    document.removeEventListener('mousedown', onClickOutsideLocation)
   }
 })
 </script>
