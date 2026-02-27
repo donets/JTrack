@@ -1,6 +1,6 @@
 {
   "name": "@jtrack/mobile",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "build:web:mobile": "pnpm --filter @jtrack/web build:mobile",

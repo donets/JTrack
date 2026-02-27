@@ -20,6 +20,14 @@ services:
         value: 15m
       - key: JWT_REFRESH_TTL
         value: 30d
+      - key: JWT_INVITE_SECRET
+        sync: false
+      - key: JWT_INVITE_TTL
+        value: 7d
+      - key: JWT_ISSUER
+        value: jtrack-api
+      - key: JWT_AUDIENCE
+        value: jtrack
       - key: COOKIE_SECURE
         value: "true"
       - key: WEB_ORIGIN
@@ -28,6 +36,16 @@ services:
         value: ./uploads
       - key: STORAGE_PROVIDER
         value: local
+      - key: MAIL_PROVIDER
+        value: resend
+      - key: MAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: AUTH_VERIFY_EMAIL_TTL_MINUTES
+        value: "15"
+      - key: AUTH_RESET_PASSWORD_TTL_MINUTES
+        value: "15"
 
 databases:
   - name: jtrack-db
