@@ -9,7 +9,7 @@
       </template>
 
       <template #actions>
-        <JButton size="sm" variant="secondary" disabled>Edit</JButton>
+        <JButton size="sm" variant="secondary" @click="openEditModal">Edit</JButton>
         <JButton size="sm" variant="danger" :disabled="!canCancel || updatingStatus" @click="cancelTicket">
           Cancel
         </JButton>
@@ -163,7 +163,7 @@
             </div>
           </dl>
 
-          <JButton class="mt-4 w-full" size="sm" variant="secondary" disabled>
+          <JButton class="mt-4 w-full" size="sm" variant="secondary" @click="openPaymentModal">
             + Record Payment
           </JButton>
         </JCard>
@@ -184,6 +184,88 @@
     </div>
 
     <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
+
+    <JModal v-model="editModalOpen" title="Edit Ticket" size="lg">
+      <form class="space-y-4" @submit.prevent="submitEditTicket">
+        <JInput
+          v-model="editForm.title"
+          label="Title *"
+          placeholder="Brief description of the job"
+          :error="editErrors.title"
+        />
+
+        <JTextarea
+          v-model="editForm.description"
+          label="Description"
+          placeholder="Detailed notes"
+          :rows="3"
+        />
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JSelect v-model="editForm.priority" label="Priority" :options="prioritySelectOptions" />
+          <JSelect v-model="editForm.assignee" label="Assign to" :options="assigneeSelectOptions" />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JDatePicker
+            v-model="editForm.scheduledStartAt"
+            include-time
+            label="Scheduled start"
+            :error="editErrors.scheduledStartAt"
+          />
+          <JDatePicker
+            v-model="editForm.scheduledEndAt"
+            include-time
+            label="Scheduled end"
+            :error="editErrors.scheduledEndAt"
+          />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JInput
+            v-model="editForm.amount"
+            type="number"
+            label="Amount"
+            placeholder="0.00"
+            :error="editErrors.amount"
+          />
+          <JSelect v-model="editForm.currency" label="Currency" :options="currencyOptions" />
+        </div>
+      </form>
+
+      <template #footer>
+        <JButton variant="secondary" :disabled="editSubmitting" @click="editModalOpen = false">Cancel</JButton>
+        <JButton :loading="editSubmitting" @click="submitEditTicket">Save</JButton>
+      </template>
+    </JModal>
+
+    <JModal v-model="paymentModalOpen" title="Record Payment" size="md">
+      <form class="space-y-4" @submit.prevent="submitPayment">
+        <div class="rounded-md bg-mist p-3 text-sm">
+          <p class="text-slate-600">Amount due</p>
+          <p class="mt-1 text-xl font-semibold text-ink">{{ balanceAmountLabel }}</p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JInput
+            v-model="paymentForm.amount"
+            type="number"
+            label="Amount *"
+            placeholder="0.00"
+            :error="paymentErrors.amount"
+          />
+          <JSelect v-model="paymentForm.provider" label="Provider" :options="paymentProviderOptions" />
+        </div>
+
+        <JDatePicker v-model="paymentForm.date" label="Date" />
+        <JTextarea v-model="paymentForm.notes" label="Notes" :rows="3" />
+      </form>
+
+      <template #footer>
+        <JButton variant="secondary" :disabled="paymentSubmitting" @click="paymentModalOpen = false">Cancel</JButton>
+        <JButton :loading="paymentSubmitting" @click="submitPayment">Record Payment</JButton>
+      </template>
+    </JModal>
   </section>
 
   <section v-else class="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
@@ -246,6 +328,39 @@ const submittingComment = ref(false)
 const uploadingAttachment = ref(false)
 const updatingStatus = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const editModalOpen = ref(false)
+const editSubmitting = ref(false)
+const paymentModalOpen = ref(false)
+const paymentSubmitting = ref(false)
+
+const editForm = reactive({
+  title: '',
+  description: '',
+  priority: 'medium',
+  assignee: '',
+  scheduledStartAt: '',
+  scheduledEndAt: '',
+  amount: '',
+  currency: 'EUR'
+})
+
+const editErrors = reactive({
+  title: '',
+  amount: '',
+  scheduledStartAt: '',
+  scheduledEndAt: ''
+})
+
+const paymentForm = reactive({
+  amount: '',
+  provider: 'manual',
+  date: '',
+  notes: ''
+})
+
+const paymentErrors = reactive({
+  amount: ''
+})
 
 const checklistItems = reactive([
   { id: 'inspect', label: 'Inspect unit', done: false },
@@ -290,6 +405,30 @@ const userNameById = computed(() => {
 
   return map
 })
+
+const prioritySelectOptions = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' }
+]
+
+const currencyOptions = [
+  { value: 'EUR', label: 'EUR' },
+  { value: 'USD', label: 'USD' },
+  { value: 'GBP', label: 'GBP' }
+]
+
+const paymentProviderOptions = [
+  { value: 'manual', label: 'Manual' },
+  { value: 'stripe', label: 'Stripe' }
+]
+
+const assigneeSelectOptions = computed(() => [
+  { value: '', label: '— Unassigned —' },
+  ...users.value
+    .map((user) => ({ value: user.id, label: user.name }))
+    .sort((left, right) => left.label.localeCompare(right.label))
+])
 
 const assignedLabel = computed(() => {
   if (!ticket.value?.assignedToUserId) {
@@ -591,6 +730,250 @@ const updateTicketStatus = async (status: TicketStatus) => {
 
 const cancelTicket = async () => {
   await updateTicketStatus('Canceled')
+}
+
+const resetEditErrors = () => {
+  editErrors.title = ''
+  editErrors.amount = ''
+  editErrors.scheduledStartAt = ''
+  editErrors.scheduledEndAt = ''
+}
+
+const resetPaymentErrors = () => {
+  paymentErrors.amount = ''
+}
+
+const parseAmountToCents = (value: string): number | null => {
+  const normalized = value.trim().replace(',', '.')
+
+  if (!normalized) {
+    return null
+  }
+
+  const amount = Number.parseFloat(normalized)
+  if (!Number.isFinite(amount) || amount < 0) {
+    return Number.NaN
+  }
+
+  return Math.round(amount * 100)
+}
+
+const formatAmountInput = (amountCents: number | null) => {
+  if (amountCents === null) {
+    return ''
+  }
+
+  return (amountCents / 100).toFixed(2)
+}
+
+const openEditModal = () => {
+  if (!ticket.value) {
+    return
+  }
+
+  resetEditErrors()
+  editForm.title = ticket.value.title
+  editForm.description = ticket.value.description ?? ''
+  editForm.priority = ticket.value.priority?.toLowerCase() || 'medium'
+  editForm.assignee = ticket.value.assignedToUserId ?? ''
+  editForm.scheduledStartAt = ticket.value.scheduledStartAt ?? ''
+  editForm.scheduledEndAt = ticket.value.scheduledEndAt ?? ''
+  editForm.amount = formatAmountInput(ticket.value.totalAmountCents)
+  editForm.currency = ticket.value.currency || 'EUR'
+  editModalOpen.value = true
+}
+
+const validateEditForm = () => {
+  resetEditErrors()
+
+  let valid = true
+
+  if (!editForm.title.trim()) {
+    editErrors.title = 'Title is required'
+    valid = false
+  }
+
+  const parsedAmount = parseAmountToCents(editForm.amount)
+  if (Number.isNaN(parsedAmount)) {
+    editErrors.amount = 'Amount must be a valid non-negative number'
+    valid = false
+  }
+
+  const startTimestamp = editForm.scheduledStartAt ? new Date(editForm.scheduledStartAt).getTime() : null
+  const endTimestamp = editForm.scheduledEndAt ? new Date(editForm.scheduledEndAt).getTime() : null
+
+  if (startTimestamp !== null && Number.isNaN(startTimestamp)) {
+    editErrors.scheduledStartAt = 'Invalid start date'
+    valid = false
+  }
+
+  if (endTimestamp !== null && Number.isNaN(endTimestamp)) {
+    editErrors.scheduledEndAt = 'Invalid end date'
+    valid = false
+  }
+
+  if (
+    startTimestamp !== null &&
+    endTimestamp !== null &&
+    !Number.isNaN(startTimestamp) &&
+    !Number.isNaN(endTimestamp) &&
+    endTimestamp < startTimestamp
+  ) {
+    editErrors.scheduledEndAt = 'End date must be after start date'
+    valid = false
+  }
+
+  return valid
+}
+
+const submitEditTicket = async () => {
+  if (!ticket.value || editSubmitting.value) {
+    return
+  }
+
+  if (!validateEditForm()) {
+    return
+  }
+
+  const parsedAmount = parseAmountToCents(editForm.amount)
+  const patch: {
+    title?: string
+    description?: string | null
+    priority?: string | null
+    assignedToUserId?: string | null
+    scheduledStartAt?: string | null
+    scheduledEndAt?: string | null
+    totalAmountCents?: number | null
+    currency?: string
+  } = {}
+
+  const nextTitle = editForm.title.trim()
+  if (nextTitle !== ticket.value.title) {
+    patch.title = nextTitle
+  }
+
+  const nextDescription = editForm.description.trim() || null
+  if (nextDescription !== ticket.value.description) {
+    patch.description = nextDescription
+  }
+
+  const nextPriority = editForm.priority || null
+  if (nextPriority !== ticket.value.priority) {
+    patch.priority = nextPriority
+  }
+
+  const nextAssignee = editForm.assignee || null
+  if (nextAssignee !== ticket.value.assignedToUserId) {
+    patch.assignedToUserId = nextAssignee
+  }
+
+  const nextStart = editForm.scheduledStartAt || null
+  if (nextStart !== ticket.value.scheduledStartAt) {
+    patch.scheduledStartAt = nextStart
+  }
+
+  const nextEnd = editForm.scheduledEndAt || null
+  if (nextEnd !== ticket.value.scheduledEndAt) {
+    patch.scheduledEndAt = nextEnd
+  }
+
+  if (parsedAmount !== ticket.value.totalAmountCents) {
+    patch.totalAmountCents = parsedAmount
+  }
+
+  if (editForm.currency !== ticket.value.currency) {
+    patch.currency = editForm.currency
+  }
+
+  if (Object.keys(patch).length === 0) {
+    editModalOpen.value = false
+    return
+  }
+
+  editSubmitting.value = true
+
+  try {
+    await repository.saveTicket({
+      id: ticket.value.id,
+      ...patch
+    })
+
+    await syncStore.syncNow()
+    editModalOpen.value = false
+
+    toast.show({
+      type: 'success',
+      message: 'Ticket updated'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to update ticket'
+    })
+  } finally {
+    editSubmitting.value = false
+  }
+}
+
+const openPaymentModal = () => {
+  resetPaymentErrors()
+  paymentForm.provider = 'manual'
+  paymentForm.date = new Date().toISOString().slice(0, 10)
+  paymentForm.notes = ''
+
+  const suggestedAmount = balanceAmountCents.value ?? ticket.value?.totalAmountCents ?? null
+  paymentForm.amount = suggestedAmount !== null && suggestedAmount > 0 ? formatAmountInput(suggestedAmount) : ''
+  paymentModalOpen.value = true
+}
+
+const submitPayment = async () => {
+  if (!ticket.value || paymentSubmitting.value) {
+    return
+  }
+
+  resetPaymentErrors()
+
+  const amountCents = parseAmountToCents(paymentForm.amount)
+  if (amountCents === null || Number.isNaN(amountCents) || amountCents <= 0) {
+    paymentErrors.amount = 'Amount must be greater than 0'
+    return
+  }
+
+  paymentSubmitting.value = true
+
+  try {
+    await repository.addPaymentRecord({
+      ticketId: ticket.value.id,
+      provider: paymentForm.provider as 'manual' | 'stripe',
+      amountCents,
+      currency: ticket.value.currency || 'EUR',
+      status: paymentForm.provider === 'manual' ? 'Succeeded' : 'Pending'
+    })
+
+    if (paymentForm.notes.trim()) {
+      const notePrefix = paymentForm.date ? `${paymentForm.date}: ` : ''
+
+      await repository.addComment({
+        ticketId: ticket.value.id,
+        body: `Payment note — ${notePrefix}${paymentForm.notes.trim()}`
+      })
+    }
+
+    await syncStore.syncNow()
+    paymentModalOpen.value = false
+
+    toast.show({
+      type: 'success',
+      message: 'Payment recorded'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to record payment'
+    })
+  } finally {
+    paymentSubmitting.value = false
+  }
 }
 
 const addComment = async () => {

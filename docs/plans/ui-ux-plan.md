@@ -231,7 +231,7 @@ layouts/default.vue (CSS Grid)
 | 2 | JTR-49 | Ticket creation modal (done 2026-02-27) | 3pt |
 | 3 | JTR-50 | Ticket detail two-column layout (done 2026-02-27) | 5pt |
 | 4 | JTR-51 | Ticket status change workflow (done 2026-02-27) | 3pt |
-| 5 | JTR-52 | Ticket edit modal + financial card | 3pt |
+| 5 | JTR-52 | Ticket edit modal + financial card (done 2026-02-27) | 3pt |
 | 6 | JTR-53 | Ticket status badge mapping utility (done 2026-02-27) | 1pt |
 
 ### Epic 4: Dashboard (11pt)
