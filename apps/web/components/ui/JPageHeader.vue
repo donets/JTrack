@@ -37,10 +37,7 @@
 </template>
 
 <script setup lang="ts">
-type BreadcrumbItem = {
-  label: string
-  to?: string
-}
+import type { BreadcrumbItem } from '~/types/ui'
 
 withDefaults(
   defineProps<{

@@ -12,8 +12,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#0f172a',
-        mist: '#f1f5f9',
+        ink: {
+          DEFAULT: '#0f172a',
+          light: '#334155'
+        },
+        mist: {
+          DEFAULT: '#f1f5f9',
+          dark: '#e2e8f0'
+        },
         mint: {
           DEFAULT: '#10b981',
           light: '#d1fae5'

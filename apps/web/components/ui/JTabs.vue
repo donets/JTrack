@@ -1,11 +1,17 @@
 <template>
-  <div class="flex border-b-2 border-slate-200">
+  <div class="flex border-b-2 border-slate-200" role="tablist" aria-orientation="horizontal">
     <button
-      v-for="tab in tabs"
+      v-for="(tab, index) in tabs"
+      :id="tabId(tab.key)"
       :key="tab.key"
+      :ref="(element) => setTabRef(element, index)"
       type="button"
+      role="tab"
+      :aria-selected="tab.key === modelValue"
+      :tabindex="tab.key === modelValue ? 0 : -1"
       :class="tabClasses(tab.key)"
       @click="selectTab(tab.key)"
+      @keydown="onKeydown($event, index)"
     >
       <span>{{ tab.label }}</span>
       <span
@@ -19,11 +25,9 @@
 </template>
 
 <script setup lang="ts">
-type TabItem = {
-  key: string
-  label: string
-  count?: number
-}
+import { nextTick, ref, useId } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
+import type { TabItem } from '~/types/ui'
 
 const props = defineProps<{
   tabs: TabItem[]
@@ -34,12 +38,78 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+const tabsId = useId()
+const tabRefs = ref<(HTMLButtonElement | null)[]>([])
+
 const selectTab = (key: string) => {
   if (key === props.modelValue) {
     return
   }
 
   emit('update:modelValue', key)
+}
+
+const tabId = (key: string) => `j-tab-${tabsId}-${key}`
+
+const setTabRef = (element: Element | ComponentPublicInstance | null, index: number) => {
+  if (!element) {
+    tabRefs.value[index] = null
+    return
+  }
+
+  if (element instanceof HTMLButtonElement) {
+    tabRefs.value[index] = element
+    return
+  }
+
+  if ('$el' in element) {
+    tabRefs.value[index] = element.$el instanceof HTMLButtonElement ? element.$el : null
+    return
+  }
+
+  tabRefs.value[index] = null
+}
+
+const moveFocus = async (index: number) => {
+  const tab = props.tabs[index]
+  if (!tab) {
+    return
+  }
+
+  selectTab(tab.key)
+  await nextTick()
+  tabRefs.value[index]?.focus()
+}
+
+const onKeydown = async (event: KeyboardEvent, index: number) => {
+  if (props.tabs.length === 0) {
+    return
+  }
+
+  const lastIndex = props.tabs.length - 1
+
+  if (event.key === 'ArrowRight') {
+    event.preventDefault()
+    await moveFocus(index === lastIndex ? 0 : index + 1)
+    return
+  }
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault()
+    await moveFocus(index === 0 ? lastIndex : index - 1)
+    return
+  }
+
+  if (event.key === 'Home') {
+    event.preventDefault()
+    await moveFocus(0)
+    return
+  }
+
+  if (event.key === 'End') {
+    event.preventDefault()
+    await moveFocus(lastIndex)
+  }
 }
 
 const tabClasses = (key: string) => [

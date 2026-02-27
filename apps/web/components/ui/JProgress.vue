@@ -1,5 +1,5 @@
 <template>
-  <div class="h-2 w-full overflow-hidden rounded bg-slate-200" role="progressbar" :aria-valuenow="normalizedValue" :aria-valuemin="0" :aria-valuemax="max">
+  <div class="h-1.5 w-full overflow-hidden rounded bg-mist-dark" role="progressbar" :aria-valuenow="normalizedValue" :aria-valuemin="0" :aria-valuemax="max">
     <div :class="fillClasses" :style="fillStyle" />
   </div>
 </template>

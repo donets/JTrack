@@ -1,25 +1,29 @@
 <template>
-  <label v-if="label" :for="inputId" class="mb-1 block text-xs font-semibold text-slate-600">
-    {{ label }}
-  </label>
+  <div>
+    <label v-if="label" :for="inputId" class="mb-1 block text-xs font-semibold text-slate-600">
+      {{ label }}
+    </label>
 
-  <input
-    :id="inputId"
-    :type="inputType"
-    :value="inputValue"
-    :min="minValue"
-    :max="maxValue"
-    :class="inputClasses"
-    @input="onInput"
-  />
+    <input
+      :id="inputId"
+      :type="inputType"
+      :value="inputValue"
+      :min="minValue"
+      :max="maxValue"
+      :class="inputClasses"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="error ? errorId : undefined"
+      @input="onInput"
+    />
 
-  <p v-if="error" class="mt-1 text-xs text-rose">
-    {{ error }}
-  </p>
+    <p v-if="error" :id="errorId" class="mt-1 text-xs text-rose">
+      {{ error }}
+    </p>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance } from 'vue'
+import { computed, useId } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -45,8 +49,9 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const instance = getCurrentInstance()
-const inputId = computed(() => props.id ?? `j-date-picker-${instance?.uid ?? 'field'}`)
+const generatedId = useId()
+const inputId = computed(() => props.id ?? `j-date-picker-${generatedId}`)
+const errorId = computed(() => `${inputId.value}-error`)
 
 const inputType = computed(() => (props.includeTime ? 'datetime-local' : 'date'))
 
@@ -55,6 +60,13 @@ const pad = (value: number) => String(value).padStart(2, '0')
 const toInputValue = (source?: string) => {
   if (!source) {
     return ''
+  }
+
+  if (!props.includeTime) {
+    const dateOnlyMatch = source.match(/^(\d{4}-\d{2}-\d{2})/)
+    if (dateOnlyMatch?.[1]) {
+      return dateOnlyMatch[1]
+    }
   }
 
   const date = new Date(source)
@@ -95,7 +107,7 @@ const onInput = (event: Event) => {
   }
 
   if (!props.includeTime) {
-    emit('update:modelValue', `${rawValue}T00:00:00.000Z`)
+    emit('update:modelValue', rawValue)
     return
   }
 

@@ -27,3 +27,13 @@
 
 - `pnpm lint`
 - `pnpm typecheck`
+
+## Review follow-up (2026-02-27)
+
+- Fixed date-only timezone shift bug:
+  - `JDatePicker` now emits `YYYY-MM-DD` when `includeTime=false` instead of forcing `T00:00:00.000Z`.
+  - input parsing now preserves date-only and ISO-backed values without day rollback in west-of-UTC timezones.
+- Added form-field accessibility and structure hardening:
+  - single root wrapper (no fragment `$attrs` warning)
+  - `aria-invalid` + `aria-describedby` wiring for validation state
+  - replaced internal UID generation with `useId()`.

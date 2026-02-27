@@ -26,3 +26,9 @@
 
 - `pnpm lint`
 - `pnpm typecheck`
+
+## Review follow-up (2026-02-27)
+
+- Fixed invalid HTML nesting in CTA rendering:
+  - replaced `NuxtLink > JButton(button)` with a styled `NuxtLink` action for route navigation.
+- Removed nested interactive elements (`button` inside `a`) to keep markup valid and accessible.

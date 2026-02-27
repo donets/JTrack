@@ -24,3 +24,9 @@
 
 - `pnpm lint`
 - `pnpm typecheck`
+
+## Review follow-up (2026-02-27)
+
+- Added missing token variants identified during UI-kit review:
+  - `ink.light` (`#334155`)
+  - `mist.dark` (`#e2e8f0`)

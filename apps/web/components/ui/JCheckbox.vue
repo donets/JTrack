@@ -10,7 +10,7 @@
         @change="onChange"
       />
       <span
-        class="h-4 w-4 rounded border border-slate-300 bg-white transition-colors peer-checked:border-mint peer-checked:bg-mint peer-disabled:opacity-60"
+        class="h-4 w-4 rounded border border-slate-300 bg-white transition-colors peer-checked:border-mint peer-checked:bg-mint peer-focus-visible:ring-2 peer-focus-visible:ring-sky/40 peer-focus-visible:ring-offset-1 peer-disabled:opacity-60"
       />
       <svg
         class="pointer-events-none absolute h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance } from 'vue'
+import { computed, useId } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -47,8 +47,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
 
-const instance = getCurrentInstance()
-const inputId = computed(() => props.id ?? `j-checkbox-${instance?.uid ?? 'field'}`)
+const generatedId = useId()
+const inputId = computed(() => props.id ?? `j-checkbox-${generatedId}`)
 
 const onChange = (event: Event) => {
   const target = event.target as HTMLInputElement | null

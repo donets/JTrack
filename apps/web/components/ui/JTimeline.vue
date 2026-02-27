@@ -1,51 +1,29 @@
 <template>
-  <ul class="space-y-4">
+  <ul>
     <li
       v-for="item in items"
       :key="item.id"
-      class="relative border-l border-slate-200 pl-5"
+      class="relative border-l border-mist-dark pb-4 pl-5 last:pb-0"
     >
       <span
         :class="dotClasses(item.type)"
-        class="absolute -left-[5px] top-2 h-2.5 w-2.5 rounded-full"
+        class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full"
       />
 
-      <div class="rounded-md border border-slate-200 bg-white p-3">
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <JAvatar
-              :name="item.actor.name"
-              :src="item.actor.avatarUrl"
-              size="sm"
-            />
-            <div class="text-sm">
-              <p class="font-semibold text-ink">{{ item.actor.name }}</p>
-              <p class="text-xs text-slate-500">{{ typeLabel(item.type) }}</p>
-            </div>
-          </div>
-
-          <p class="shrink-0 text-xs text-slate-500">{{ formatTimestamp(item.timestamp) }}</p>
-        </div>
-
-        <p class="mt-2 text-sm text-slate-700">{{ item.content }}</p>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+        <p class="font-semibold text-ink">{{ item.actor.name }}</p>
+        <p class="text-ink-light">{{ typeLabel(item.type) }}</p>
+        <span class="text-slate-400">•</span>
+        <p class="text-slate-500">{{ formatTimestamp(item.timestamp) }}</p>
       </div>
+
+      <p class="mt-1 text-sm text-ink-light">{{ item.content }}</p>
     </li>
   </ul>
 </template>
 
 <script setup lang="ts">
-type TimelineEventType = 'comment' | 'status_change' | 'payment' | 'attachment'
-
-export type TimelineItem = {
-  id: string
-  type: TimelineEventType
-  actor: {
-    name: string
-    avatarUrl?: string
-  }
-  content: string
-  timestamp: string
-}
+import type { TimelineEventType, TimelineItem } from '~/types/ui'
 
 defineProps<{
   items: TimelineItem[]

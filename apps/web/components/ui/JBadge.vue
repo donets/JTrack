@@ -27,7 +27,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   sky: 'bg-sky-light text-blue-800',
   rose: 'bg-rose-light text-rose-800',
   violet: 'bg-violet-light text-violet-800',
-  mist: 'bg-slate-200 text-slate-700'
+  mist: 'bg-mist-dark text-ink-light'
 }
 
 const sizeClasses: Record<BadgeSize, string> = {
@@ -36,7 +36,7 @@ const sizeClasses: Record<BadgeSize, string> = {
 }
 
 const badgeClasses = computed(() => [
-  'inline-flex items-center rounded-full font-semibold leading-none',
+  'inline-flex items-center rounded-full font-semibold uppercase leading-none tracking-[0.5px]',
   variantClasses[props.variant],
   sizeClasses[props.size]
 ])

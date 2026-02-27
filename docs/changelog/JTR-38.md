@@ -30,3 +30,10 @@
 
 - `pnpm lint`
 - `pnpm typecheck`
+
+## Review follow-up (2026-02-27)
+
+- Reworked `JTimeline` presentation to match the flat wireframe:
+  - removed card-per-item container
+  - kept vertical line + event dots with compact text rows
+- Moved timeline type contracts to shared `apps/web/types/ui.ts` so `TimelineItem` can be imported by consumers.

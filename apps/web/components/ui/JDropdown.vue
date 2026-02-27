@@ -1,12 +1,20 @@
 <template>
   <div ref="rootRef" class="relative inline-block text-left" @keydown="handleKeydown">
-    <div ref="triggerRef" class="inline-flex" @click="toggleMenu">
+    <div
+      ref="triggerRef"
+      class="inline-flex"
+      aria-haspopup="menu"
+      :aria-expanded="isOpen ? 'true' : 'false'"
+      :aria-controls="isOpen ? menuId : undefined"
+      @click="toggleMenu"
+    >
       <slot name="trigger" :open="openMenu" :close="closeMenu" :toggle="toggleMenu" :is-open="isOpen" />
     </div>
 
     <Transition name="j-dropdown-transition">
       <div
         v-if="isOpen"
+        :id="menuId"
         ref="menuRef"
         :class="menuClasses"
         role="menu"
@@ -30,15 +38,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
-
-type DropdownItem = {
-  label: string
-  icon?: string
-  action?: () => void | Promise<void>
-  variant?: 'default' | 'danger'
-}
+import type { DropdownItem } from '~/types/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -56,6 +58,7 @@ const rootRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
 const menuRef = ref<HTMLElement | null>(null)
 const itemRefs = ref<(HTMLElement | null)[]>([])
+const menuId = `j-dropdown-${useId()}`
 
 const menuClasses = computed(() => [
   'absolute z-40 mt-2 min-w-[180px] overflow-hidden rounded-md border border-slate-200 bg-white py-1 shadow-lg',

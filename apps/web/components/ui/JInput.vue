@@ -1,24 +1,28 @@
 <template>
-  <label v-if="label" :for="inputId" class="mb-1 block text-xs font-semibold text-slate-600">
-    {{ label }}
-  </label>
+  <div>
+    <label v-if="label" :for="inputId" class="mb-1 block text-xs font-semibold text-slate-600">
+      {{ label }}
+    </label>
 
-  <input
-    :id="inputId"
-    :type="type"
-    :value="modelValue"
-    :placeholder="placeholder"
-    :class="inputClasses"
-    @input="onInput"
-  />
+    <input
+      :id="inputId"
+      :type="type"
+      :value="modelValue"
+      :placeholder="placeholder"
+      :class="inputClasses"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="error ? errorId : undefined"
+      @input="onInput"
+    />
 
-  <p v-if="error" class="mt-1 text-xs text-rose">
-    {{ error }}
-  </p>
+    <p v-if="error" :id="errorId" class="mt-1 text-xs text-rose">
+      {{ error }}
+    </p>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance } from 'vue'
+import { computed, useId } from 'vue'
 
 type InputType = 'text' | 'email' | 'password' | 'number'
 
@@ -44,8 +48,9 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const instance = getCurrentInstance()
-const inputId = computed(() => props.id ?? `j-input-${instance?.uid ?? 'field'}`)
+const generatedId = useId()
+const inputId = computed(() => props.id ?? `j-input-${generatedId}`)
+const errorId = computed(() => `${inputId.value}-error`)
 
 const inputClasses = computed(() => [
   'block w-full min-w-0 rounded-md border bg-white px-3 py-2 text-[13px] text-ink',

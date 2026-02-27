@@ -9,6 +9,7 @@
             scope="col"
             :class="headerClasses(column)"
             :style="column.width ? { width: column.width } : undefined"
+            :aria-sort="ariaSort(column)"
           >
             <button
               v-if="canSortColumn(column)"
@@ -68,14 +69,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-
-export type TableColumn = {
-  key: string
-  label: string
-  sortable?: boolean
-  align?: 'left' | 'center' | 'right'
-  width?: string
-}
+import type { TableColumn } from '~/types/ui'
 
 type SortDirection = 'asc' | 'desc'
 
@@ -122,6 +116,18 @@ const sortIcon = (columnKey: string) => {
   }
 
   return sortDirection.value === 'asc' ? '↑' : '↓'
+}
+
+const ariaSort = (column: TableColumn) => {
+  if (!canSortColumn(column)) {
+    return undefined
+  }
+
+  if (sortKey.value !== column.key) {
+    return 'none'
+  }
+
+  return sortDirection.value === 'asc' ? 'ascending' : 'descending'
 }
 
 const normalizeSortValue = (value: unknown) => {

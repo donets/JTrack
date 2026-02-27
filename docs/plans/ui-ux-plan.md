@@ -63,6 +63,17 @@ JTrack — offline-first field-service CRM. Фронтенд (Nuxt 4 + Vue 3 + T
 | `CalendarGrid` | Calendar view | P2 |
 | `InvoiceLineItems` | Invoice detail | P2 |
 
+### 1.6 Review Follow-Up (2026-02-27)
+- Closed critical UI-kit review issues:
+  - `JTR-40`: fixed date-only timezone round-trip in `JDatePicker`
+  - `JTR-38`: aligned `JTimeline` with flat wireframe layout
+  - `JTR-36`: removed invalid nested interactive HTML in `JEmptyState`
+- Closed cross-cutting hardening tasks:
+  - replaced `getCurrentInstance().uid` with `useId()` in form controls
+  - added missing ARIA semantics (`JTabs`, `JTable`, `JDropdown`, `JToast`, form fields)
+  - added shared UI type exports in `apps/web/types/ui.ts`
+  - completed missing token variants `ink.light` and `mist.dark`
+
 ---
 
 ## Part 2: Layout System

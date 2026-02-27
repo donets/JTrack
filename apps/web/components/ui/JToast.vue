@@ -1,11 +1,23 @@
 <template>
   <Teleport to="body">
-    <div class="pointer-events-none fixed right-4 top-4 z-[60] flex w-[min(24rem,calc(100%-2rem))] flex-col gap-2">
-      <TransitionGroup name="j-toast-transition" tag="div" class="flex flex-col gap-2">
+    <div
+      class="pointer-events-none fixed right-4 top-4 z-[60] flex w-[min(24rem,calc(100%-2rem))] flex-col gap-2"
+      role="region"
+      aria-label="Notifications"
+    >
+      <TransitionGroup
+        name="j-toast-transition"
+        tag="div"
+        class="flex flex-col gap-2"
+        aria-live="polite"
+        aria-relevant="additions text"
+      >
         <article
           v-for="toast in toasts"
           :key="toast.id"
           :class="toastClasses(toast.type)"
+          :role="toast.type === 'error' ? 'alert' : 'status'"
+          aria-atomic="true"
         >
           <p class="flex-1 pr-2 text-sm">{{ toast.message }}</p>
           <button

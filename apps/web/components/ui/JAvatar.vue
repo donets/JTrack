@@ -1,5 +1,5 @@
 <template>
-  <span :class="avatarClasses">
+  <span :class="avatarClasses" role="img" :aria-label="name">
     <img
       v-if="showImage"
       :src="src"
