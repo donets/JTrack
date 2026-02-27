@@ -59,14 +59,15 @@
         <div class="rounded-lg border border-slate-200 bg-white">
           <form class="flex items-start gap-3 border-b border-slate-100 px-5 py-4" @submit.prevent="addComment">
             <JAvatar :name="currentUserName" size="md" class="mt-[1px] shrink-0" />
-            <JTextarea
-              v-model="commentBody"
-              placeholder="Leave a comment…"
-              :rows="1"
-              class="flex-1"
-            />
-            <div class="mt-[1px] flex shrink-0 items-center gap-1">
-              <JButton type="submit" :disabled="!commentBody.trim()">Post</JButton>
+            <div class="flex-1" @keydown.enter.exact.prevent="submitComment">
+              <JTextarea
+                v-model="commentBody"
+                placeholder="Leave a comment…"
+                :rows="1"
+              />
+            </div>
+            <div class="mt-[1px] flex shrink-0 items-center gap-2.5">
+              <JButton type="submit" :disabled="!commentBody.trim()">Send</JButton>
               <button type="button" class="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600" title="Upload file" @click="openFileDialog">
                 <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -384,7 +385,13 @@ async function savePriority(value: string) {
   await syncStore.syncNow()
 }
 
-// --- Comments & Attachments (unchanged logic) ---
+// --- Comments & Attachments ---
+
+const submitComment = () => {
+  if (commentBody.value.trim()) {
+    addComment()
+  }
+}
 
 const addComment = async () => {
   if (!commentBody.value.trim()) {
