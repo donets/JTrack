@@ -4,7 +4,6 @@ services:
     runtime: docker
     dockerContext: .
     dockerfilePath: ./docker/Dockerfile.api
-    dockerCommand: sh -c "export API_PORT=${PORT}; node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"
     plan: free
     autoDeploy: true
     envVars:

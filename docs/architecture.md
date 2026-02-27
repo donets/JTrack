@@ -129,7 +129,8 @@ sequenceDiagram
   - Backend (Render): `/Users/vlad/Projects/JTrack/render.yaml`
     - Deploys `jtrack-api` from `docker/Dockerfile.api`.
     - Uses Render Postgres `jtrack-db`.
-    - Uses `dockerCommand` to export `API_PORT` from Render `PORT`, run `node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma`, and start `node apps/api/dist/src/main.js`.
+    - Uses Dockerfile `CMD` for startup (apply Prisma migrations, then start API).
+    - API port resolution supports `API_PORT` and falls back to Render `PORT`.
   - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
     - Publishes `apps/web/.output/public`.
