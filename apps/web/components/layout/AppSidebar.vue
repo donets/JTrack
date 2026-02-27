@@ -101,7 +101,7 @@
             @click="closeMobileDrawer"
           >
             <span class="text-base leading-none">{{ item.icon }}</span>
-            <span class="text-base">{{ item.label }}</span>
+            <span class="text-lg">{{ item.label }}</span>
           </NuxtLink>
         </section>
       </nav>
@@ -227,7 +227,7 @@ const desktopSidebarClasses = computed(() => [
 ])
 
 const logoTextClasses = computed(() => [
-  'text-sm font-semibold',
+  'text-lg font-semibold',
   props.collapsed ? 'hidden' : 'hidden lg:inline'
 ])
 
@@ -241,7 +241,7 @@ const itemTextClasses = computed(() => [props.collapsed ? 'hidden' : 'hidden lg:
 const showItemTitle = (label: string) => (props.collapsed ? label : undefined)
 
 const itemClasses = (path: string) => [
-  'group flex items-center gap-3 px-4 py-2.5 text-base transition-colors',
+  'group flex items-center gap-3 px-4 py-2.5 text-lg transition-colors',
   props.collapsed ? 'justify-center lg:justify-center' : 'justify-center lg:justify-start',
   isRouteActive(path)
     ? 'border-l-[3px] border-mint bg-slate-800 text-white'
@@ -249,7 +249,7 @@ const itemClasses = (path: string) => [
 ]
 
 const mobileItemClasses = (path: string) => [
-  'flex items-center gap-3 px-4 py-2.5 text-base transition-colors',
+  'flex items-center gap-3 px-4 py-2.5 text-lg transition-colors',
   isRouteActive(path)
     ? 'border-l-[3px] border-mint bg-slate-800 text-white'
     : 'border-l-[3px] border-transparent text-slate-300 hover:bg-slate-800 hover:text-white'
