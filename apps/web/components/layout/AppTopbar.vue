@@ -40,28 +40,14 @@
           <span class="text-xs text-slate-500">{{ syncLabel }}</span>
         </div>
 
-        <JDropdown :items="locationItems" align="right">
-          <template #trigger>
-            <button
-              type="button"
-              class="inline-flex max-w-[160px] items-center gap-1 rounded-md border border-mist-dark px-2 py-1 text-xs text-slate-600 hover:bg-mist md:max-w-[220px]"
-              aria-label="Switch location"
-            >
-              <span>📍</span>
-              <span class="truncate">{{ activeLocationName }}</span>
-              <span>▾</span>
-            </button>
-          </template>
-        </JDropdown>
-
-        <button
-          type="button"
-          class="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-mist hover:text-ink"
-          aria-label="Notifications"
-        >
-          🔔
-          <span class="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose" />
-        </button>
+        <div class="w-40 md:w-48">
+          <JSelect
+            :model-value="locationStore.activeLocationId ?? ''"
+            :options="locationOptions"
+            placeholder="Select location"
+            @update:model-value="switchLocation"
+          />
+        </div>
 
         <JDropdown :items="userMenuItems" align="right">
           <template #trigger>
@@ -70,8 +56,8 @@
               class="inline-flex items-center gap-2 rounded-md p-1 hover:bg-mist"
               aria-label="Open account menu"
             >
-              <JAvatar size="sm" :name="userName" />
-              <span class="hidden max-w-[120px] truncate text-xs text-slate-600 lg:inline">{{ userName }}</span>
+              <JAvatar size="md" :name="userName" />
+              <span class="hidden max-w-[140px] truncate text-sm font-medium text-slate-700 lg:inline">{{ userName }}</span>
             </button>
           </template>
         </JDropdown>
@@ -118,7 +104,9 @@ const formatRouteTitle = (path: string) => {
 
 const userName = computed(() => authStore.user?.name ?? 'User')
 
-const activeLocationName = computed(() => locationStore.activeLocation?.name ?? 'Select location')
+const locationOptions = computed(() =>
+  locationStore.memberships.map((m) => ({ value: m.id, label: m.name }))
+)
 
 const pageTitle = computed(() => title.value || formatRouteTitle(route.path))
 
@@ -175,10 +163,7 @@ const syncNow = async () => {
 }
 
 const switchLocation = async (locationId: string) => {
-  if (locationStore.activeLocationId === locationId) {
-    return
-  }
-
+  if (!locationId || locationStore.activeLocationId === locationId) return
   locationStore.setActiveLocation(locationId)
   await syncStore.syncNow()
 }
@@ -200,13 +185,6 @@ const logout = async () => {
   await navigateTo('/login')
 }
 
-const locationItems = computed<DropdownItem[]>(() =>
-  locationStore.memberships.map((membership) => ({
-    label: membership.name,
-    icon: membership.id === locationStore.activeLocationId ? '✓' : '📍',
-    action: () => switchLocation(membership.id)
-  }))
-)
 
 const userMenuItems = computed<DropdownItem[]>(() => [
   {
