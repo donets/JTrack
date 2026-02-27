@@ -50,3 +50,31 @@
 
 - `pnpm -C /Users/vlad/Projects/JTrack lint`
 - `pnpm -C /Users/vlad/Projects/JTrack typecheck`
+
+## Follow-up polish (non-blocking)
+
+- Date: 2026-02-27
+- Scope: address additional review remarks after `c6af617`
+
+### What changed
+
+- `JDatePicker`:
+  - tightened date-only regex to exact `YYYY-MM-DD`
+  - documented why datetime parse fallback remains in date-only mode
+- `JEmptyState`:
+  - removed duplicated inline link button styles
+  - unified action rendering through `JButton` and `navigateTo(...)` for link actions
+- `JDropdown`:
+  - aligned ID-generation style by wrapping `menuId` with `computed(...)`
+
+### Files
+
+- `apps/web/components/ui/JDatePicker.vue`
+- `apps/web/components/ui/JEmptyState.vue`
+- `apps/web/components/ui/JDropdown.vue`
+- `docs/changelog/JTR-97.md`
+
+### Verification
+
+- `pnpm -C /Users/vlad/Projects/JTrack/apps/web lint`
+- `pnpm -C /Users/vlad/Projects/JTrack/apps/web typecheck`

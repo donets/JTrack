@@ -58,7 +58,8 @@ const rootRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
 const menuRef = ref<HTMLElement | null>(null)
 const itemRefs = ref<(HTMLElement | null)[]>([])
-const menuId = `j-dropdown-${useId()}`
+const dropdownId = useId()
+const menuId = computed(() => `j-dropdown-${dropdownId}`)
 
 const menuClasses = computed(() => [
   'absolute z-40 mt-2 min-w-[180px] overflow-hidden rounded-md border border-slate-200 bg-white py-1 shadow-lg',
