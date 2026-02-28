@@ -25,20 +25,20 @@
       </nav>
       <span v-else class="min-w-0 truncate text-lg font-semibold text-ink">{{ pageTitle }}</span>
 
-      <div class="ml-auto flex items-stretch gap-0">
+      <div class="ml-auto flex items-stretch gap-2">
         <button
           type="button"
-          class="hidden w-[105px] items-center justify-center gap-1.5 self-center rounded-md border border-mist-dark py-1.5 text-sm font-semibold text-slate-600 hover:bg-mist sm:inline-flex"
+          class="hidden items-center gap-1.5 self-center rounded-md border border-mist-dark px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-mist sm:inline-flex"
           :disabled="syncStore.syncing"
           @click="syncNow"
         >
           <span class="h-2 w-2 shrink-0 rounded-full" :class="syncDotClass" />
-          {{ syncStore.syncing ? 'Syncing...' : syncStore.lastSyncedAt ? 'Synced' : 'Sync now' }}
+          {{ syncStore.syncing ? 'Syncing...' : 'Sync now' }}
         </button>
 
-        <span class="-my-[1px] ml-3 border-l border-slate-200" />
+        <span class="border-l border-slate-200" />
 
-        <div ref="locationRef" class="relative flex items-center px-4">
+        <div ref="locationRef" class="relative flex items-center px-2">
           <button
             type="button"
             class="inline-flex items-center gap-1 text-sm text-slate-700 hover:text-ink"
@@ -51,12 +51,12 @@
           </button>
           <ul
             v-if="locationOpen"
-            class="absolute left-0 right-0 top-full z-40 rounded-b-md border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
+            class="absolute right-0 z-40 mt-2 min-w-[180px] rounded-md border border-slate-200 bg-white py-1 shadow-lg"
           >
             <li
               v-for="loc in locationStore.memberships"
               :key="loc.id"
-              class="cursor-pointer px-4 py-2 text-sm hover:bg-slate-50"
+              class="cursor-pointer px-3 py-2 text-sm hover:bg-slate-50"
               :class="loc.id === locationStore.activeLocationId ? 'font-medium text-ink' : 'text-slate-600'"
               @click="switchLocation(loc.id); locationOpen = false"
             >
@@ -65,7 +65,7 @@
           </ul>
         </div>
 
-        <span class="-my-[1px] mr-3 border-l border-slate-200" />
+        <span class="border-l border-slate-200" />
 
         <JDropdown class="self-center" :items="userMenuItems" align="right">
           <template #trigger>
