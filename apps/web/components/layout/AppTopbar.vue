@@ -37,19 +37,18 @@
         </button>
       </div>
 
-      <div ref="locationRef" class="relative flex w-[180px] shrink-0 items-center justify-center border-l border-r border-slate-200">
-        <component
-          :is="hasMultipleLocations ? 'button' : 'span'"
-          :type="hasMultipleLocations ? 'button' : undefined"
-          class="inline-flex items-center gap-1 text-sm text-slate-700"
-          :class="hasMultipleLocations ? 'hover:text-ink' : ''"
-          @click="hasMultipleLocations && (locationOpen = !locationOpen)"
-        >
+      <div
+        ref="locationRef"
+        class="relative flex w-[180px] shrink-0 items-center justify-center border-l border-r border-slate-200"
+        :class="hasMultipleLocations ? 'cursor-pointer hover:bg-slate-50' : ''"
+        @click="hasMultipleLocations && (locationOpen = !locationOpen)"
+      >
+        <span class="inline-flex items-center gap-1 text-sm text-slate-700">
           <span class="max-w-[140px] truncate">{{ activeLocationName }}</span>
           <svg v-if="hasMultipleLocations" class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
           </svg>
-        </component>
+        </span>
         <ul
           v-if="locationOpen"
           class="absolute -left-px -right-px top-full z-40 border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
@@ -66,22 +65,19 @@
         </ul>
       </div>
 
-      <div ref="userRef" class="relative flex items-center px-4">
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-ink"
-          aria-label="Open account menu"
-          @click="userOpen = !userOpen"
-        >
-          <JAvatar size="md" :name="userName" />
-          <span class="hidden max-w-[140px] truncate font-medium lg:inline">{{ userName }}</span>
-          <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-          </svg>
-        </button>
+      <div
+        ref="userRef"
+        class="relative flex cursor-pointer items-center gap-2 pl-4 pr-5 hover:bg-slate-50"
+        @click="userOpen = !userOpen"
+      >
+        <JAvatar size="md" :name="userName" />
+        <span class="hidden max-w-[140px] truncate text-sm font-medium text-slate-700 lg:inline">{{ userName }}</span>
+        <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+        </svg>
         <ul
           v-if="userOpen"
-          class="absolute -left-px -right-px top-full z-40 border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
+          class="absolute right-0 top-full z-40 min-w-full border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
         >
           <li
             class="cursor-pointer px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
