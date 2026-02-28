@@ -1,3 +1,5 @@
+import type { TicketStatus } from '@jtrack/shared'
+
 export type DropdownItem = {
   label: string
   icon?: string
@@ -44,7 +46,7 @@ export type BadgeVariant = 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'
 export type KanbanTicketCardItem = {
   id: string
   title: string
-  status: string
+  status: TicketStatus
   priority: string | null
   assignedToUserId: string | null
   assigneeName?: string
@@ -56,11 +58,11 @@ export type KanbanTicketCardItem = {
 
 export type KanbanColumnDropPayload = {
   ticketId: string
-  toStatus: string
+  toStatus: TicketStatus
 }
 
 export type KanbanColumnItem = {
-  status: string
+  status: TicketStatus
   label: string
 }
 

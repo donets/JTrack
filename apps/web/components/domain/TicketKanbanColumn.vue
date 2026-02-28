@@ -36,11 +36,12 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import type { TicketStatus } from '@jtrack/shared'
 import type { KanbanColumnDropPayload, KanbanTicketCardItem } from '~/types/ui'
 
 const props = withDefaults(
   defineProps<{
-    status: string
+    status: TicketStatus
     title?: string
     tickets: KanbanTicketCardItem[]
     showTicketCode?: boolean
@@ -52,7 +53,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  drop: [payload: KanbanColumnDropPayload]
+  'ticket-drop': [payload: KanbanColumnDropPayload]
   'drag-start': [payload: { ticketId: string }]
   'open-ticket': [ticketId: string]
   'quick-assign': [ticketId: string]
@@ -104,6 +105,6 @@ const onDrop = (event: DragEvent) => {
     return
   }
 
-  emit('drop', { ticketId, toStatus: props.status })
+  emit('ticket-drop', { ticketId, toStatus: props.status })
 }
 </script>
