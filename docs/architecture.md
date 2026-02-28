@@ -74,6 +74,8 @@ flowchart LR
   - background push + pull convergence.
 - On active location switch, client prunes location-scoped RxDB records for non-active locations to prevent cross-tenant accumulation/leakage.
 - Offline attachments are staged in RxDB (`pendingAttachmentUploads`) and converted to regular attachment outbox records after deferred upload when connectivity returns; base64 file payload is stored only in staging collection (attachment placeholder keeps pending metadata without duplicating file bytes).
+- Dispatch map tab uses Leaflet with OpenStreetMap tiles for interactive job visualization.
+- Until backend geo fields are introduced, map coordinates are deterministic mock points derived from `hash(ticketId + locationId)` inside a fixed viewport bounding box.
 
 ### 6.2 Mobile App
 - Capacitor wraps web build output.

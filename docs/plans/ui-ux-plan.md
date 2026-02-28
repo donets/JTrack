@@ -271,6 +271,11 @@ layouts/default.vue (CSS Grid)
 | 7 | JTR-70 | Rewrite dispatch board page (done 2026-03-01) | 5pt |
 | 8 | JTR-71 | Ticket quick-assign modal (done 2026-03-01) | 2pt |
 
+#### Dispatch Follow-up
+| # | Linear | Task | Est |
+|---|--------|------|-----|
+| 1 | JTR-151 | Create dispatch map view tab (done 2026-03-01) | 5pt |
+
 ### Epic 7: Financial Views (10pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|

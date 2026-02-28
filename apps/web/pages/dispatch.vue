@@ -133,12 +133,16 @@
       id="dispatch-panel-map"
       role="tabpanel"
       aria-labelledby="dispatch-tab-map"
-      class="rounded-xl border border-slate-200 bg-white p-6"
+      class="space-y-4"
     >
-      <h2 class="text-sm font-semibold text-ink">Map</h2>
-      <p class="mt-2 text-sm text-slate-600">
-        Interactive dispatch map is enabled in JTR-151.
-      </p>
+      <DispatchMapView
+        :tickets="mapTickets"
+        :selected-date="selectedDate"
+        :location-id="locationStore.activeLocationId ?? '00000000-0000-0000-0000-000000000000'"
+        :technician-names="technicianNameMap"
+        @open-ticket="openTicket"
+        @quick-assign="openQuickAssign"
+      />
     </div>
 
     <TicketQuickAssignModal
@@ -154,10 +158,17 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { BreadcrumbItem, DispatchGanttRowDropPayload, QuickAssignPayload, TabItem } from '~/types/ui'
+import type {
+  BreadcrumbItem,
+  DispatchGanttRowDropPayload,
+  DispatchMapTicket,
+  QuickAssignPayload,
+  TabItem
+} from '~/types/ui'
 
 const route = useRoute()
 const router = useRouter()
+const locationStore = useLocationStore()
 const { show } = useToast()
 const { setBreadcrumbs } = useBreadcrumbs()
 const { enforceDispatchAccess } = useDispatchAccessGuard()
@@ -203,6 +214,7 @@ const quickAssignTicketId = ref('')
 const quickAssignSaving = ref(false)
 
 const {
+  tickets,
   technicians,
   unassignedTickets,
   weekDates,
@@ -261,6 +273,25 @@ const weekRangeLabel = computed(() => {
 
   return `${start} - ${end}`
 })
+
+const technicianNameMap = computed<Record<string, string>>(() =>
+  Object.fromEntries(
+    technicians.value.map((technician) => [technician.id, technician.name])
+  )
+)
+
+const mapTickets = computed<DispatchMapTicket[]>(() =>
+  tickets.value
+    .filter((ticket) => !ticket.deletedAt)
+    .map((ticket) => ({
+      id: ticket.id,
+      locationId: ticket.locationId,
+      title: ticket.title,
+      status: ticket.status,
+      assignedToUserId: ticket.assignedToUserId,
+      scheduledStartAt: ticket.scheduledStartAt
+    }))
+)
 
 const formatWeekDay = (isoDate: string) =>
   new Date(`${isoDate}T00:00:00`).toLocaleDateString('en-US', {

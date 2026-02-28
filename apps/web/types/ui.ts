@@ -121,3 +121,12 @@ export type DispatchGanttRowDropPayload = {
 export type DispatchGanttRowOpenPayload = {
   ticketId: string
 }
+
+export type DispatchMapTicket = {
+  id: string
+  locationId: string
+  title: string
+  status: TicketStatus
+  assignedToUserId: string | null
+  scheduledStartAt: string | null
+}
