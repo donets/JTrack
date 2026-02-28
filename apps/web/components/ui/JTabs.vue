@@ -8,6 +8,7 @@
       type="button"
       role="tab"
       :aria-selected="tab.key === modelValue"
+      :aria-controls="tabPanelId(tab.key)"
       :tabindex="tab.key === modelValue ? 0 : -1"
       :class="tabClasses(tab.key)"
       @click="selectTab(tab.key)"
@@ -25,13 +26,15 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, useId } from 'vue'
+import { computed, nextTick, ref, useId } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import type { TabItem } from '~/types/ui'
 
 const props = defineProps<{
   tabs: TabItem[]
   modelValue: string
+  idPrefix?: string
+  panelIdPrefix?: string
 }>()
 
 const emit = defineEmits<{
@@ -40,6 +43,7 @@ const emit = defineEmits<{
 
 const tabsId = useId()
 const tabRefs = ref<(HTMLButtonElement | null)[]>([])
+const tabIdBase = computed(() => props.idPrefix ?? `j-tab-${tabsId}`)
 
 const selectTab = (key: string) => {
   if (key === props.modelValue) {
@@ -49,7 +53,9 @@ const selectTab = (key: string) => {
   emit('update:modelValue', key)
 }
 
-const tabId = (key: string) => `j-tab-${tabsId}-${key}`
+const tabId = (key: string) => `${tabIdBase.value}-${key}`
+const tabPanelId = (key: string) =>
+  props.panelIdPrefix ? `${props.panelIdPrefix}-${key}` : undefined
 
 const setTabRef = (element: Element | ComponentPublicInstance | null, index: number) => {
   if (!element) {

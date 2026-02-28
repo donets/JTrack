@@ -302,6 +302,10 @@ Sliding window counter (Redis or in-memory with TTL for MVP).
 - Single-column centered card layout, max 400px wide
 - Show/hide password toggle (eye icon)
 - Inline validation on blur, not on every keystroke
+- Route guard behavior: all non-public app routes redirect unauthenticated users to `/login?redirect=<original-path>`.
+- If access token refresh fails on an authenticated page request, client redirects to `/login?redirect=<current-path>`.
+- After successful sign-in, client immediately navigates to `redirect` target (or `/dashboard`) and preloads locations in background (location fetch failure must not block navigation).
+- If protected-route location bootstrap fails in middleware, session state is cleared and client returns to `/login?redirect=<current-path>` to avoid blank screen states.
 - After signup: redirect to "Check your email" screen with email displayed and "Resend" button (rate-limited to 1 per 60s)
 - After password reset request: same "Check your email" screen
 - After successful reset: auto-redirect to login with toast "Password updated. Sign in with your new password."
@@ -322,8 +326,8 @@ Sliding window counter (Redis or in-memory with TTL for MVP).
 | Attribute | Value |
 |-----------|-------|
 | `HttpOnly` | `true` |
-| `Secure` | `true` |
-| `SameSite` | `Lax` (or `Strict` if it won't break flows) |
+| `Secure` | `true` in production; forced `true` when `SameSite=None` |
+| `SameSite` | Configured by `COOKIE_SAME_SITE` (`lax` default, `none` for cross-site frontend/backend) |
 | `Path` | `/auth` |
 | Prefix | Consider `__Host-` prefix (requires Secure, Path=/, no Domain) |
 
@@ -333,7 +337,7 @@ Since the refresh token is a cookie, `POST /auth/refresh` and `POST /auth/logout
 
 - Keep refresh/logout endpoints POST only.
 - **Origin header validation**: `AuthController.validateOrigin()` checks the `Origin` header against configured `WEB_ORIGIN` on `/auth/refresh` and `/auth/logout`. Rejects with 403 if Origin is present but doesn't match.
-- `SameSite=Lax` on the refresh cookie blocks cross-origin form POSTs in modern browsers.
+- For cross-site frontend/backend domains, set `COOKIE_SAME_SITE=none` (with `Secure`) so browser fetch with `credentials: 'include'` can send refresh cookie.
 
 ### CORS
 

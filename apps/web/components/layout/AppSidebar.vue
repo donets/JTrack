@@ -3,7 +3,7 @@
     :class="desktopSidebarClasses"
     aria-label="Primary navigation"
   >
-    <div class="flex h-topbar items-center border-b border-slate-700 px-4">
+    <div class="flex h-topbar items-center justify-between border-b border-slate-700 px-4">
       <NuxtLink to="/dashboard" class="flex items-center gap-2 text-white">
         <span class="text-lg">⚡</span>
         <span :class="logoTextClasses">JTrack</span>
@@ -32,25 +32,24 @@
       </section>
     </nav>
 
-    <div class="border-t border-slate-700 p-3">
+    <div class="hidden border-t border-slate-700 p-3 md:block">
       <button
         type="button"
-        :class="collapseButtonClasses"
+        class="flex w-full items-center justify-center rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+        aria-label="Toggle sidebar"
         @click="toggleCollapsed"
       >
-        <span class="text-sm">⇆</span>
-        <span :class="itemTextClasses">
-          {{ collapsed ? 'Expand' : 'Collapse' }}
-        </span>
+        <svg
+          class="size-4 transition-transform"
+          :class="collapsed ? 'rotate-180' : ''"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
       </button>
-
-      <div :class="userCardClasses">
-        <JAvatar size="sm" :name="userName" />
-        <div :class="userTextClasses">
-          <p class="text-xs font-semibold text-white">{{ userName }}</p>
-          <p class="text-[11px] text-slate-400">{{ userRole }}</p>
-        </div>
-      </div>
     </div>
   </aside>
 
@@ -67,7 +66,7 @@
   <Transition name="drawer-panel-transition">
     <aside
       v-if="mobileOpen"
-      class="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-ink md:hidden"
+      class="fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] flex-col bg-ink md:hidden"
       aria-label="Mobile navigation"
     >
       <div class="flex h-topbar items-center justify-between border-b border-slate-700 px-4">
@@ -102,20 +101,11 @@
             @click="closeMobileDrawer"
           >
             <span class="text-base leading-none">{{ item.icon }}</span>
-            <span class="text-sm">{{ item.label }}</span>
+            <span class="text-lg">{{ item.label }}</span>
           </NuxtLink>
         </section>
       </nav>
 
-      <div class="border-t border-slate-700 p-3">
-        <div class="flex items-center gap-2 rounded-md bg-slate-800/70 px-2 py-2">
-          <JAvatar size="sm" :name="userName" />
-          <div>
-            <p class="text-xs font-semibold text-white">{{ userName }}</p>
-            <p class="text-[11px] text-slate-400">{{ userRole }}</p>
-          </div>
-        </div>
-      </div>
     </aside>
   </Transition>
 </template>
@@ -213,14 +203,6 @@ const visibleSections = computed(() =>
 const isRouteActive = (path: string) =>
   route.path === path || (path !== '/dashboard' && route.path.startsWith(`${path}/`))
 
-const userName = computed(() => authStore.user?.name ?? 'Unknown user')
-const userRole = computed(() => {
-  if (authStore.user?.isAdmin) {
-    return 'Admin'
-  }
-
-  return activeRole.value ?? 'No role'
-})
 
 const desktopSidebarClasses = computed(() => [
   'hidden h-screen shrink-0 flex-col bg-ink md:flex',
@@ -228,7 +210,7 @@ const desktopSidebarClasses = computed(() => [
 ])
 
 const logoTextClasses = computed(() => [
-  'text-sm font-semibold',
+  'text-lg font-semibold',
   props.collapsed ? 'hidden' : 'hidden lg:inline'
 ])
 
@@ -239,22 +221,10 @@ const sectionLabelClasses = computed(() => [
 
 const itemTextClasses = computed(() => [props.collapsed ? 'hidden' : 'hidden lg:inline'])
 
-const collapseButtonClasses = computed(() => [
-  'hidden w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-slate-300',
-  'hover:bg-slate-800 hover:text-white lg:flex'
-])
-
-const userCardClasses = computed(() => [
-  'mt-2 flex items-center gap-2 rounded-md bg-slate-800/70 px-2 py-2',
-  props.collapsed ? 'justify-center' : ''
-])
-
-const userTextClasses = computed(() => [props.collapsed ? 'hidden' : 'hidden lg:block'])
-
 const showItemTitle = (label: string) => (props.collapsed ? label : undefined)
 
 const itemClasses = (path: string) => [
-  'group flex items-center gap-3 px-4 py-2 text-sm transition-colors',
+  'group flex items-center gap-3 px-4 py-2.5 text-lg transition-colors',
   props.collapsed ? 'justify-center lg:justify-center' : 'justify-center lg:justify-start',
   isRouteActive(path)
     ? 'border-l-[3px] border-mint bg-slate-800 text-white'
@@ -262,7 +232,7 @@ const itemClasses = (path: string) => [
 ]
 
 const mobileItemClasses = (path: string) => [
-  'flex items-center gap-3 px-4 py-2 text-sm transition-colors',
+  'flex items-center gap-3 px-4 py-2.5 text-lg transition-colors',
   isRouteActive(path)
     ? 'border-l-[3px] border-mint bg-slate-800 text-white'
     : 'border-l-[3px] border-transparent text-slate-300 hover:bg-slate-800 hover:text-white'

@@ -1,75 +1,103 @@
 <template>
   <header class="border-b border-mist-dark bg-white">
-    <div class="flex h-topbar items-center gap-3 px-3 md:px-5">
-      <button
-        type="button"
-        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-mist hover:text-ink md:hidden"
-        aria-label="Open menu"
-        @click="openMobileDrawer"
-      >
-        ☰
-      </button>
-
-      <div class="min-w-0">
-        <p v-if="breadcrumbs.length > 0" class="truncate text-xs text-slate-500">
-          <span v-for="(item, index) in breadcrumbs" :key="`${item.label}-${index}`">
-            <span v-if="index > 0" class="px-1">/</span>
-            {{ item.label }}
-          </span>
-        </p>
-        <h1 class="truncate text-sm font-semibold text-ink md:text-base">{{ pageTitle }}</h1>
-      </div>
-
-      <div class="ml-auto flex items-center gap-2">
+    <div class="flex h-topbar items-stretch">
+      <div class="flex min-w-0 flex-1 items-center gap-2 px-3 sm:gap-3 md:px-5">
         <button
           type="button"
-          class="hidden rounded-md border border-mist-dark px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-mist sm:inline-flex"
+          class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-600 hover:bg-mist hover:text-ink md:hidden"
+          aria-label="Open menu"
+          @click="openMobileDrawer"
+        >
+          ☰
+        </button>
+
+        <nav v-if="breadcrumbs.length > 0" class="flex min-w-0 items-center truncate text-sm text-slate-500 sm:text-lg">
+          <template v-for="(item, index) in breadcrumbs" :key="`${item.label}-${index}`">
+            <span v-if="index > 0" class="px-1.5 text-slate-300 sm:px-2">/</span>
+            <NuxtLink
+              v-if="item.to && index < breadcrumbs.length - 1"
+              :to="item.to"
+              class="rounded px-1 py-0.5 hover:bg-slate-100 hover:text-slate-800 sm:px-1.5"
+            >
+              {{ item.label }}
+            </NuxtLink>
+            <span v-else class="truncate px-1 py-0.5 font-semibold text-slate-800 sm:px-1.5">{{ item.label }}</span>
+          </template>
+        </nav>
+        <span v-else class="min-w-0 truncate text-sm font-semibold text-ink sm:text-lg">{{ pageTitle }}</span>
+
+        <button
+          type="button"
+          class="ml-auto hidden w-[105px] shrink-0 items-center justify-center gap-1.5 rounded-md border border-mist-dark py-1.5 text-sm font-semibold text-slate-600 hover:bg-mist sm:inline-flex"
           :disabled="syncStore.syncing"
           @click="syncNow"
         >
-          {{ syncStore.syncing ? 'Syncing...' : 'Sync now' }}
+          <span class="h-2 w-2 shrink-0 rounded-full" :class="syncDotClass" />
+          {{ syncStore.syncing ? 'Syncing...' : syncStore.lastSyncedAt ? 'Synced' : 'Sync now' }}
         </button>
+      </div>
 
-        <div class="hidden items-center gap-2 sm:flex">
-          <span class="h-2.5 w-2.5 rounded-full" :class="syncDotClass" />
-          <span class="text-xs text-slate-500">{{ syncLabel }}</span>
-        </div>
-
-        <JDropdown :items="locationItems" align="right">
-          <template #trigger>
-            <button
-              type="button"
-              class="inline-flex max-w-[160px] items-center gap-1 rounded-md border border-mist-dark px-2 py-1 text-xs text-slate-600 hover:bg-mist md:max-w-[220px]"
-              aria-label="Switch location"
-            >
-              <span>📍</span>
-              <span class="truncate">{{ activeLocationName }}</span>
-              <span>▾</span>
-            </button>
-          </template>
-        </JDropdown>
-
-        <button
-          type="button"
-          class="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-mist hover:text-ink"
-          aria-label="Notifications"
+      <div
+        ref="locationRef"
+        class="relative hidden w-[180px] shrink-0 items-center justify-center border-l border-r border-slate-200 sm:flex"
+        :class="hasMultipleLocations ? 'cursor-pointer hover:bg-slate-50' : ''"
+        @click="hasMultipleLocations && (locationOpen = !locationOpen)"
+      >
+        <span class="inline-flex items-center gap-1 text-sm text-slate-700">
+          <span class="max-w-[140px] truncate">{{ activeLocationName }}</span>
+          <svg v-if="hasMultipleLocations" class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+          </svg>
+        </span>
+        <ul
+          v-if="locationOpen"
+          class="absolute -left-px -right-px top-full z-40 border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
         >
-          🔔
-          <span class="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose" />
-        </button>
+          <li
+            v-for="loc in locationStore.memberships"
+            :key="loc.id"
+            class="cursor-pointer px-4 py-2.5 text-sm hover:bg-slate-50"
+            :class="loc.id === locationStore.activeLocationId ? 'font-medium text-ink' : 'text-slate-600'"
+            @click="switchLocation(loc.id); locationOpen = false"
+          >
+            {{ loc.name }}
+          </li>
+        </ul>
+      </div>
 
-        <JDropdown :items="userMenuItems" align="right">
-          <template #trigger>
-            <button
-              type="button"
-              class="inline-flex items-center gap-2 rounded-md p-1 hover:bg-mist"
-              aria-label="Open account menu"
-            >
-              <JAvatar size="sm" :name="userName" />
-              <span class="hidden max-w-[120px] truncate text-xs text-slate-600 lg:inline">{{ userName }}</span>
-            </button>
-          </template>
-        </JDropdown>
+      <div
+        ref="userRef"
+        class="relative flex shrink-0 cursor-pointer items-center gap-2 pl-3 pr-3 hover:bg-slate-50 sm:pl-4 sm:pr-5"
+        @click="userOpen = !userOpen"
+      >
+        <JAvatar size="md" :name="userName" />
+        <span class="hidden max-w-[140px] truncate text-sm font-medium text-slate-700 lg:inline">{{ userName }}</span>
+        <svg class="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+        </svg>
+        <ul
+          v-if="userOpen"
+          class="absolute right-0 top-full z-40 min-w-[160px] border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
+        >
+          <li
+            class="cursor-pointer px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
+            @click="userOpen = false; navigateTo('/settings')"
+          >
+            Profile
+          </li>
+          <li
+            class="cursor-pointer px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
+            @click="userOpen = false; navigateTo('/locations')"
+          >
+            Locations
+          </li>
+          <li
+            class="cursor-pointer px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50"
+            @click="userOpen = false; logout()"
+          >
+            Logout
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -81,7 +109,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import type { DropdownItem } from '~/types/ui'
 import { destroyDatabase } from '~/plugins/rxdb.client'
 
 const route = useRoute()
@@ -112,8 +139,23 @@ const formatRouteTitle = (path: string) => {
 }
 
 const userName = computed(() => authStore.user?.name ?? 'User')
-
 const activeLocationName = computed(() => locationStore.activeLocation?.name ?? 'Select location')
+const hasMultipleLocations = computed(() => locationStore.memberships.length > 1)
+
+const locationOpen = ref(false)
+const locationRef = ref<HTMLElement | null>(null)
+const userOpen = ref(false)
+const userRef = ref<HTMLElement | null>(null)
+
+const onClickOutsideDropdowns = (e: MouseEvent) => {
+  const target = e.target as Node
+  if (locationOpen.value && locationRef.value && !locationRef.value.contains(target)) {
+    locationOpen.value = false
+  }
+  if (userOpen.value && userRef.value && !userRef.value.contains(target)) {
+    userOpen.value = false
+  }
+}
 
 const pageTitle = computed(() => title.value || formatRouteTitle(route.path))
 
@@ -145,77 +187,40 @@ const syncDotClass = computed(() => {
   return syncAgeMs.value < 60_000 ? 'bg-mint' : 'bg-flame'
 })
 
-const syncLabel = computed(() => {
-  if (!isOnline.value) {
-    return 'Offline'
-  }
-
-  if (syncStore.error) {
-    return syncStore.error
-  }
-
-  if (syncStore.syncing) {
-    return 'Sync in progress'
-  }
-
-  if (!syncStore.lastSyncedAt) {
-    return 'Never synced'
-  }
-
-  return `Last sync ${new Date(syncStore.lastSyncedAt).toLocaleTimeString()}`
-})
 
 const syncNow = async () => {
   await syncStore.syncNow()
 }
 
 const switchLocation = async (locationId: string) => {
-  if (locationStore.activeLocationId === locationId) {
-    return
-  }
-
+  if (!locationId || locationStore.activeLocationId === locationId) return
   locationStore.setActiveLocation(locationId)
   await syncStore.syncNow()
+
+  // If on a detail page, redirect to dashboard since the item may not exist in the new location
+  const path = route.path
+  if (route.params.id || /\/[0-9a-f-]{36}/.test(path)) {
+    await navigateTo('/dashboard')
+  }
 }
 
 const logout = async () => {
-  await authStore.logout()
-  locationStore.clear()
-  syncStore.clearSyncData()
-  await destroyDatabase()
+  try {
+    await authStore.logout()
+  } finally {
+    locationStore.clear()
+    syncStore.clearSyncData()
+  }
+
+  try {
+    await destroyDatabase()
+  } catch (error) {
+    console.warn('[auth] failed to destroy local database during logout', error)
+  }
+
   await navigateTo('/login')
 }
 
-const locationItems = computed<DropdownItem[]>(() =>
-  locationStore.memberships.map((membership) => ({
-    label: membership.name,
-    icon: membership.id === locationStore.activeLocationId ? '✓' : '📍',
-    action: () => switchLocation(membership.id)
-  }))
-)
-
-const userMenuItems = computed<DropdownItem[]>(() => [
-  {
-    label: 'Profile',
-    icon: '👤',
-    action: async () => {
-      await navigateTo('/settings')
-    }
-  },
-  {
-    label: 'Locations',
-    icon: '📍',
-    action: async () => {
-      await navigateTo('/locations')
-    }
-  },
-  {
-    label: 'Logout',
-    icon: '↩',
-    variant: 'danger',
-    action: logout
-  }
-])
 
 const setOnlineStatus = () => {
   isOnline.value = import.meta.client ? navigator.onLine : true
@@ -229,6 +234,7 @@ onMounted(() => {
     }, 15_000)
     window.addEventListener('online', setOnlineStatus)
     window.addEventListener('offline', setOnlineStatus)
+    document.addEventListener('mousedown', onClickOutsideDropdowns)
   }
 })
 
@@ -240,6 +246,7 @@ onUnmounted(() => {
     }
     window.removeEventListener('online', setOnlineStatus)
     window.removeEventListener('offline', setOnlineStatus)
+    document.removeEventListener('mousedown', onClickOutsideDropdowns)
   }
 })
 </script>

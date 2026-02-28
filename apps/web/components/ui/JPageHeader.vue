@@ -21,7 +21,7 @@
     <div class="mt-1 flex flex-wrap items-start justify-between gap-3">
       <div>
         <div class="flex items-center gap-2">
-          <h1 class="text-xl font-bold text-ink">{{ title }}</h1>
+          <h1 class="text-xl font-bold text-ink"><slot name="title">{{ title }}</slot></h1>
           <slot name="status" />
         </div>
         <p v-if="description" class="mt-1 text-sm text-slate-600">
@@ -29,7 +29,7 @@
         </p>
       </div>
 
-      <div v-if="$slots.actions" class="flex flex-wrap items-center gap-2">
+      <div v-if="$slots.actions" class="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
         <slot name="actions" />
       </div>
     </div>

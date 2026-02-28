@@ -54,9 +54,9 @@ const dialogRef = ref<HTMLElement | null>(null)
 let previousActiveElement: HTMLElement | null = null
 
 const sizeClasses: Record<ModalSize, string> = {
-  sm: 'max-w-[400px]',
-  md: 'max-w-[520px]',
-  lg: 'max-w-[700px]'
+  sm: 'max-w-[min(400px,90vw)]',
+  md: 'max-w-[min(520px,90vw)]',
+  lg: 'max-w-[min(700px,90vw)]'
 }
 
 const dialogClasses = computed(() => [

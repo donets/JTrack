@@ -38,7 +38,7 @@ flowchart LR
 - `auth`: login/refresh/logout/me, invite onboarding completion, JWT issuance, refresh token rotation.
 - `rbac`: role/privilege resolution and access checks.
 - `locations`: tenant container lifecycle.
-- `users`: membership and operator management.
+- `users`: membership and operator management (including per-location role/status updates through `PATCH /users/:id` with `x-location-id` context).
 - `tickets`, `comments`, `attachments`, `payments`: core domain CRUD.
 - `sync`: delta pull/push and conflict handling.
 - `health`: readiness/liveness probe endpoint with DB connectivity check.
@@ -65,6 +65,7 @@ flowchart LR
 ### 6.1 Web App
 - Nuxt 4 (Vue 3) for UI and routing.
 - RxDB/Dexie as local reactive storage.
+- Global route middleware protects non-public routes and redirects unauthenticated users to `/login?redirect=<target>`.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
 - Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
 - Outbox pattern:
@@ -104,7 +105,8 @@ sequenceDiagram
   - short-lived JWT access token in Authorization header.
   - refresh token in HttpOnly cookie (`/auth` path).
   - invite onboarding uses signed short-lived invite token (`/auth/invite/complete`) and atomically claims membership (`invited` -> `active`) in the same transaction as initial password set.
-  - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`).
+  - refresh cookie `sameSite` is controlled by `COOKIE_SAME_SITE` (`lax` default; `none` for cross-site web/api domains).
+  - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`); `SameSite=None` forces `secure=true`.
   - auth brute-force mitigation is enforced via throttling on `/auth/login` and `/auth/refresh`.
 - Authorization:
   - location scoping for tenant separation.
@@ -120,7 +122,8 @@ sequenceDiagram
   - API/Web Dockerfiles use multi-stage builds (`deps` -> `builder` -> `runner`) to reduce runtime image size.
   - Docker build context filtering uses repository `.dockerignore`; docker-local mirror rules are stored in `docker/.dockerignore`.
   - Startup via `docker/docker-compose.yml` (`docker-compose up -d --build`).
-  - API container startup runs `prisma migrate deploy --schema apps/api/prisma/schema.prisma` before `node apps/api/dist/src/main.js`.
+  - API container startup runs `node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma` before app start.
+  - If `SEED_DEMO_DATA=true`, startup also runs `node apps/api/dist/prisma/seed.js` (idempotent upserts for demo users/location).
   - DB service has network alias `jtrack`; API uses `postgresql://...@jtrack:5432/...`.
   - Legacy Prisma migration `20260223082027_init` is a no-op placeholder to keep migration chain valid in clean environments.
   - API TypeScript output is fixed to `apps/api/dist` (`apps/api/tsconfig.json` with explicit `outDir`).
@@ -129,11 +132,13 @@ sequenceDiagram
   - Backend (Render): `/Users/vlad/Projects/JTrack/render.yaml`
     - Deploys `jtrack-api` from `docker/Dockerfile.api`.
     - Uses Render Postgres `jtrack-db`.
-    - Uses `dockerCommand` to export `API_PORT` from Render `PORT`, apply Prisma migrations, and start `node apps/api/dist/src/main.js`.
+    - Uses Dockerfile `CMD` for startup (apply Prisma migrations, optional demo seed, then start API).
+    - API port resolution supports `API_PORT` and falls back to Render `PORT`.
   - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
     - Publishes `apps/web/.output/public`.
     - Root route `/` is explicitly prerendered in Nuxt route rules to guarantee static entrypoint generation.
+    - Critical auth/navigation entry routes are explicitly prerendered (`/`, `/login`, `/dashboard`, `/locations`) to prevent 404s when SPA rewrites are unavailable or bypassed.
     - App routes (`/login`, `/dashboard`, etc.) are served via SPA rewrite fallback and are not prerendered to avoid route payload fetches (`/_payload.json`) on client navigation.
     - Nuxt payload extraction is disabled in web config to prevent runtime `/_payload.json` requests in static SPA mode.
     - SPA fallback rewrite to `/index.html`.

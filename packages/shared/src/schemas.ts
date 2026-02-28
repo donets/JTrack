@@ -187,7 +187,9 @@ export const createUserSchema = z.object({
 
 export const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
-  isAdmin: z.boolean().optional()
+  isAdmin: z.boolean().optional(),
+  role: roleKeySchema.optional(),
+  membershipStatus: userLocationStatusSchema.optional()
 })
 
 export const inviteResponseSchema = z.object({

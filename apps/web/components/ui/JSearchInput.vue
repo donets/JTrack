@@ -16,7 +16,7 @@
       :value="internalValue"
       :placeholder="placeholder"
       class="block w-full rounded-md border border-slate-200 bg-white py-2 pl-9 pr-9 text-[13px] text-ink placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky/30"
-      type="search"
+      type="text"
       @input="onInput"
     />
 

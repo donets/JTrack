@@ -40,10 +40,12 @@
 
         <template v-else-if="sortedRows.length > 0">
           <tr v-for="row in sortedRows" :key="rowKey(row)" class="hover:bg-slate-50/60">
-            <td
+            <component
+              :is="column.rowHeader ? 'th' : 'td'"
               v-for="column in columns"
               :key="`${rowKey(row)}-${column.key}`"
               :class="cellClasses(column)"
+              :scope="column.rowHeader ? 'row' : undefined"
             >
               <slot
                 :name="`cell-${column.key}`"
@@ -53,7 +55,7 @@
               >
                 {{ row[column.key] ?? '—' }}
               </slot>
-            </td>
+            </component>
           </tr>
         </template>
 
@@ -208,5 +210,6 @@ const alignClass = (align: TableColumn['align']) => {
 const headerClasses = (column: TableColumn) =>
   `px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600 ${alignClass(column.align)}`
 
-const cellClasses = (column: TableColumn) => `px-4 py-3 ${alignClass(column.align)}`
+const cellClasses = (column: TableColumn) =>
+  `px-4 py-3 ${alignClass(column.align)} ${column.rowHeader ? 'font-medium text-ink' : ''}`
 </script>

@@ -6,7 +6,7 @@
       '--bottom-nav-height': '4rem'
     }"
   >
-    <div class="grid h-full md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] md:grid-rows-[3.5rem_minmax(0,1fr)]">
+    <div class="grid h-full grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[64px_minmax(0,1fr)] md:grid-rows-[3.5rem_minmax(0,1fr)] lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]">
       <AppSidebar
         v-model:collapsed="sidebarCollapsed"
         v-model:mobile-open="mobileDrawerOpen"

@@ -246,11 +246,18 @@ layouts/default.vue (CSS Grid)
 ### Epic 5: Team Management (13pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
-| 1 | JTR-59 | Create useTeamStore | 3pt |
-| 2 | JTR-60 | Create team list page | 3pt |
-| 3 | JTR-61 | Create invite member modal | 3pt |
-| 4 | JTR-62 | Create member detail page | 3pt |
-| 5 | JTR-63 | RBAC guards for team pages | 1pt |
+| 1 | JTR-59 | Create useTeamStore (done 2026-02-27) | 3pt |
+| 2 | JTR-60 | Create team list page (done 2026-02-27) | 3pt |
+| 3 | JTR-61 | Create invite member modal (done 2026-02-27) | 3pt |
+| 4 | JTR-62 | Create member detail page (done 2026-02-27) | 3pt |
+| 5 | JTR-63 | RBAC guards for team pages (done 2026-02-27) | 1pt |
+
+#### Team Follow-ups
+| # | Linear | Task | Est |
+|---|--------|------|-----|
+| 1 | JTR-90 | Enhance team management page (done 2026-02-27) | 3pt |
+| 2 | JTR-111 | Create team invitations tab (done 2026-02-27) | 2pt |
+| 3 | JTR-112 | Create RBAC roles matrix tab (done 2026-02-27) | 2pt |
 
 ### Epic 6: Kanban & Dispatch (27pt)
 | # | Linear | Task | Est |

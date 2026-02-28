@@ -80,7 +80,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 const isDisabled = computed(() => props.disabled || props.loading)
 
 const buttonClasses = computed(() => [
-  'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-semibold transition-colors',
+  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent font-semibold transition-colors',
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-sky/40',
   'disabled:cursor-not-allowed disabled:opacity-60',
   variantClasses[props.variant],

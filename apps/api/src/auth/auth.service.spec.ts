@@ -413,4 +413,40 @@ describe('AuthService', () => {
 
     expect(service.getRefreshCookieOptions().secure).toBe(true)
   })
+
+  it('supports configurable sameSite and forces secure for SameSite=None', () => {
+    configService.get.mockImplementation((key: string) => {
+      if (key === 'COOKIE_SAME_SITE') {
+        return 'none'
+      }
+
+      if (key === 'COOKIE_SECURE') {
+        return 'false'
+      }
+
+      return undefined
+    })
+
+    expect(service.getRefreshCookieOptions()).toMatchObject({
+      sameSite: 'none',
+      secure: true
+    })
+
+    configService.get.mockImplementation((key: string) => {
+      if (key === 'COOKIE_SAME_SITE') {
+        return 'strict'
+      }
+
+      if (key === 'COOKIE_SECURE') {
+        return 'yes'
+      }
+
+      return undefined
+    })
+
+    expect(service.getRefreshCookieOptions()).toMatchObject({
+      sameSite: 'strict',
+      secure: true
+    })
+  })
 })

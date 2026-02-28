@@ -1,3 +1,5 @@
+import { isPublicRoute } from '~/utils/public-routes'
+
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
   body?: unknown
@@ -87,6 +89,17 @@ export const useApiClient = () => {
             ...options,
             skipAuthRefresh: true
           })
+        }
+
+        if (import.meta.client) {
+          const route = useRoute()
+
+          if (!isPublicRoute(route.path)) {
+            await navigateTo({
+              path: '/login',
+              query: { redirect: route.fullPath }
+            })
+          }
         }
       }
 

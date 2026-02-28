@@ -272,8 +272,8 @@
     </JModal>
   </section>
 
-  <section v-else class="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
-    Ticket not found in local database
+  <section v-else class="rounded-xl border border-slate-200 bg-white p-8 text-center text-base text-slate-500">
+    Ticket not found in local database.
   </section>
 </template>
 
@@ -321,6 +321,7 @@ const STATUS_EVENT_PREFIX = '[status-change]'
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
+const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
@@ -400,7 +401,7 @@ const breadcrumbs = ref<BreadcrumbItem[]>([
 watch(
   () => ticket.value?.title,
   (title) => {
-    breadcrumbs.value = [
+    const items: BreadcrumbItem[] = [
       { label: 'Dashboard', to: '/dashboard' },
       { label: 'Tickets', to: '/tickets' },
       { label: title ? `${ticketCode.value} ${title}` : ticketCode.value }
