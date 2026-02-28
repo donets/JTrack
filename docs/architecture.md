@@ -134,6 +134,8 @@ sequenceDiagram
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
     - Publishes `apps/web/.output/public`.
     - Root route `/` is explicitly prerendered in Nuxt route rules to guarantee static entrypoint generation.
+    - App routes (`/login`, `/dashboard`, etc.) are served via SPA rewrite fallback and are not prerendered to avoid route payload fetches (`/_payload.json`) on client navigation.
+    - Nuxt payload extraction is disabled in web config to prevent runtime `/_payload.json` requests in static SPA mode.
     - SPA fallback rewrite to `/index.html`.
 - Production target:
   - stateless API instances behind load balancer,
