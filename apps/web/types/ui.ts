@@ -59,6 +59,11 @@ export type KanbanColumnDropPayload = {
   toStatus: string
 }
 
+export type KanbanColumnItem = {
+  status: string
+  label: string
+}
+
 export type QuickAssignPayload = {
   ticketId: string
   assignedToUserId: string

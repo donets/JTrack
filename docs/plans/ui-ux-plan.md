@@ -263,7 +263,7 @@ layouts/default.vue (CSS Grid)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
 | 1 | JTR-64 | Create TicketKanbanCard (done 2026-03-01) | 2pt |
-| 2 | JTR-65 | Create TicketKanbanColumn | 3pt |
+| 2 | JTR-65 | Create TicketKanbanColumn (done 2026-03-01) | 3pt |
 | 3 | JTR-66 | Create kanban board view | 5pt |
 | 4 | JTR-67 | Create DispatchTimeGrid | 3pt |
 | 5 | JTR-68 | Create DispatchGanttRow | 4pt |
