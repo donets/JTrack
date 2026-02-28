@@ -32,7 +32,6 @@ export interface DashboardStatusSlice {
 
 export interface DashboardUnassignedTicket {
   id: string
-  ticketCode: string
   title: string
   priorityLabel: string
   priorityVariant: BadgeVariant
@@ -51,7 +50,6 @@ export interface DashboardTeamAvailability {
 
 export interface DashboardScheduleTicket {
   id: string
-  ticketCode: string
   title: string
   status: TicketStatus
   statusLabel: string
@@ -114,8 +112,6 @@ const inRange = (
 
   return timestamp >= range.startMs && timestamp < range.endMs
 }
-
-const formatTicketCode = (ticketId: string) => `#${ticketId.slice(0, 8).toUpperCase()}`
 
 const formatPriority = (priority: string | null) => {
   if (!priority) {
@@ -417,7 +413,6 @@ export const useDashboardStats = () => {
       .slice(0, 6)
       .map<DashboardUnassignedTicket>((ticket) => ({
         id: ticket.id,
-        ticketCode: formatTicketCode(ticket.id),
         title: ticket.title,
         priorityLabel: formatPriority(ticket.priority),
         priorityVariant: priorityToBadgeVariant(ticket.priority),
@@ -503,7 +498,7 @@ export const useDashboardStats = () => {
         actor: {
           name: resolveUserName(ticket.createdByUserId)
         },
-        content: `${formatTicketCode(ticket.id)} created`,
+        content: `${ticket.title} created`,
         timestamp: ticket.createdAt
       })
 
@@ -514,7 +509,7 @@ export const useDashboardStats = () => {
           actor: {
             name: 'System'
           },
-          content: `${formatTicketCode(ticket.id)} moved to ${statusToLabel(ticket.status)}`,
+          content: `${ticket.title} moved to ${statusToLabel(ticket.status)}`,
           timestamp: ticket.updatedAt
         })
       }
@@ -527,13 +522,13 @@ export const useDashboardStats = () => {
         actor: {
           name: resolveUserName(comment.authorUserId)
         },
-        content: `Comment on ${formatTicketCode(comment.ticketId)}: ${comment.body.slice(0, 80)}`,
+        content: `Comment on ${ticketTitleById.get(comment.ticketId) ?? 'ticket'}: ${comment.body.slice(0, 80)}`,
         timestamp: comment.createdAt
       })
     }
 
     for (const payment of payments.value) {
-      const ticketTitle = ticketTitleById.get(payment.ticketId) ?? formatTicketCode(payment.ticketId)
+      const ticketTitle = ticketTitleById.get(payment.ticketId) ?? 'ticket'
       activityItems.push({
         id: `payment-${payment.id}`,
         type: 'payment',
@@ -592,7 +587,6 @@ export const useDashboardStats = () => {
       })
       .map<DashboardScheduleTicket>((ticket) => ({
         id: ticket.id,
-        ticketCode: formatTicketCode(ticket.id),
         title: ticket.title,
         status: ticket.status,
         statusLabel: statusToLabel(ticket.status),
@@ -635,7 +629,6 @@ export const useDashboardStats = () => {
     todayLabel,
     usersLoading,
     ownerManager,
-    technician,
-    formatTicketCode
+    technician
   }
 }

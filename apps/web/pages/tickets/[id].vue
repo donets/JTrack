@@ -1,7 +1,7 @@
 <template>
   <section v-if="ticket" class="space-y-4">
     <JPageHeader
-      :title="`${ticketCode} ${ticket.title}`"
+      :title="ticket.title"
       :breadcrumbs="breadcrumbs"
     >
       <template #status>
@@ -172,17 +172,18 @@
           </JButton>
         </JCard>
 
-        <JCard :title="`Checklist ${completedChecklistCount}/${checklistItems.length}`">
+        <JCard title="Checklist">
+          <p class="mb-2 text-xs text-slate-500">{{ completedChecklistCount }}/{{ checklistItems.length }}</p>
           <JProgress :value="completedChecklistCount" :max="checklistItems.length" variant="mint" />
 
-          <div class="mt-3 space-y-2">
-            <JCheckbox
-              v-for="item in checklistItems"
-              :key="item.id"
-              v-model="item.done"
-              :label="item.label"
-            />
-          </div>
+          <ul class="mt-3 space-y-2">
+            <li v-for="item in checklistItems" :key="item.id">
+              <JCheckbox
+                v-model="item.done"
+                :label="item.label"
+              />
+            </li>
+          </ul>
         </JCard>
       </div>
     </div>
@@ -290,7 +291,6 @@ import {
   formatDateTime,
   formatMoney,
   formatPriorityLabel,
-  formatTicketCode,
   parseAmountToCents
 } from '~/utils/format'
 
@@ -389,12 +389,10 @@ let commentsSub: { unsubscribe: () => void } | null = null
 let attachmentsSub: { unsubscribe: () => void } | null = null
 let paymentsSub: { unsubscribe: () => void } | null = null
 
-const ticketCode = computed(() => formatTicketCode(ticketId))
-
 const breadcrumbs = ref<BreadcrumbItem[]>([
   { label: 'Dashboard', to: '/dashboard' },
   { label: 'Tickets', to: '/tickets' },
-  { label: ticketCode.value }
+  { label: 'Ticket' }
 ])
 
 watch(
@@ -403,7 +401,7 @@ watch(
     breadcrumbs.value = [
       { label: 'Dashboard', to: '/dashboard' },
       { label: 'Tickets', to: '/tickets' },
-      { label: title ? `${ticketCode.value} ${title}` : ticketCode.value }
+      { label: title || 'Ticket' }
     ]
 
     setBreadcrumbs(breadcrumbs.value)
@@ -559,7 +557,7 @@ const timelineItems = computed<TimelineItem[]>(() => {
       actor: {
         name: createdByLabel.value
       },
-      content: `${ticketCode.value} created`,
+      content: 'Ticket created',
       timestamp: ticket.value.createdAt
     })
   }
@@ -573,7 +571,7 @@ const timelineItems = computed<TimelineItem[]>(() => {
         actor: {
           name: userNameById.value.get(comment.authorUserId) ?? `User ${comment.authorUserId.slice(0, 8)}`
         },
-        content: `${ticketCode.value} moved from ${statusToLabel(statusEvent.from)} to ${statusToLabel(statusEvent.to)}`,
+        content: `Ticket moved from ${statusToLabel(statusEvent.from)} to ${statusToLabel(statusEvent.to)}`,
         timestamp: comment.createdAt
       })
       continue

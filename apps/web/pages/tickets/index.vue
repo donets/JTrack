@@ -1,54 +1,42 @@
 <template>
   <section class="space-y-5">
-    <JPageHeader
-      title="Tickets"
-      description="Data source: RxDB (offline-first)."
-      :breadcrumbs="breadcrumbs"
-    />
-
-    <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-      <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 sm:gap-3">
+    <section class="rounded-xl border border-slate-200 bg-white">
+      <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 px-3 py-3 sm:gap-3 sm:px-5">
         <div class="min-w-0 flex-1 sm:max-w-52">
-          <JSearchInput v-model="searchQuery" placeholder="Search tickets..." />
+          <JSearchInput v-model="searchQuery" placeholder="Search…" />
         </div>
 
-        <div class="w-32 shrink-0 sm:w-40">
-          <JSelect v-model="statusFilter" :options="statusOptions" />
+        <div class="w-28 shrink-0 sm:w-40">
+          <JListbox v-model="statusFilter" :options="statusOptions" />
         </div>
 
-        <JButton class="shrink-0 !px-3 sm:!px-4" size="sm" @click="openCreateModal">
+        <JButton class="shrink-0 !px-3 sm:!px-4" @click="openCreateModal">
           <span class="sm:hidden">+</span>
           <span class="hidden sm:inline">New Ticket</span>
         </JButton>
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <JSelect v-model="priorityFilter" :options="priorityOptions" />
-        <JSelect v-model="assigneeFilter" :options="assigneeOptions" />
-
-        <JSelect v-model="dateRangeFilter" :options="dateRangeOptions" />
-
-        <JSelect v-model="perPageModel" :options="perPageOptions" />
+      <div class="grid gap-3 px-3 pb-3 pt-3 sm:grid-cols-2 sm:px-5 lg:grid-cols-4">
+        <JListbox v-model="priorityFilter" :options="priorityOptions" />
+        <JListbox v-model="assigneeFilter" :options="assigneeOptions" />
+        <JListbox v-model="dateRangeFilter" :options="dateRangeOptions" />
+        <JListbox v-model="perPageModel" :options="perPageOptions" />
       </div>
 
-      <div class="text-xs text-slate-500">{{ totalTickets }} tickets</div>
+      <div class="px-3 pb-3 text-xs text-slate-500 sm:px-5">{{ totalTickets }} tickets</div>
     </section>
 
     <JTable
       :columns="columns"
       :rows="pageRows"
       :sortable="true"
+      :row-clickable="true"
       :sort-key="sortKey"
       :sort-direction="sortDirection"
       :empty-text="emptyText"
       @sort-change="onSortChange"
+      @row-click="onTableRowClick"
     >
-      <template #cell-ticketCode="{ row }">
-        <NuxtLink :to="`/tickets/${row.id}`" class="font-semibold text-ink hover:underline">
-          {{ row.ticketCode }}
-        </NuxtLink>
-      </template>
-
       <template #cell-title="{ row }">
         <NuxtLink :to="`/tickets/${row.id}`" class="font-medium text-ink hover:text-mint hover:underline">
           {{ row.title }}
@@ -160,13 +148,11 @@ import {
   formatDateTime,
   formatMoney,
   formatPriorityLabel,
-  formatTicketCode,
   parseAmountToCents
 } from '~/utils/format'
 
 interface TicketRow {
   id: string
-  ticketCode: string
   title: string
   status: TicketStatus
   priority: string | null
@@ -249,36 +235,35 @@ const createErrors = reactive({
 let ticketSubscription: { unsubscribe: () => void } | null = null
 
 const columns: TableColumn[] = [
-  { key: 'ticketCode', label: '#', width: '100px' },
   { key: 'title', label: 'Title', sortable: true },
   { key: 'status', label: 'Status', sortable: true, width: '130px' },
   { key: 'priority', label: 'Priority', sortable: true, width: '120px' },
   { key: 'assignedToUserId', label: 'Assigned', width: '200px' },
   { key: 'scheduledStartAt', label: 'Scheduled', width: '160px' },
   { key: 'totalAmountCents', label: 'Amount', align: 'right', width: '120px' },
-  { key: 'updatedAt', label: 'Updated', sortable: true, width: '170px' }
+  { key: 'updatedAt', label: 'Updated', sortable: true, width: '170px', hideClass: 'hidden lg:table-cell' }
 ]
 
 const statusOptions = [
-  { value: '', label: 'Status: All' },
-  ...STATUS_VALUES.map((status) => ({ value: status, label: `Status: ${statusToLabel(status)}` }))
+  { value: '', label: 'All' },
+  ...STATUS_VALUES.map((status) => ({ value: status, label: statusToLabel(status) }))
 ]
 
 const priorityOptions = [
-  { value: '', label: 'Priority: All' },
-  ...PRIORITY_VALUES.map((priority) => ({ value: priority, label: `Priority: ${formatPriorityLabel(priority)}` }))
+  { value: '', label: 'All' },
+  ...PRIORITY_VALUES.map((priority) => ({ value: priority, label: formatPriorityLabel(priority) }))
 ]
 
 const dateRangeOptions = [
-  { value: '', label: 'Date range: Any' },
-  { value: 'today', label: 'Date range: Today' },
-  { value: 'next7d', label: 'Date range: Next 7 days' },
-  { value: 'next30d', label: 'Date range: Next 30 days' }
+  { value: '', label: 'Any' },
+  { value: 'today', label: 'Today' },
+  { value: 'next7d', label: 'Next 7 days' },
+  { value: 'next30d', label: 'Next 30 days' }
 ]
 
 const perPageOptions = PER_PAGE_VALUES.map((value) => ({
   value: String(value),
-  label: `Rows: ${value}`
+  label: String(value)
 }))
 
 const createPriorityOptions = [
@@ -313,16 +298,16 @@ const sortedTeamMembers = computed(() =>
 
 const assigneeOptions = computed(() => {
   const options = [
-    { value: '', label: 'Assigned: Anyone' },
-    { value: 'unassigned', label: 'Assigned: Unassigned' }
+    { value: '', label: 'Anyone' },
+    { value: 'unassigned', label: 'Unassigned' }
   ]
 
   for (const member of sortedTeamMembers.value) {
-    options.push({ value: member.id, label: `Assigned: ${member.name}` })
+    options.push({ value: member.id, label: member.name })
   }
 
   if (authStore.user && !teamMembers.value.some((member) => member.id === authStore.user?.id)) {
-    options.push({ value: authStore.user.id, label: `Assigned: ${authStore.user.name}` })
+    options.push({ value: authStore.user.id, label: authStore.user.name })
   }
 
   return options
@@ -653,7 +638,6 @@ const paginatedTickets = computed(() => {
 const pageRows = computed<TicketRow[]>(() =>
   paginatedTickets.value.map((ticket) => ({
     id: ticket.id,
-    ticketCode: formatTicketCode(ticket.id),
     title: ticket.title,
     status: ticket.status,
     priority: ticket.priority,
@@ -740,6 +724,15 @@ const onSortChange = (payload: { key: string; direction: SortDirection }) => {
 
 const onPageChange = (nextPage: number) => {
   page.value = nextPage
+}
+
+const onTableRowClick = (row: Record<string, unknown>) => {
+  const ticketId = typeof row.id === 'string' ? row.id : ''
+  if (!ticketId) {
+    return
+  }
+
+  navigateTo(`/tickets/${ticketId}`)
 }
 
 const resetCreateErrors = () => {

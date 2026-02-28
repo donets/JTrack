@@ -17,8 +17,23 @@
               class="inline-flex items-center gap-1"
               @click="toggleSort(column.key)"
             >
-              <span>{{ column.label }}</span>
-              <span class="text-[10px] text-slate-500">{{ sortIcon(column.key) }}</span>
+              <span class="inline-flex items-center gap-1">
+                <span>{{ column.label }}</span>
+                <svg
+                  v-if="activeSortKey === column.key"
+                  class="h-3.5 w-3.5"
+                  :class="activeSortDirection === 'desc' ? 'rotate-180' : ''"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <span v-else class="h-3.5 w-3.5" />
+              </span>
             </button>
             <span v-else>{{ column.label }}</span>
           </th>
@@ -39,7 +54,12 @@
         </template>
 
         <template v-else-if="sortedRows.length > 0">
-          <tr v-for="row in sortedRows" :key="rowKey(row)" class="hover:bg-slate-50/60">
+          <tr
+            v-for="row in sortedRows"
+            :key="rowKey(row)"
+            :class="rowClasses"
+            @click="onRowClick($event, row)"
+          >
             <component
               :is="column.rowHeader ? 'th' : 'td'"
               v-for="column in columns"
@@ -84,18 +104,21 @@ const props = withDefaults(
     emptyText?: string
     sortKey?: string | null
     sortDirection?: SortDirection
+    rowClickable?: boolean
   }>(),
   {
     sortable: false,
     loading: false,
     emptyText: 'No data',
     sortKey: undefined,
-    sortDirection: undefined
+    sortDirection: undefined,
+    rowClickable: false
   }
 )
 
 const emit = defineEmits<{
   'sort-change': [payload: { key: string; direction: SortDirection }]
+  'row-click': [row: Record<string, any>]
 }>()
 
 const internalSortKey = ref<string | null>(null)
@@ -128,12 +151,21 @@ const toggleSort = (columnKey: string) => {
   emit('sort-change', { key: columnKey, direction: nextDirection })
 }
 
-const sortIcon = (columnKey: string) => {
-  if (activeSortKey.value !== columnKey) {
-    return '↕'
+const rowClasses = computed(() =>
+  props.rowClickable ? 'cursor-pointer transition-colors hover:bg-slate-50' : 'hover:bg-slate-50/60'
+)
+
+const onRowClick = (event: MouseEvent, row: Record<string, any>) => {
+  if (!props.rowClickable) {
+    return
   }
 
-  return activeSortDirection.value === 'asc' ? '↑' : '↓'
+  const target = event.target as HTMLElement | null
+  if (target?.closest('a,button,input,select,textarea,label,[role="button"],[role="link"],[data-row-click-ignore]')) {
+    return
+  }
+
+  emit('row-click', row)
 }
 
 const ariaSort = (column: TableColumn) => {
@@ -208,8 +240,23 @@ const alignClass = (align: TableColumn['align']) => {
 }
 
 const headerClasses = (column: TableColumn) =>
-  `px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600 ${alignClass(column.align)}`
+  [
+    canSortColumn(column)
+      ? 'cursor-pointer select-none px-3 py-3.5 text-left text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 sm:px-5'
+      : 'px-3 py-3.5 text-left text-sm font-medium text-slate-600 sm:px-5',
+    alignClass(column.align),
+    column.hideClass ?? ''
+  ]
+    .filter(Boolean)
+    .join(' ')
 
 const cellClasses = (column: TableColumn) =>
-  `px-4 py-3 ${alignClass(column.align)} ${column.rowHeader ? 'font-medium text-ink' : ''}`
+  [
+    'px-3 py-4 text-sm sm:px-5',
+    alignClass(column.align),
+    column.rowHeader ? 'font-medium text-slate-900' : '',
+    column.hideClass ?? ''
+  ]
+    .filter(Boolean)
+    .join(' ')
 </script>

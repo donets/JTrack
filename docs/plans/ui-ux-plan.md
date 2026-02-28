@@ -305,7 +305,7 @@ pnpm lint
 pnpm typecheck
 
 # Manual testing:
-# 1. Open http://localhost:3000, login with demo credentials
+# 1. Open http://localhost:3010, login with demo credentials
 # 2. Verify sidebar navigation (desktop expanded/collapsed, mobile drawer)
 # 3. Check responsive behavior at 375px, 768px, 1280px
 # 4. Test offline: disconnect network, verify sync dot turns orange, create ticket, reconnect
