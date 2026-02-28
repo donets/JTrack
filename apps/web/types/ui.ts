@@ -101,3 +101,12 @@ export type DispatchTechnician = {
 export type DispatchTimeGridNavEvent = {
   date: string
 }
+
+export type DispatchTimeGridContext = {
+  date: string
+  startHour: number
+  endHour: number
+  hourSlots: number[]
+  labelWidthPx: number
+  hourWidthPx: number
+}
