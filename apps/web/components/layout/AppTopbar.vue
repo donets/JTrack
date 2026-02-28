@@ -37,9 +37,7 @@
         </button>
       </div>
 
-      <span class="border-l border-slate-200" />
-
-      <div ref="locationRef" class="relative flex w-[180px] shrink-0 items-center justify-center">
+      <div ref="locationRef" class="relative flex w-[180px] shrink-0 items-center justify-center border-l border-r border-slate-200">
         <component
           :is="hasMultipleLocations ? 'button' : 'span'"
           :type="hasMultipleLocations ? 'button' : undefined"
@@ -54,7 +52,7 @@
         </component>
         <ul
           v-if="locationOpen"
-          class="absolute left-0 right-0 top-full z-40 rounded-b-md border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
+          class="absolute -left-px -right-px top-full z-40 border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
         >
           <li
             v-for="loc in locationStore.memberships"
@@ -67,8 +65,6 @@
           </li>
         </ul>
       </div>
-
-      <span class="border-l border-slate-200" />
 
       <div class="flex items-center px-3 md:px-5">
         <JDropdown :items="userMenuItems" align="right">
