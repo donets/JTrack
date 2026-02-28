@@ -13,7 +13,7 @@
       </li>
 
       <li class="h-full">
-        <button type="button" class="flex h-full w-full flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-500" @click="openMobileDrawer">
+        <button type="button" class="flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-500" @click="openMobileDrawer">
           <span class="text-base leading-none">⋯</span>
           <span>More</span>
         </button>
@@ -37,7 +37,7 @@ const isActiveRoute = (path: string) =>
   route.path === path || (path !== '/dashboard' && route.path.startsWith(`${path}/`))
 
 const linkClasses = (path: string) => [
-  'flex h-full w-full flex-col items-center justify-center gap-1 text-[10px] font-semibold',
+  'flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-semibold',
   isActiveRoute(path) ? 'text-mint' : 'text-slate-500'
 ]
 </script>

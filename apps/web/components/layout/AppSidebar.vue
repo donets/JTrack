@@ -66,7 +66,7 @@
   <Transition name="drawer-panel-transition">
     <aside
       v-if="mobileOpen"
-      class="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-ink md:hidden"
+      class="fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] flex-col bg-ink md:hidden"
       aria-label="Mobile navigation"
     >
       <div class="flex h-topbar items-center justify-between border-b border-slate-700 px-4">
