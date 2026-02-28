@@ -268,7 +268,7 @@ layouts/default.vue (CSS Grid)
 | 4 | JTR-67 | Create DispatchTimeGrid (done 2026-03-01) | 3pt |
 | 5 | JTR-68 | Create DispatchGanttRow (done 2026-03-01) | 4pt |
 | 6 | JTR-69 | Dispatch unassigned sidebar (done 2026-03-01) | 3pt |
-| 7 | JTR-70 | Rewrite dispatch board page | 5pt |
+| 7 | JTR-70 | Rewrite dispatch board page (done 2026-03-01) | 5pt |
 | 8 | JTR-71 | Ticket quick-assign modal (done 2026-03-01) | 2pt |
 
 ### Epic 7: Financial Views (10pt)
