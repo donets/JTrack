@@ -1,14 +1,17 @@
 <template>
   <section>
     <div class="rounded-xl border border-slate-200 bg-white">
-      <div class="flex items-center gap-3 border-b border-slate-100 px-5 py-3">
-        <div class="w-52 shrink-0">
+      <div class="flex items-center gap-2 border-b border-slate-100 px-3 py-3 sm:gap-3 sm:px-5">
+        <div class="min-w-0 flex-1 sm:w-52 sm:flex-none">
           <JSearchInput v-model="searchQuery" placeholder="Search…" />
         </div>
-        <div class="w-40 shrink-0">
+        <div class="hidden w-40 shrink-0 sm:block">
           <JListbox v-model="statusFilter" :options="statusOptions" placeholder="All statuses" />
         </div>
-        <JButton class="ml-auto" @click="createTicket">New Ticket</JButton>
+        <JButton class="ml-auto shrink-0 !px-3 sm:!px-4" @click="createTicket">
+          <span class="sm:hidden">+</span>
+          <span class="hidden sm:inline">New Ticket</span>
+        </JButton>
       </div>
       <table class="min-w-full divide-y divide-slate-200 text-base">
         <thead class="bg-slate-50">
