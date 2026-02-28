@@ -38,6 +38,9 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/': { prerender: true },
+    '/login': { prerender: true },
+    '/dashboard': { prerender: true },
+    '/locations': { prerender: true },
     '/**': { prerender: false }
   },
   pwa: {
