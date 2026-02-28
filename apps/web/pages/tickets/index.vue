@@ -20,8 +20,11 @@
         <JSelect v-model="priorityFilter" :options="priorityOptions" />
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <JSelect v-model="assigneeFilter" :options="assigneeOptions" />
+
+        <JDatePicker v-model="dateFromFilter" label="Date from" />
+        <JDatePicker v-model="dateToFilter" label="Date to" />
 
         <JSelect v-model="perPageModel" :options="perPageOptions" />
       </div>
@@ -71,7 +74,7 @@
       </template>
 
       <template #cell-totalAmountCents="{ row }">
-        <span>{{ formatAmount(row.totalAmountCents, row.currency) }}</span>
+        <span>{{ formatMoney(row.totalAmountCents, row.currency) }}</span>
       </template>
 
       <template #cell-updatedAt="{ value }">
@@ -87,7 +90,7 @@
     />
 
     <JModal v-model="createModalOpen" title="Create New Ticket" size="lg">
-      <form class="space-y-4" @submit.prevent="submitCreateTicket">
+      <form id="create-ticket-form" class="space-y-4" @submit.prevent="submitCreateTicket">
         <JInput
           v-model="createForm.title"
           label="Title *"
@@ -136,7 +139,7 @@
 
       <template #footer>
         <JButton variant="secondary" :disabled="createSubmitting" @click="closeCreateModal">Cancel</JButton>
-        <JButton :loading="createSubmitting" @click="submitCreateTicket">Create Ticket</JButton>
+        <JButton type="submit" form="create-ticket-form" :loading="createSubmitting">Create Ticket</JButton>
       </template>
     </JModal>
   </section>
@@ -151,6 +154,13 @@ import {
   statusToBadgeVariant,
   statusToLabel
 } from '~/utils/ticket-status'
+import {
+  formatDateTime,
+  formatMoney,
+  formatPriorityLabel,
+  formatTicketCode,
+  parseAmountToCents
+} from '~/utils/format'
 
 interface TicketRow {
   id: string
@@ -177,6 +187,7 @@ const SORT_KEYS = new Set<SortKey>(['title', 'status', 'priority', 'updatedAt'])
 const PER_PAGE_VALUES = [25, 50, 100] as const
 const STATUS_VALUES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
 const PRIORITY_VALUES = ['low', 'medium', 'high'] as const
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 const route = useRoute()
 const router = useRouter()
@@ -203,6 +214,8 @@ const searchQuery = ref('')
 const statusFilter = ref('')
 const priorityFilter = ref('')
 const assigneeFilter = ref('')
+const dateFromFilter = ref('')
+const dateToFilter = ref('')
 const perPage = ref<number>(25)
 const page = ref(1)
 const sortKey = ref<SortKey>('updatedAt')
@@ -397,6 +410,12 @@ const applyQuery = (query: LocationQuery) => {
     : ''
 
   assigneeFilter.value = queryValue(query.assignee)
+  const nextDateFrom = queryValue(query.dateFrom)
+  dateFromFilter.value = DATE_ONLY_PATTERN.test(nextDateFrom) ? nextDateFrom : ''
+
+  const nextDateTo = queryValue(query.dateTo)
+  dateToFilter.value = DATE_ONLY_PATTERN.test(nextDateTo) ? nextDateTo : ''
+
   searchQuery.value = queryValue(query.q)
 
   const nextSort = queryValue(query.sort)
@@ -424,6 +443,14 @@ const buildQuery = (): LocationQueryRaw => {
 
   if (assigneeFilter.value) {
     query.assignee = assigneeFilter.value
+  }
+
+  if (dateFromFilter.value) {
+    query.dateFrom = dateFromFilter.value
+  }
+
+  if (dateToFilter.value) {
+    query.dateTo = dateToFilter.value
   }
 
   const trimmedSearch = searchQuery.value.trim()
@@ -531,6 +558,37 @@ const filteredBySearch = computed(() => {
   })
 })
 
+const filteredByDate = computed(() => {
+  const hasFrom = DATE_ONLY_PATTERN.test(dateFromFilter.value)
+  const hasTo = DATE_ONLY_PATTERN.test(dateToFilter.value)
+
+  if (!hasFrom && !hasTo) {
+    return filteredBySearch.value
+  }
+
+  const fromMs = hasFrom ? new Date(`${dateFromFilter.value}T00:00:00`).getTime() : null
+  const toMs = hasTo ? new Date(`${dateToFilter.value}T23:59:59.999`).getTime() : null
+
+  return filteredBySearch.value.filter((ticket) => {
+    const targetDate = ticket.scheduledStartAt || ticket.updatedAt
+    const timestamp = new Date(targetDate).getTime()
+
+    if (Number.isNaN(timestamp)) {
+      return false
+    }
+
+    if (fromMs !== null && timestamp < fromMs) {
+      return false
+    }
+
+    if (toMs !== null && timestamp > toMs) {
+      return false
+    }
+
+    return true
+  })
+})
+
 const sortedTickets = computed(() => {
   const multiplier = sortDirection.value === 'asc' ? 1 : -1
 
@@ -551,7 +609,7 @@ const sortedTickets = computed(() => {
     return ticket.title.toLowerCase()
   }
 
-  return [...filteredBySearch.value].sort((left, right) => {
+  return [...filteredByDate.value].sort((left, right) => {
     const leftValue = normalize(left)
     const rightValue = normalize(right)
 
@@ -619,7 +677,7 @@ watch(
   { immediate: true }
 )
 
-watch([statusFilter, priorityFilter, assigneeFilter, searchQuery, perPage], () => {
+watch([statusFilter, priorityFilter, assigneeFilter, dateFromFilter, dateToFilter, searchQuery, perPage], () => {
   if (isApplyingRouteQuery.value) {
     return
   }
@@ -627,7 +685,9 @@ watch([statusFilter, priorityFilter, assigneeFilter, searchQuery, perPage], () =
   page.value = 1
 })
 
-watch([statusFilter, priorityFilter, assigneeFilter, searchQuery, sortKey, sortDirection, perPage, page], async () => {
+watch(
+  [statusFilter, priorityFilter, assigneeFilter, dateFromFilter, dateToFilter, searchQuery, sortKey, sortDirection, perPage, page],
+  async () => {
   if (isApplyingRouteQuery.value) {
     return
   }
@@ -637,10 +697,11 @@ watch([statusFilter, priorityFilter, assigneeFilter, searchQuery, sortKey, sortD
     return
   }
 
-  await router.replace({ query: nextQuery })
-})
+    await router.replace({ query: nextQuery })
+  }
+)
 
-watch([() => locationStore.activeLocationId, ticketSelector], subscribeToTickets, { immediate: true })
+watch(ticketSelector, subscribeToTickets, { immediate: true })
 watch([() => locationStore.activeLocationId, () => hasPrivilege('users.read')], loadTeamMembers, { immediate: true })
 
 watch([page, totalPages], () => {
@@ -689,22 +750,6 @@ const resetCreateForm = () => {
   createForm.currency = 'EUR'
 }
 
-const parseAmountToCents = (value: string): number | null => {
-  const normalized = value.trim().replace(',', '.')
-
-  if (!normalized) {
-    return null
-  }
-
-  const amount = Number.parseFloat(normalized)
-
-  if (!Number.isFinite(amount) || amount < 0) {
-    return Number.NaN
-  }
-
-  return Math.round(amount * 100)
-}
-
 const validateCreateForm = () => {
   resetCreateErrors()
 
@@ -749,6 +794,7 @@ const validateCreateForm = () => {
 }
 
 const openCreateModal = () => {
+  resetCreateForm()
   resetCreateErrors()
   createModalOpen.value = true
 }
@@ -806,49 +852,11 @@ const submitCreateTicket = async () => {
 
 const resolveAssigneeName = (assigneeId: string) => assigneeNameMap.value.get(assigneeId) ?? `User ${assigneeId.slice(0, 8)}`
 
-const formatTicketCode = (ticketId: string) => `#${ticketId.slice(0, 8).toUpperCase()}`
-
-const formatPriorityLabel = (priority: string | null) => {
-  const normalized = priority?.trim().toLowerCase()
-
-  if (!normalized) {
-    return 'None'
-  }
-
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1)
-}
-
-const formatDateTime = (value: string) => {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return '—'
-  }
-
-  return date.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  })
-}
-
 const formatScheduled = (value: string | null) => {
   if (!value) {
     return '—'
   }
 
   return formatDateTime(value)
-}
-
-const formatAmount = (amountCents: number | null, currency: string) => {
-  if (amountCents === null) {
-    return '—'
-  }
-
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: currency || 'EUR',
-    maximumFractionDigits: 0
-  }).format(amountCents / 100)
 }
 </script>

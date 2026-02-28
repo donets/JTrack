@@ -16,7 +16,7 @@
       </template>
     </JPageHeader>
 
-    <div class="grid grid-cols-3 gap-2 md:hidden">
+    <div class="grid grid-cols-3 gap-2 xl:hidden">
       <JButton size="sm" :disabled="!canStartJob || updatingStatus" @click="updateTicketStatus('InProgress')">
         Start Job
       </JButton>
@@ -62,9 +62,13 @@
           <div class="space-y-3 p-4">
             <button
               type="button"
-              class="w-full rounded-md border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500 hover:border-mint hover:text-ink"
+              class="w-full rounded-md border border-dashed px-4 py-6 text-center text-sm hover:border-mint hover:text-ink"
+              :class="isDragOver ? 'border-mint bg-mint-light text-ink' : 'border-slate-300 text-slate-500'"
+              aria-dropeffect="copy"
               :disabled="uploadingAttachment"
               @click="openFileDialog"
+              @dragenter.prevent="isDragOver = true"
+              @dragleave.prevent="isDragOver = false"
               @drop.prevent="onDropFiles"
               @dragover.prevent
             >
@@ -186,7 +190,7 @@
     <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
 
     <JModal v-model="editModalOpen" title="Edit Ticket" size="lg">
-      <form class="space-y-4" @submit.prevent="submitEditTicket">
+      <form id="edit-ticket-form" class="space-y-4" @submit.prevent="submitEditTicket">
         <JInput
           v-model="editForm.title"
           label="Title *"
@@ -235,12 +239,12 @@
 
       <template #footer>
         <JButton variant="secondary" :disabled="editSubmitting" @click="editModalOpen = false">Cancel</JButton>
-        <JButton :loading="editSubmitting" @click="submitEditTicket">Save</JButton>
+        <JButton type="submit" form="edit-ticket-form" :loading="editSubmitting">Save</JButton>
       </template>
     </JModal>
 
     <JModal v-model="paymentModalOpen" title="Record Payment" size="md">
-      <form class="space-y-4" @submit.prevent="submitPayment">
+      <form id="record-payment-form" class="space-y-4" @submit.prevent="submitPayment">
         <div class="rounded-md bg-mist p-3 text-sm">
           <p class="text-slate-600">Amount due</p>
           <p class="mt-1 text-xl font-semibold text-ink">{{ balanceAmountLabel }}</p>
@@ -263,7 +267,7 @@
 
       <template #footer>
         <JButton variant="secondary" :disabled="paymentSubmitting" @click="paymentModalOpen = false">Cancel</JButton>
-        <JButton :loading="paymentSubmitting" @click="submitPayment">Record Payment</JButton>
+        <JButton type="submit" form="record-payment-form" :loading="paymentSubmitting">Record Payment</JButton>
       </template>
     </JModal>
   </section>
@@ -281,6 +285,14 @@ import {
   statusToBadgeVariant,
   statusToLabel
 } from '~/utils/ticket-status'
+import {
+  formatAmountInput,
+  formatDateTime,
+  formatMoney,
+  formatPriorityLabel,
+  formatTicketCode,
+  parseAmountToCents
+} from '~/utils/format'
 
 interface LocationUser {
   id: string
@@ -288,15 +300,26 @@ interface LocationUser {
 }
 
 const ALL_STATUSES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
+const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  New: ['Scheduled', 'InProgress', 'Canceled'],
+  Scheduled: ['InProgress', 'Canceled'],
+  InProgress: ['Done', 'Canceled'],
+  Done: ['Invoiced', 'Canceled'],
+  Invoiced: ['Paid', 'Canceled'],
+  Paid: [],
+  Canceled: []
+}
+
 const TECHNICIAN_TRANSITIONS: Partial<Record<TicketStatus, TicketStatus[]>> = {
   New: ['InProgress'],
   Scheduled: ['InProgress'],
   InProgress: ['Done']
 }
 
+const STATUS_EVENT_PREFIX = '[status-change]'
+
 const route = useRoute()
 const config = useRuntimeConfig()
-const authStore = useAuthStore()
 const db = useRxdb()
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
@@ -314,19 +337,11 @@ const comments = ref<TicketComment[]>([])
 const attachments = ref<TicketAttachment[]>([])
 const payments = ref<PaymentRecord[]>([])
 const users = ref<LocationUser[]>([])
-const statusEvents = ref<
-  Array<{
-    id: string
-    from: TicketStatus
-    to: TicketStatus
-    timestamp: string
-    actorName: string
-  }>
->([])
 const commentBody = ref('')
 const submittingComment = ref(false)
 const uploadingAttachment = ref(false)
 const updatingStatus = ref(false)
+const isDragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const editModalOpen = ref(false)
 const editSubmitting = ref(false)
@@ -374,7 +389,7 @@ let commentsSub: { unsubscribe: () => void } | null = null
 let attachmentsSub: { unsubscribe: () => void } | null = null
 let paymentsSub: { unsubscribe: () => void } | null = null
 
-const ticketCode = computed(() => `#${ticketId.slice(0, 8).toUpperCase()}`)
+const ticketCode = computed(() => formatTicketCode(ticketId))
 
 const breadcrumbs = ref<BreadcrumbItem[]>([
   { label: 'Dashboard', to: '/dashboard' },
@@ -419,7 +434,7 @@ const currencyOptions = [
 ]
 
 const paymentProviderOptions = [
-  { value: 'manual', label: 'Manual' },
+  { value: 'manual', label: 'Cash / Card / Bank Transfer' },
   { value: 'stripe', label: 'Stripe' }
 ]
 
@@ -476,19 +491,40 @@ const balanceAmountLabel = computed(() => formatMoney(balanceAmountCents.value, 
 const completedChecklistCount = computed(() => checklistItems.filter((item) => item.done).length)
 
 const getAllowedTransitions = (current: TicketStatus) => {
+  const validForStatus = VALID_TRANSITIONS[current] ?? []
+
   if (activeRole.value === 'Owner') {
-    return ALL_STATUSES.filter((status) => status !== current)
+    return validForStatus
   }
 
   if (activeRole.value === 'Manager') {
-    return ALL_STATUSES.filter((status) => status !== current && status !== 'Paid')
+    return validForStatus.filter((status) => status !== 'Paid')
   }
 
   if (activeRole.value === 'Technician') {
-    return TECHNICIAN_TRANSITIONS[current] ?? []
+    const technicianTransitions = TECHNICIAN_TRANSITIONS[current] ?? []
+    return technicianTransitions.filter((status) => validForStatus.includes(status))
   }
 
   return []
+}
+
+const isTicketStatus = (value: string): value is TicketStatus =>
+  ALL_STATUSES.includes(value as TicketStatus)
+
+const parseStatusEventComment = (body: string) => {
+  if (!body.startsWith(STATUS_EVENT_PREFIX)) {
+    return null
+  }
+
+  const payload = body.slice(STATUS_EVENT_PREFIX.length).trim()
+  const [fromRaw, toRaw] = payload.split('->').map((part) => part.trim())
+
+  if (!fromRaw || !toRaw || !isTicketStatus(fromRaw) || !isTicketStatus(toRaw)) {
+    return null
+  }
+
+  return { from: fromRaw, to: toRaw }
 }
 
 const allowedNextStatuses = computed(() => {
@@ -528,19 +564,21 @@ const timelineItems = computed<TimelineItem[]>(() => {
     })
   }
 
-  for (const event of statusEvents.value) {
-    items.push({
-      id: event.id,
-      type: 'status_change',
-      actor: {
-        name: event.actorName
-      },
-      content: `${ticketCode.value} moved from ${statusToLabel(event.from)} to ${statusToLabel(event.to)}`,
-      timestamp: event.timestamp
-    })
-  }
-
   for (const comment of comments.value) {
+    const statusEvent = parseStatusEventComment(comment.body)
+    if (statusEvent) {
+      items.push({
+        id: `status-${comment.id}`,
+        type: 'status_change',
+        actor: {
+          name: userNameById.value.get(comment.authorUserId) ?? `User ${comment.authorUserId.slice(0, 8)}`
+        },
+        content: `${ticketCode.value} moved from ${statusToLabel(statusEvent.from)} to ${statusToLabel(statusEvent.to)}`,
+        timestamp: comment.createdAt
+      })
+      continue
+    }
+
     items.push({
       id: comment.id,
       type: 'comment',
@@ -589,7 +627,6 @@ const bindStreams = () => {
   commentsSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
   paymentsSub?.unsubscribe()
-  statusEvents.value = []
 
   if (!locationStore.activeLocationId) {
     ticket.value = null
@@ -701,16 +738,10 @@ const updateTicketStatus = async (status: TicketStatus) => {
       status
     })
 
-    statusEvents.value = [
-      {
-        id: `status-event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        from: currentStatus,
-        to: status,
-        timestamp: new Date().toISOString(),
-        actorName: authStore.user?.name ?? 'You'
-      },
-      ...statusEvents.value
-    ]
+    await repository.addComment({
+      ticketId: ticket.value.id,
+      body: `${STATUS_EVENT_PREFIX} ${currentStatus}->${status}`
+    })
 
     await syncStore.syncNow()
 
@@ -741,29 +772,6 @@ const resetEditErrors = () => {
 
 const resetPaymentErrors = () => {
   paymentErrors.amount = ''
-}
-
-const parseAmountToCents = (value: string): number | null => {
-  const normalized = value.trim().replace(',', '.')
-
-  if (!normalized) {
-    return null
-  }
-
-  const amount = Number.parseFloat(normalized)
-  if (!Number.isFinite(amount) || amount < 0) {
-    return Number.NaN
-  }
-
-  return Math.round(amount * 100)
-}
-
-const formatAmountInput = (amountCents: number | null) => {
-  if (amountCents === null) {
-    return ''
-  }
-
-  return (amountCents / 100).toFixed(2)
 }
 
 const openEditModal = () => {
@@ -991,6 +999,15 @@ const addComment = async () => {
 
     commentBody.value = ''
     await syncStore.syncNow()
+    toast.show({
+      type: 'success',
+      message: 'Comment added'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to add comment'
+    })
   } finally {
     submittingComment.value = false
   }
@@ -1001,12 +1018,20 @@ const openFileDialog = () => {
 }
 
 const uploadFile = async (file: File) => {
-  uploadingAttachment.value = true
-
   try {
+    uploadingAttachment.value = true
     const payload = await adapter.fromFile(file)
     await adapter.uploadAttachment(ticketId, payload)
     await syncStore.syncNow()
+    toast.show({
+      type: 'success',
+      message: `Uploaded ${file.name}`
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: `Failed to upload ${file.name}`
+    })
   } finally {
     uploadingAttachment.value = false
   }
@@ -1028,13 +1053,16 @@ const onWebFileSelected = async (event: Event) => {
 }
 
 const onDropFiles = async (event: DragEvent) => {
-  const file = event.dataTransfer?.files?.[0]
+  isDragOver.value = false
+  const files = Array.from(event.dataTransfer?.files ?? [])
 
-  if (!file) {
+  if (files.length === 0) {
     return
   }
 
-  await uploadFile(file)
+  for (const file of files) {
+    await uploadFile(file)
+  }
 }
 
 const capturePhoto = async () => {
@@ -1068,21 +1096,6 @@ const isImageAttachment = (attachment: TicketAttachment) =>
   Boolean(attachment.url) &&
   !attachment.storageKey.startsWith('pending/')
 
-const formatDateTime = (value: string) => {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return '—'
-  }
-
-  return date.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  })
-}
-
 const formatBytes = (size: number) => {
   if (size < 1024) {
     return `${size} B`
@@ -1095,18 +1108,6 @@ const formatBytes = (size: number) => {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`
 }
 
-const formatMoney = (amountCents: number | null, currency: string) => {
-  if (amountCents === null) {
-    return '—'
-  }
-
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: currency || 'EUR',
-    maximumFractionDigits: 0
-  }).format(amountCents / 100)
-}
-
 const providerLabel = (provider: string) => {
   if (provider === 'stripe') {
     return 'Stripe'
@@ -1117,15 +1118,5 @@ const providerLabel = (provider: string) => {
   }
 
   return provider
-}
-
-const formatPriorityLabel = (priority: string | null) => {
-  const normalized = priority?.trim().toLowerCase()
-
-  if (!normalized) {
-    return 'None'
-  }
-
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 </script>

@@ -164,6 +164,10 @@ const normalizeSortValue = (value: unknown) => {
 
 const sortedRows = computed(() => {
   const list = [...props.rows]
+  if (usesControlledSorting.value) {
+    return list
+  }
+
   if (!activeSortKey.value) {
     return list
   }
