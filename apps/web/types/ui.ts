@@ -71,6 +71,12 @@ export type QuickAssignPayload = {
   scheduledEndAt: string
 }
 
+export type QuickAssignTechnicianOption = {
+  id: string
+  name: string
+  jobCount?: number
+}
+
 export type DispatchScheduledJob = {
   id: string
   title: string
