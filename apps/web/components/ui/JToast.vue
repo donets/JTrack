@@ -21,7 +21,7 @@
         >
           <p class="flex-1 pr-2 text-sm">{{ toast.message }}</p>
           <button
-            class="inline-flex h-5 w-5 items-center justify-center rounded text-[12px] leading-none hover:bg-black/5"
+            class="inline-flex h-7 w-7 items-center justify-center rounded text-[12px] leading-none hover:bg-black/5"
             type="button"
             aria-label="Dismiss notification"
             @click="dismiss(toast.id)"

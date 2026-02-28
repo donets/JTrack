@@ -1,9 +1,9 @@
 <template>
   <section v-if="ticket">
-    <div class="flex flex-col gap-6 lg:flex-row">
+    <div class="flex flex-col gap-6 md:flex-row">
       <!-- Left column — main content -->
       <div class="min-w-0 flex-[3] space-y-6">
-        <div class="rounded-lg border border-slate-200 bg-white px-5 py-4">
+        <div class="rounded-lg border border-slate-200 bg-white px-3 py-3 sm:px-5 sm:py-4">
           <div class="mb-3 flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
               <input
@@ -57,23 +57,23 @@
 
         <!-- Activity / Comments -->
         <div class="rounded-lg border border-slate-200 bg-white">
-          <form class="flex items-start gap-3 border-b border-slate-100 px-5 py-4" @submit.prevent="addComment">
-            <JAvatar :name="currentUserName" size="md" class="mt-[1px] shrink-0" />
-            <div class="flex-1" @keydown.enter.exact.prevent="submitComment">
+          <form class="flex items-start gap-2 border-b border-slate-100 px-3 py-3 sm:gap-3 sm:px-5 sm:py-4" @submit.prevent="addComment">
+            <JAvatar :name="currentUserName" size="md" class="mt-[1px] hidden shrink-0 sm:block" />
+            <div class="min-w-0 flex-1" @keydown.enter.exact.prevent="submitComment">
               <JTextarea
                 v-model="commentBody"
                 placeholder="Leave a comment…"
                 :rows="1"
               />
             </div>
-            <div class="mt-[1px] flex shrink-0 items-center gap-2.5">
+            <div class="mt-[1px] flex shrink-0 items-center gap-1.5 sm:gap-2.5">
               <JButton type="submit" :disabled="!commentBody.trim()">Send</JButton>
-              <button type="button" class="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600" title="Upload file" @click="openFileDialog">
+              <button type="button" class="hidden rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 sm:block" title="Upload file" @click="openFileDialog">
                 <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
               </button>
-              <button type="button" class="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600" title="Capture photo" @click="capturePhoto">
+              <button type="button" class="hidden rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 sm:block" title="Capture photo" @click="capturePhoto">
                 <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
@@ -86,7 +86,7 @@
             <article
               v-for="comment in comments"
               :key="comment.id"
-              class="flex gap-3 px-5 py-4"
+              class="flex gap-2 px-3 py-3 sm:gap-3 sm:px-5 sm:py-4"
             >
               <JAvatar :name="comment.userId ?? 'User'" size="md" class="mt-0.5 shrink-0" />
               <div class="min-w-0 flex-1">
@@ -106,7 +106,7 @@
       </div>
 
       <!-- Right column — sidebar -->
-      <div class="w-full space-y-6 lg:max-w-[320px]">
+      <div class="w-full space-y-6 md:max-w-[280px] lg:max-w-[320px]">
         <!-- Details -->
         <JCard title="Details">
           <dl class="space-y-4">

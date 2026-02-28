@@ -56,7 +56,7 @@
           <li
             v-for="loc in locationStore.memberships"
             :key="loc.id"
-            class="cursor-pointer px-4 py-2 text-sm hover:bg-slate-50"
+            class="cursor-pointer px-4 py-2.5 text-sm hover:bg-slate-50"
             :class="loc.id === locationStore.activeLocationId ? 'font-medium text-ink' : 'text-slate-600'"
             @click="switchLocation(loc.id); locationOpen = false"
           >
@@ -80,19 +80,19 @@
           class="absolute right-0 top-full z-40 min-w-[160px] border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
         >
           <li
-            class="cursor-pointer px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+            class="cursor-pointer px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
             @click="userOpen = false; navigateTo('/settings')"
           >
             Profile
           </li>
           <li
-            class="cursor-pointer px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+            class="cursor-pointer px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
             @click="userOpen = false; navigateTo('/locations')"
           >
             Locations
           </li>
           <li
-            class="cursor-pointer px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
+            class="cursor-pointer px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50"
             @click="userOpen = false; logout()"
           >
             Logout

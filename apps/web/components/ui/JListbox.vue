@@ -120,7 +120,7 @@ function optionId(index: number) {
 
 function optionClasses(option: ListboxOption, index: number) {
   return [
-    'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
+    'flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm',
     'focus:outline-none',
     activeIndex.value === index ? 'bg-slate-100' : 'hover:bg-slate-50',
     option.value === props.modelValue ? 'font-medium' : ''

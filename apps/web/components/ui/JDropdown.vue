@@ -62,7 +62,7 @@ const dropdownId = useId()
 const menuId = computed(() => `j-dropdown-${dropdownId}`)
 
 const menuClasses = computed(() => [
-  'absolute z-40 mt-2 min-w-[180px] overflow-hidden rounded-md border border-slate-200 bg-white py-1 shadow-lg',
+  'absolute z-40 mt-2 min-w-[180px] max-h-[60vh] overflow-y-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg',
   props.align === 'right' ? 'right-0' : 'left-0'
 ])
 
@@ -202,7 +202,7 @@ watch(
 )
 
 const itemClasses = (item: DropdownItem, index: number) => [
-  'flex w-full items-center gap-2 px-3 py-2 text-sm',
+  'flex w-full items-center gap-2 px-3 py-2.5 text-sm',
   'focus:outline-none',
   activeIndex.value === index ? 'bg-slate-100 text-ink' : 'text-slate-700 hover:bg-slate-50',
   item.variant === 'danger' ? 'text-rose-700 hover:bg-rose-50' : ''
