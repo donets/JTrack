@@ -4,23 +4,26 @@
       title="Tickets"
       description="Data source: RxDB (offline-first)."
       :breadcrumbs="breadcrumbs"
-    >
-      <template #actions>
-        <JButton size="sm" @click="openCreateModal">+ New Ticket</JButton>
-      </template>
-    </JPageHeader>
+    />
 
     <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-      <div class="grid gap-3 lg:grid-cols-4">
-        <div class="lg:col-span-2">
+      <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 sm:gap-3">
+        <div class="min-w-0 flex-1 sm:max-w-52">
           <JSearchInput v-model="searchQuery" placeholder="Search tickets..." />
         </div>
 
-        <JSelect v-model="statusFilter" :options="statusOptions" />
-        <JSelect v-model="priorityFilter" :options="priorityOptions" />
+        <div class="w-32 shrink-0 sm:w-40">
+          <JSelect v-model="statusFilter" :options="statusOptions" />
+        </div>
+
+        <JButton class="shrink-0 !px-3 sm:!px-4" size="sm" @click="openCreateModal">
+          <span class="sm:hidden">+</span>
+          <span class="hidden sm:inline">New Ticket</span>
+        </JButton>
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <JSelect v-model="priorityFilter" :options="priorityOptions" />
         <JSelect v-model="assigneeFilter" :options="assigneeOptions" />
 
         <JSelect v-model="dateRangeFilter" :options="dateRangeOptions" />

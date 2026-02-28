@@ -16,7 +16,7 @@
       </template>
     </JPageHeader>
 
-    <div class="grid grid-cols-3 gap-2 xl:hidden">
+    <div class="grid grid-cols-3 gap-2 md:hidden">
       <JButton size="sm" :disabled="!canStartJob || updatingStatus" @click="updateTicketStatus('InProgress')">
         Start Job
       </JButton>
@@ -24,8 +24,8 @@
       <JButton size="sm" variant="secondary">Call</JButton>
     </div>
 
-    <div class="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(260px,1fr)]">
-      <div class="space-y-4">
+    <div class="flex flex-col gap-6 md:flex-row">
+      <div class="min-w-0 flex-[3] space-y-6">
         <JCard title="Description">
           <p class="text-sm text-ink-light">
             {{ ticket.description || 'No description provided.' }}
@@ -105,7 +105,7 @@
         </JCard>
       </div>
 
-      <div class="space-y-4">
+      <div class="w-full space-y-4 md:max-w-[300px] lg:max-w-[320px]">
         <JCard title="Details">
           <dl class="space-y-3 text-sm">
             <div class="flex items-center justify-between gap-3">
@@ -321,7 +321,6 @@ const STATUS_EVENT_PREFIX = '[status-change]'
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
-const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
@@ -401,7 +400,7 @@ const breadcrumbs = ref<BreadcrumbItem[]>([
 watch(
   () => ticket.value?.title,
   (title) => {
-    const items: BreadcrumbItem[] = [
+    breadcrumbs.value = [
       { label: 'Dashboard', to: '/dashboard' },
       { label: 'Tickets', to: '/tickets' },
       { label: title ? `${ticketCode.value} ${title}` : ticketCode.value }
