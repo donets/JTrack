@@ -1,0 +1,29 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+      target: base
+    command: >
+      sh -lc "corepack enable &&
+      corepack prepare pnpm@9.12.0 --activate &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @jtrack/shared build &&
+      pnpm --filter @jtrack/web exec nuxt dev --host 0.0.0.0 --port 3010"
+    environment:
+      NODE_ENV: development
+      NUXT_PUBLIC_API_BASE: http://localhost:3011
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "200"
+    volumes:
+      - ..:/app
+      - web_node_modules:/app/node_modules
+      - web_app_node_modules:/app/apps/web/node_modules
+      - shared_node_modules:/app/packages/shared/node_modules
+      - pnpm_store:/pnpm/store
+
+volumes:
+  web_node_modules:
+  web_app_node_modules:
+  shared_node_modules:
+  pnpm_store:

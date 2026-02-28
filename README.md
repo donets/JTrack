@@ -40,8 +40,21 @@ Migration naming:
 - explicit: `pnpm db:migrate -- --name your_migration_name`
 
 Default services:
-- Web: `http://localhost:3000`
-- API: `http://localhost:3001`
+- Web: `http://localhost:3010`
+- API: `http://localhost:3011`
+- Postgres: `localhost:5433`
+
+### Docker HMR Mode (Web)
+
+Default `docker-compose.yml` runs production-like web runtime (`nuxt build` output), so UI changes require image rebuild.
+
+For frontend development with HMR, start compose with the dev override:
+
+```bash
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d
+```
+
+This switches only `web` service to `nuxt dev` with source bind-mounts and file polling, so Vue/Nuxt changes hot-reload without `--build`.
 
 Demo credentials:
 - Owner user: `owner@demo.local` / `password123`

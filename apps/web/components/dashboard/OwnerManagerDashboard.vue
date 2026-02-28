@@ -120,7 +120,6 @@ import type { TableColumn } from '~/types/ui'
 const { ownerManager, usersLoading } = useDashboardStats()
 
 const unassignedColumns: TableColumn[] = [
-  { key: 'ticket', label: 'Ticket' },
   { key: 'title', label: 'Title' },
   { key: 'priority', label: 'Priority' },
   { key: 'created', label: 'Created' },
@@ -130,7 +129,6 @@ const unassignedColumns: TableColumn[] = [
 const unassignedRows = computed(() =>
   ownerManager.value.unassignedTickets.map((ticket) => ({
     id: ticket.id,
-    ticket: ticket.ticketCode,
     title: ticket.title,
     priorityLabel: ticket.priorityLabel,
     priorityVariant: ticket.priorityVariant,
