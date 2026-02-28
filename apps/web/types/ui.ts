@@ -82,7 +82,7 @@ export type QuickAssignTechnicianOption = {
 export type DispatchScheduledJob = {
   id: string
   title: string
-  status: string
+  status: TicketStatus
   priority: string | null
   ticketCode?: string
   assignedToUserId: string | null
@@ -109,4 +109,15 @@ export type DispatchTimeGridContext = {
   hourSlots: number[]
   labelWidthPx: number
   hourWidthPx: number
+}
+
+export type DispatchGanttRowDropPayload = {
+  ticketId: string
+  technicianId: string
+  scheduledStartAt: string
+  scheduledEndAt: string
+}
+
+export type DispatchGanttRowOpenPayload = {
+  ticketId: string
 }
