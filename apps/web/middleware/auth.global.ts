@@ -40,7 +40,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (!locationStore.loaded) {
     locationStore.restoreActiveLocation()
-    await locationStore.loadLocations()
+
+    try {
+      await locationStore.loadLocations()
+    } catch (error) {
+      console.warn('[auth] failed to load locations in route middleware', error)
+      authStore.clearState()
+      locationStore.clear()
+
+      return navigateTo({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+    }
   }
 
   const locationOptionalRoute = to.path === '/locations'

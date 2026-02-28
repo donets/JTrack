@@ -10,8 +10,8 @@
       </template>
     </JPageHeader>
 
-    <OwnerManagerDashboard v-if="activeRole === 'Owner' || activeRole === 'Manager'" />
-    <TechnicianDashboard v-else-if="activeRole === 'Technician'" />
+    <OwnerManagerDashboard v-if="hasLocationContext && (activeRole === 'Owner' || activeRole === 'Manager')" />
+    <TechnicianDashboard v-else-if="hasLocationContext && activeRole === 'Technician'" />
 
     <JEmptyState
       v-else
@@ -26,8 +26,11 @@
 import { computed, watchEffect } from 'vue'
 import type { BreadcrumbItem } from '~/types/ui'
 
+const locationStore = useLocationStore()
 const { activeRole } = useRbacGuard()
 const { setBreadcrumbs } = useBreadcrumbs()
+
+const hasLocationContext = computed(() => Boolean(locationStore.activeLocationId))
 
 const pageTitle = computed(() => (activeRole.value === 'Technician' ? 'My Day' : 'Dashboard'))
 const pageDescription = computed(() =>
