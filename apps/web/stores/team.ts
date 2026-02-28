@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import type {
   InviteResponse,
   RoleKey,
-  UpdateUserInput,
   User,
   UserLocationStatus
 } from '@jtrack/shared'
@@ -106,10 +105,8 @@ export const useTeamStore = defineStore('team', {
 
       this.error = null
 
-      const input: UpdateUserInput = payload
-
       try {
-        await api.patch<User, UpdateUserInput>(`/users/${userId}`, input)
+        await api.patch<User, UpdateMemberAccessPayload>(`/users/${userId}`, payload)
         await this.fetchMembers()
       } catch (error: unknown) {
         this.error = getErrorMessage(error, 'Failed to update member access')

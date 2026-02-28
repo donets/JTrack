@@ -227,12 +227,12 @@ layouts/default.vue (CSS Grid)
 ### Epic 3: Ticket Views Enhancement (20pt)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
-| 1 | JTR-48 | Refactor ticket list (JTable + filters) | 5pt |
-| 2 | JTR-49 | Ticket creation modal | 3pt |
-| 3 | JTR-50 | Ticket detail two-column layout | 5pt |
-| 4 | JTR-51 | Ticket status change workflow | 3pt |
-| 5 | JTR-52 | Ticket edit modal + financial card | 3pt |
-| 6 | JTR-53 | Ticket status badge mapping utility | 1pt |
+| 1 | JTR-48 | Refactor ticket list (JTable + filters) (done 2026-02-27) | 5pt |
+| 2 | JTR-49 | Ticket creation modal (done 2026-02-27) | 3pt |
+| 3 | JTR-50 | Ticket detail two-column layout (done 2026-02-27) | 5pt |
+| 4 | JTR-51 | Ticket status change workflow (done 2026-02-27) | 3pt |
+| 5 | JTR-52 | Ticket edit modal + financial card (done 2026-02-27) | 3pt |
+| 6 | JTR-53 | Ticket status badge mapping utility (done 2026-02-27) | 1pt |
 
 ### Epic 4: Dashboard (11pt)
 | # | Linear | Task | Est |

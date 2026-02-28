@@ -82,11 +82,15 @@ const props = withDefaults(
     sortable?: boolean
     loading?: boolean
     emptyText?: string
+    sortKey?: string | null
+    sortDirection?: SortDirection
   }>(),
   {
     sortable: false,
     loading: false,
-    emptyText: 'No data'
+    emptyText: 'No data',
+    sortKey: undefined,
+    sortDirection: undefined
   }
 )
 
@@ -94,30 +98,42 @@ const emit = defineEmits<{
   'sort-change': [payload: { key: string; direction: SortDirection }]
 }>()
 
-const sortKey = ref<string | null>(null)
-const sortDirection = ref<SortDirection>('asc')
+const internalSortKey = ref<string | null>(null)
+const internalSortDirection = ref<SortDirection>('asc')
 
 const skeletonRows = 5
+const usesControlledSorting = computed(() => props.sortKey !== undefined)
+
+const activeSortKey = computed(() =>
+  usesControlledSorting.value ? (props.sortKey ?? null) : internalSortKey.value
+)
+
+const activeSortDirection = computed<SortDirection>(() =>
+  usesControlledSorting.value ? (props.sortDirection ?? 'asc') : internalSortDirection.value
+)
 
 const canSortColumn = (column: TableColumn) => props.sortable && Boolean(column.sortable)
 
 const toggleSort = (columnKey: string) => {
-  if (sortKey.value === columnKey) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortKey.value = columnKey
-    sortDirection.value = 'asc'
+  const currentKey = activeSortKey.value
+  const currentDirection = activeSortDirection.value
+  const nextDirection: SortDirection =
+    currentKey === columnKey ? (currentDirection === 'asc' ? 'desc' : 'asc') : 'asc'
+
+  if (!usesControlledSorting.value) {
+    internalSortKey.value = columnKey
+    internalSortDirection.value = nextDirection
   }
 
-  emit('sort-change', { key: columnKey, direction: sortDirection.value })
+  emit('sort-change', { key: columnKey, direction: nextDirection })
 }
 
 const sortIcon = (columnKey: string) => {
-  if (sortKey.value !== columnKey) {
+  if (activeSortKey.value !== columnKey) {
     return '↕'
   }
 
-  return sortDirection.value === 'asc' ? '↑' : '↓'
+  return activeSortDirection.value === 'asc' ? '↑' : '↓'
 }
 
 const ariaSort = (column: TableColumn) => {
@@ -125,11 +141,11 @@ const ariaSort = (column: TableColumn) => {
     return undefined
   }
 
-  if (sortKey.value !== column.key) {
+  if (activeSortKey.value !== column.key) {
     return 'none'
   }
 
-  return sortDirection.value === 'asc' ? 'ascending' : 'descending'
+  return activeSortDirection.value === 'asc' ? 'ascending' : 'descending'
 }
 
 const normalizeSortValue = (value: unknown) => {
@@ -150,12 +166,16 @@ const normalizeSortValue = (value: unknown) => {
 
 const sortedRows = computed(() => {
   const list = [...props.rows]
-  if (!sortKey.value) {
+  if (usesControlledSorting.value) {
     return list
   }
 
-  const key = sortKey.value
-  const multiplier = sortDirection.value === 'asc' ? 1 : -1
+  if (!activeSortKey.value) {
+    return list
+  }
+
+  const key = activeSortKey.value
+  const multiplier = activeSortDirection.value === 'asc' ? 1 : -1
 
   return list.sort((left, right) => {
     const leftValue = normalizeSortValue(left[key])
