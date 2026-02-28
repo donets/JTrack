@@ -66,19 +66,42 @@
         </ul>
       </div>
 
-      <div class="flex items-center px-3 md:px-5">
-        <JDropdown :items="userMenuItems" align="right">
-          <template #trigger>
-            <button
-              type="button"
-              class="inline-flex items-center gap-2 rounded-md p-1 hover:bg-mist"
-              aria-label="Open account menu"
-            >
-              <JAvatar size="md" :name="userName" />
-              <span class="hidden max-w-[140px] truncate text-sm font-medium text-slate-700 lg:inline">{{ userName }}</span>
-            </button>
-          </template>
-        </JDropdown>
+      <div ref="userRef" class="relative flex items-center px-4">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 text-sm text-slate-700 hover:text-ink"
+          aria-label="Open account menu"
+          @click="userOpen = !userOpen"
+        >
+          <JAvatar size="md" :name="userName" />
+          <span class="hidden max-w-[140px] truncate font-medium lg:inline">{{ userName }}</span>
+          <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+          </svg>
+        </button>
+        <ul
+          v-if="userOpen"
+          class="absolute -left-px -right-px top-full z-40 border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
+        >
+          <li
+            class="cursor-pointer px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+            @click="userOpen = false; navigateTo('/settings')"
+          >
+            Profile
+          </li>
+          <li
+            class="cursor-pointer px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+            @click="userOpen = false; navigateTo('/locations')"
+          >
+            Locations
+          </li>
+          <li
+            class="cursor-pointer px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
+            @click="userOpen = false; logout()"
+          >
+            Logout
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -90,7 +113,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import type { DropdownItem } from '~/types/ui'
 import { destroyDatabase } from '~/plugins/rxdb.client'
 
 const route = useRoute()
@@ -126,10 +148,16 @@ const hasMultipleLocations = computed(() => locationStore.memberships.length > 1
 
 const locationOpen = ref(false)
 const locationRef = ref<HTMLElement | null>(null)
+const userOpen = ref(false)
+const userRef = ref<HTMLElement | null>(null)
 
-const onClickOutsideLocation = (e: MouseEvent) => {
-  if (locationOpen.value && locationRef.value && !locationRef.value.contains(e.target as Node)) {
+const onClickOutsideDropdowns = (e: MouseEvent) => {
+  const target = e.target as Node
+  if (locationOpen.value && locationRef.value && !locationRef.value.contains(target)) {
     locationOpen.value = false
+  }
+  if (userOpen.value && userRef.value && !userRef.value.contains(target)) {
+    userOpen.value = false
   }
 }
 
@@ -198,29 +226,6 @@ const logout = async () => {
 }
 
 
-const userMenuItems = computed<DropdownItem[]>(() => [
-  {
-    label: 'Profile',
-    icon: '👤',
-    action: async () => {
-      await navigateTo('/settings')
-    }
-  },
-  {
-    label: 'Locations',
-    icon: '📍',
-    action: async () => {
-      await navigateTo('/locations')
-    }
-  },
-  {
-    label: 'Logout',
-    icon: '↩',
-    variant: 'danger',
-    action: logout
-  }
-])
-
 const setOnlineStatus = () => {
   isOnline.value = import.meta.client ? navigator.onLine : true
 }
@@ -233,7 +238,7 @@ onMounted(() => {
     }, 15_000)
     window.addEventListener('online', setOnlineStatus)
     window.addEventListener('offline', setOnlineStatus)
-    document.addEventListener('mousedown', onClickOutsideLocation)
+    document.addEventListener('mousedown', onClickOutsideDropdowns)
   }
 })
 
@@ -245,7 +250,7 @@ onUnmounted(() => {
     }
     window.removeEventListener('online', setOnlineStatus)
     window.removeEventListener('offline', setOnlineStatus)
-    document.removeEventListener('mousedown', onClickOutsideLocation)
+    document.removeEventListener('mousedown', onClickOutsideDropdowns)
   }
 })
 </script>
