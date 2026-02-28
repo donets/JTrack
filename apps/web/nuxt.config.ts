@@ -3,6 +3,9 @@ import { defineNuxtConfig } from 'nuxt/config'
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',
   ssr: false,
+  experimental: {
+    payloadExtraction: false
+  },
   modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss', '@vite-pwa/nuxt'],
   components: [
     {
@@ -35,8 +38,6 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/': { prerender: true },
-    '/login': { prerender: true },
-    '/dashboard': { prerender: true },
     '/**': { prerender: false }
   },
   pwa: {
