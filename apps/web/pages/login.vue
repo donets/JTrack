@@ -101,6 +101,10 @@ const resolveRedirectTarget = () => {
     return '/dashboard'
   }
 
+  if (redirectRaw === '/login' || redirectRaw.startsWith('/login?')) {
+    return '/dashboard'
+  }
+
   return redirectRaw
 }
 
@@ -111,7 +115,9 @@ const submit = async () => {
 
   try {
     await authStore.login(email.value, password.value)
-    await locationStore.loadLocations()
+    void locationStore.loadLocations().catch((loadError) => {
+      console.warn('[auth] failed to prefetch locations after login', loadError)
+    })
     await navigateTo(resolveRedirectTarget())
   } catch (err: any) {
     error.value = err?.data?.message ?? 'Unable to sign in'
