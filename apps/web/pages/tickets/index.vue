@@ -20,11 +20,10 @@
         <JSelect v-model="priorityFilter" :options="priorityOptions" />
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <JSelect v-model="assigneeFilter" :options="assigneeOptions" />
 
-        <JDatePicker v-model="dateFromFilter" label="Date from" />
-        <JDatePicker v-model="dateToFilter" label="Date to" />
+        <JSelect v-model="dateRangeFilter" :options="dateRangeOptions" />
 
         <JSelect v-model="perPageModel" :options="perPageOptions" />
       </div>
@@ -182,12 +181,13 @@ interface TeamMember {
 
 type SortDirection = 'asc' | 'desc'
 type SortKey = 'title' | 'status' | 'priority' | 'updatedAt'
+type DateRangeValue = '' | 'today' | 'next7d' | 'next30d'
 
 const SORT_KEYS = new Set<SortKey>(['title', 'status', 'priority', 'updatedAt'])
 const PER_PAGE_VALUES = [25, 50, 100] as const
 const STATUS_VALUES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
 const PRIORITY_VALUES = ['low', 'medium', 'high'] as const
-const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const DATE_RANGE_VALUES: DateRangeValue[] = ['', 'today', 'next7d', 'next30d']
 
 const route = useRoute()
 const router = useRouter()
@@ -214,8 +214,7 @@ const searchQuery = ref('')
 const statusFilter = ref('')
 const priorityFilter = ref('')
 const assigneeFilter = ref('')
-const dateFromFilter = ref('')
-const dateToFilter = ref('')
+const dateRangeFilter = ref<DateRangeValue>('')
 const perPage = ref<number>(25)
 const page = ref(1)
 const sortKey = ref<SortKey>('updatedAt')
@@ -265,6 +264,13 @@ const statusOptions = [
 const priorityOptions = [
   { value: '', label: 'Priority: All' },
   ...PRIORITY_VALUES.map((priority) => ({ value: priority, label: `Priority: ${formatPriorityLabel(priority)}` }))
+]
+
+const dateRangeOptions = [
+  { value: '', label: 'Date range: Any' },
+  { value: 'today', label: 'Date range: Today' },
+  { value: 'next7d', label: 'Date range: Next 7 days' },
+  { value: 'next30d', label: 'Date range: Next 30 days' }
 ]
 
 const perPageOptions = PER_PAGE_VALUES.map((value) => ({
@@ -410,11 +416,10 @@ const applyQuery = (query: LocationQuery) => {
     : ''
 
   assigneeFilter.value = queryValue(query.assignee)
-  const nextDateFrom = queryValue(query.dateFrom)
-  dateFromFilter.value = DATE_ONLY_PATTERN.test(nextDateFrom) ? nextDateFrom : ''
-
-  const nextDateTo = queryValue(query.dateTo)
-  dateToFilter.value = DATE_ONLY_PATTERN.test(nextDateTo) ? nextDateTo : ''
+  const nextDateRange = queryValue(query.dateRange)
+  dateRangeFilter.value = DATE_RANGE_VALUES.includes(nextDateRange as DateRangeValue)
+    ? (nextDateRange as DateRangeValue)
+    : ''
 
   searchQuery.value = queryValue(query.q)
 
@@ -445,12 +450,8 @@ const buildQuery = (): LocationQueryRaw => {
     query.assignee = assigneeFilter.value
   }
 
-  if (dateFromFilter.value) {
-    query.dateFrom = dateFromFilter.value
-  }
-
-  if (dateToFilter.value) {
-    query.dateTo = dateToFilter.value
+  if (dateRangeFilter.value) {
+    query.dateRange = dateRangeFilter.value
   }
 
   const trimmedSearch = searchQuery.value.trim()
@@ -559,15 +560,17 @@ const filteredBySearch = computed(() => {
 })
 
 const filteredByDate = computed(() => {
-  const hasFrom = DATE_ONLY_PATTERN.test(dateFromFilter.value)
-  const hasTo = DATE_ONLY_PATTERN.test(dateToFilter.value)
-
-  if (!hasFrom && !hasTo) {
+  if (!dateRangeFilter.value) {
     return filteredBySearch.value
   }
 
-  const fromMs = hasFrom ? new Date(`${dateFromFilter.value}T00:00:00`).getTime() : null
-  const toMs = hasTo ? new Date(`${dateToFilter.value}T23:59:59.999`).getTime() : null
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+
+  const startMs = startOfToday.getTime()
+  const endOfTodayMs = startMs + 24 * 60 * 60 * 1000 - 1
+  const endOfNext7dMs = startMs + 7 * 24 * 60 * 60 * 1000 - 1
+  const endOfNext30dMs = startMs + 30 * 24 * 60 * 60 * 1000 - 1
 
   return filteredBySearch.value.filter((ticket) => {
     const targetDate = ticket.scheduledStartAt || ticket.updatedAt
@@ -577,12 +580,16 @@ const filteredByDate = computed(() => {
       return false
     }
 
-    if (fromMs !== null && timestamp < fromMs) {
-      return false
+    if (dateRangeFilter.value === 'today') {
+      return timestamp >= startMs && timestamp <= endOfTodayMs
     }
 
-    if (toMs !== null && timestamp > toMs) {
-      return false
+    if (dateRangeFilter.value === 'next7d') {
+      return timestamp >= startMs && timestamp <= endOfNext7dMs
+    }
+
+    if (dateRangeFilter.value === 'next30d') {
+      return timestamp >= startMs && timestamp <= endOfNext30dMs
     }
 
     return true
@@ -677,7 +684,7 @@ watch(
   { immediate: true }
 )
 
-watch([statusFilter, priorityFilter, assigneeFilter, dateFromFilter, dateToFilter, searchQuery, perPage], () => {
+watch([statusFilter, priorityFilter, assigneeFilter, dateRangeFilter, searchQuery, perPage], () => {
   if (isApplyingRouteQuery.value) {
     return
   }
@@ -686,7 +693,7 @@ watch([statusFilter, priorityFilter, assigneeFilter, dateFromFilter, dateToFilte
 })
 
 watch(
-  [statusFilter, priorityFilter, assigneeFilter, dateFromFilter, dateToFilter, searchQuery, sortKey, sortDirection, perPage, page],
+  [statusFilter, priorityFilter, assigneeFilter, dateRangeFilter, searchQuery, sortKey, sortDirection, perPage, page],
   async () => {
   if (isApplyingRouteQuery.value) {
     return

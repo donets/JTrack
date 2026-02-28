@@ -19,6 +19,8 @@
 - Adjusted tablet/mobile quick-actions visibility from `md:hidden` to `xl:hidden` so actions remain visible before desktop sidebar breakpoint.
 - Fixed JTable controlled-sort behavior to avoid re-sorting already sorted page data (eliminates double-sorting).
 - Added missing date-range filters (`Date from` / `Date to`) to ticket list filter bar.
+- Updated ticket list date filter UI to match `docs/ui-requirements/04-tickets.html`:
+  - replaced separate `Date from` / `Date to` controls with a single `Date range` select.
 - Improved form accessibility in modals by binding footer submit buttons to their forms via `form` attribute.
 - Reset create-ticket modal form state on open to prevent stale draft values.
 - Simplified tickets list subscription watcher to avoid redundant triggers on location change.
