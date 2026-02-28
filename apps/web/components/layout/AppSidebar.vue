@@ -32,7 +32,7 @@
       </section>
     </nav>
 
-    <div class="hidden border-t border-slate-700 p-3 lg:block">
+    <div class="hidden border-t border-slate-700 p-3 md:block">
       <button
         type="button"
         class="flex w-full items-center justify-center rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
@@ -106,15 +106,6 @@
         </section>
       </nav>
 
-      <div class="border-t border-slate-700 p-3">
-        <div class="flex items-center gap-2 rounded-md bg-slate-800/70 px-2 py-2">
-          <JAvatar size="sm" :name="userName" />
-          <div>
-            <p class="text-xs font-semibold text-white">{{ userName }}</p>
-            <p class="text-[11px] text-slate-400">{{ userRole }}</p>
-          </div>
-        </div>
-      </div>
     </aside>
   </Transition>
 </template>
@@ -212,14 +203,6 @@ const visibleSections = computed(() =>
 const isRouteActive = (path: string) =>
   route.path === path || (path !== '/dashboard' && route.path.startsWith(`${path}/`))
 
-const userName = computed(() => authStore.user?.name ?? 'Unknown user')
-const userRole = computed(() => {
-  if (authStore.user?.isAdmin) {
-    return 'Admin'
-  }
-
-  return activeRole.value ?? 'No role'
-})
 
 const desktopSidebarClasses = computed(() => [
   'hidden h-screen shrink-0 flex-col bg-ink md:flex',
