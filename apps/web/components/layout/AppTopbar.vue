@@ -1,34 +1,34 @@
 <template>
   <header class="border-b border-mist-dark bg-white">
-    <div class="flex h-topbar items-stretch">
-      <div class="flex min-w-0 flex-1 items-center gap-3 px-3 md:px-5">
+    <div class="flex h-topbar items-stretch overflow-hidden">
+      <div class="flex min-w-0 flex-1 items-center gap-2 px-3 sm:gap-3 md:px-5">
         <button
           type="button"
-          class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-mist hover:text-ink md:hidden"
+          class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-600 hover:bg-mist hover:text-ink md:hidden"
           aria-label="Open menu"
           @click="openMobileDrawer"
         >
           ☰
         </button>
 
-        <nav v-if="breadcrumbs.length > 0" class="flex min-w-0 items-center truncate text-lg text-slate-500">
+        <nav v-if="breadcrumbs.length > 0" class="flex min-w-0 items-center truncate text-sm text-slate-500 sm:text-lg">
           <template v-for="(item, index) in breadcrumbs" :key="`${item.label}-${index}`">
-            <span v-if="index > 0" class="px-2 text-slate-300">/</span>
+            <span v-if="index > 0" class="px-1.5 text-slate-300 sm:px-2">/</span>
             <NuxtLink
               v-if="item.to && index < breadcrumbs.length - 1"
               :to="item.to"
-              class="rounded px-1.5 py-0.5 hover:bg-slate-100 hover:text-slate-800"
+              class="rounded px-1 py-0.5 hover:bg-slate-100 hover:text-slate-800 sm:px-1.5"
             >
               {{ item.label }}
             </NuxtLink>
-            <span v-else class="px-1.5 py-0.5 font-semibold text-slate-800">{{ item.label }}</span>
+            <span v-else class="truncate px-1 py-0.5 font-semibold text-slate-800 sm:px-1.5">{{ item.label }}</span>
           </template>
         </nav>
-        <span v-else class="min-w-0 truncate text-lg font-semibold text-ink">{{ pageTitle }}</span>
+        <span v-else class="min-w-0 truncate text-sm font-semibold text-ink sm:text-lg">{{ pageTitle }}</span>
 
         <button
           type="button"
-          class="ml-auto hidden w-[105px] items-center justify-center gap-1.5 rounded-md border border-mist-dark py-1.5 text-sm font-semibold text-slate-600 hover:bg-mist sm:inline-flex"
+          class="ml-auto hidden w-[105px] shrink-0 items-center justify-center gap-1.5 rounded-md border border-mist-dark py-1.5 text-sm font-semibold text-slate-600 hover:bg-mist sm:inline-flex"
           :disabled="syncStore.syncing"
           @click="syncNow"
         >
@@ -39,7 +39,7 @@
 
       <div
         ref="locationRef"
-        class="relative flex w-[180px] shrink-0 items-center justify-center border-l border-r border-slate-200"
+        class="relative hidden w-[180px] shrink-0 items-center justify-center border-l border-r border-slate-200 sm:flex"
         :class="hasMultipleLocations ? 'cursor-pointer hover:bg-slate-50' : ''"
         @click="hasMultipleLocations && (locationOpen = !locationOpen)"
       >
@@ -67,17 +67,17 @@
 
       <div
         ref="userRef"
-        class="relative flex cursor-pointer items-center gap-2 pl-4 pr-5 hover:bg-slate-50"
+        class="relative flex shrink-0 cursor-pointer items-center gap-2 pl-3 pr-3 hover:bg-slate-50 sm:pl-4 sm:pr-5"
         @click="userOpen = !userOpen"
       >
         <JAvatar size="md" :name="userName" />
         <span class="hidden max-w-[140px] truncate text-sm font-medium text-slate-700 lg:inline">{{ userName }}</span>
-        <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+        <svg class="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
         </svg>
         <ul
           v-if="userOpen"
-          class="absolute right-0 top-full z-40 min-w-full border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
+          class="absolute right-0 top-full z-40 min-w-[160px] border border-t-0 border-slate-200 bg-white py-1 shadow-lg"
         >
           <li
             class="cursor-pointer px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"

@@ -255,6 +255,7 @@ watch(
 )
 
 // Sync editForm when ticket data changes (only if not currently editing)
+const editStarted = ref(false)
 watch(
   () => ticket.value,
   (t) => {
@@ -264,6 +265,11 @@ watch(
     }
     if (t && !editingPriority.value) {
       editForm.priority = t.priority ?? ''
+    }
+    // Auto-enter edit mode when navigated with ?edit=1
+    if (t && !editStarted.value && route.query.edit === '1') {
+      editStarted.value = true
+      startEditing()
     }
   },
   { immediate: true }
