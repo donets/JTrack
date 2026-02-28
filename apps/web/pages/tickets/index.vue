@@ -17,7 +17,7 @@
             <th
               v-for="col in sortableColumns"
               :key="col.key"
-              class="cursor-pointer select-none px-5 py-3.5 text-left text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+              :class="['cursor-pointer select-none px-5 py-3.5 text-left text-sm font-medium text-slate-600 transition-colors hover:text-slate-900', col.hideClass]"
               @click="toggleSort(col.key)"
             >
               <span class="inline-flex items-center gap-1">
@@ -44,8 +44,8 @@
             <td class="px-5 py-4">
               <JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge>
             </td>
-            <td class="px-5 py-4 text-slate-500" :title="formatTooltipDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</td>
-            <td class="px-5 py-4 text-slate-500" :title="formatTooltipDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</td>
+            <td class="hidden px-5 py-4 text-slate-500 lg:table-cell" :title="formatTooltipDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</td>
+            <td class="hidden px-5 py-4 text-slate-500 lg:table-cell" :title="formatTooltipDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</td>
           </tr>
           <tr v-if="visibleTickets.length === 0">
             <td class="px-5 py-8 text-center text-slate-400" colspan="5">No tickets found</td>
@@ -80,10 +80,10 @@ const sortKey = ref<'status' | 'priority' | 'createdAt' | 'updatedAt'>('updatedA
 const sortDir = ref<'asc' | 'desc'>('desc')
 
 const sortableColumns = [
-  { key: 'status' as const, label: 'Status' },
-  { key: 'priority' as const, label: 'Priority' },
-  { key: 'createdAt' as const, label: 'Created' },
-  { key: 'updatedAt' as const, label: 'Updated' }
+  { key: 'status' as const, label: 'Status', hideClass: '' },
+  { key: 'priority' as const, label: 'Priority', hideClass: '' },
+  { key: 'createdAt' as const, label: 'Created', hideClass: 'hidden lg:table-cell' },
+  { key: 'updatedAt' as const, label: 'Updated', hideClass: 'hidden lg:table-cell' }
 ]
 
 function toggleSort(key: typeof sortKey.value) {

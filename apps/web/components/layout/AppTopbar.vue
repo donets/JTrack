@@ -1,6 +1,6 @@
 <template>
   <header class="border-b border-mist-dark bg-white">
-    <div class="flex h-topbar items-stretch overflow-hidden">
+    <div class="flex h-topbar items-stretch">
       <div class="flex min-w-0 flex-1 items-center gap-2 px-3 sm:gap-3 md:px-5">
         <button
           type="button"
