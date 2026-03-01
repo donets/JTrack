@@ -205,6 +205,23 @@ export const useOfflineRepository = () => {
     return comment
   }
 
+  const deleteComment = async (commentId: string) => {
+    const comment = await db.collections.ticketComments.findOne(commentId).exec()
+
+    if (!comment) {
+      return
+    }
+
+    const now = new Date().toISOString()
+
+    await comment.incrementalPatch({
+      deletedAt: now,
+      updatedAt: now
+    })
+
+    await enqueueOutbox('ticketComments', 'delete', { id: commentId })
+  }
+
   const addAttachmentMetadata = async (input: CreateAttachmentMetadataInput) => {
     const { userId, locationId } = requireContext()
     const now = new Date().toISOString()
@@ -336,6 +353,7 @@ export const useOfflineRepository = () => {
     saveTicket,
     deleteTicket,
     addComment,
+    deleteComment,
     addAttachmentMetadata,
     deleteAttachment,
     stageAttachmentUpload,

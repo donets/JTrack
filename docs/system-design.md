@@ -80,6 +80,7 @@
 - Ticket detail attachment card renders image thumbnails and file metadata rows separately, with soft-delete actions enqueued through outbox.
 - Drag-and-drop upload card accepts multiple files per action and displays per-file progress/status rows before final sync flush.
 - Ticket detail activity feed merges `ticketActivities` with non-deleted `ticketComments` and sorts by `createdAt DESC`.
+- Comment timeline items expose author metadata and support owner-only soft delete actions via outbox (`ticketComments` delete op).
 - Ticket checklist state is updated through regular ticket outbox updates (no separate checklist entity/collection).
 - On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.

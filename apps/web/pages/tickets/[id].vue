@@ -33,7 +33,12 @@
         </JCard>
 
         <JCard title="Activity">
-          <JTimeline :items="timelineItems" />
+          <JTimeline
+            :items="timelineItems"
+            :deletable-comment-ids="deletableCommentIds"
+            :deleting-comment-id="deletingCommentId"
+            @delete-comment="deleteComment"
+          />
         </JCard>
 
         <JCard>
@@ -368,6 +373,7 @@ interface UploadProgressItem {
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
+const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
@@ -388,6 +394,7 @@ const submittingComment = ref(false)
 const uploadingAttachment = ref(false)
 const updatingStatus = ref(false)
 const checklistSaving = ref(false)
+const deletingCommentId = ref<string | null>(null)
 const deletingAttachmentId = ref<string | null>(null)
 const attachmentPreviewOpen = ref(false)
 const previewAttachment = ref<TicketAttachment | null>(null)
@@ -551,6 +558,17 @@ const fileAttachments = computed(() => attachments.value.filter((attachment) => 
 const { timelineItems } = useTicketActivity({
   ticketId: computed(() => ticketId),
   users: computed(() => users.value)
+})
+
+const deletableCommentIds = computed(() => {
+  const currentUserId = authStore.user?.id
+  if (!currentUserId) {
+    return []
+  }
+
+  return timelineItems.value
+    .filter((item) => item.type === 'comment' && item.commentId && item.actor.id === currentUserId)
+    .map((item) => item.commentId as string)
 })
 
 const getAllowedTransitions = (current: TicketStatus) => {
@@ -987,6 +1005,37 @@ const addComment = async () => {
     })
   } finally {
     submittingComment.value = false
+  }
+}
+
+const deleteComment = async (commentId: string) => {
+  if (deletingCommentId.value) {
+    return
+  }
+
+  if (typeof window !== 'undefined') {
+    const confirmed = window.confirm('Delete this comment?')
+    if (!confirmed) {
+      return
+    }
+  }
+
+  deletingCommentId.value = commentId
+
+  try {
+    await repository.deleteComment(commentId)
+    await syncStore.syncNow()
+    toast.show({
+      type: 'success',
+      message: 'Comment deleted'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to delete comment'
+    })
+  } finally {
+    deletingCommentId.value = null
   }
 }
 

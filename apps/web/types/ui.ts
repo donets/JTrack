@@ -29,11 +29,13 @@ export type TimelineItem = {
   id: string
   type: TimelineEventType
   actor: {
+    id?: string | null
     name: string
     avatarUrl?: string
   }
   content: string
   timestamp: string
+  commentId?: string
   icon?: string
   color?: 'mist' | 'sky' | 'mint' | 'violet' | 'flame' | 'rose'
 }

@@ -84,6 +84,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Offline attachments are staged in RxDB (`pendingAttachmentUploads`) and converted to regular attachment outbox records after deferred upload when connectivity returns; base64 file payload is stored only in staging collection (attachment placeholder keeps pending metadata without duplicating file bytes).
 - Ticket detail attachments UI separates image thumbnails (with preview modal) and file list metadata, with per-item soft-delete actions.
 - Attachment upload zone supports drag-and-drop multi-file selection with per-file progress/status indicators and batch sync after completion.
+- Activity timeline renders author avatars and relative timestamps, and allows users to soft-delete their own comments.
 - Dispatch map tab uses Leaflet with OpenStreetMap tiles for interactive job visualization.
 - Until backend geo fields are introduced, map coordinates are deterministic mock points derived from `hash(ticketId + locationId)` inside a fixed viewport bounding box.
 

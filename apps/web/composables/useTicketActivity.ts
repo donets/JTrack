@@ -20,6 +20,7 @@ type TicketActivityFeedItem = {
   }
   message: string
   timestamp: string
+  commentId?: string
   icon: string
   color: 'mist' | 'sky' | 'mint' | 'violet' | 'flame' | 'rose'
 }
@@ -234,12 +235,14 @@ export const useTicketActivity = (options: {
       }
 
       const commentBody = asString(metadata.body) ?? asString(metadata.commentBody) ?? ''
+      const commentId = asString(metadata.commentId) ?? undefined
       merged.push({
         id: activity.id,
         type: 'comment',
         user: resolveUser(activity.userId),
         message: `${resolveUser(activity.userId).name} commented: "${truncateComment(commentBody)}"`,
         timestamp: activity.createdAt,
+        commentId,
         ...TIMELINE_STYLE.comment
       })
     }
@@ -251,6 +254,7 @@ export const useTicketActivity = (options: {
         user: resolveUser(comment.authorUserId),
         message: `${resolveUser(comment.authorUserId).name} commented: "${truncateComment(comment.body)}"`,
         timestamp: comment.createdAt,
+        commentId: comment.id,
         ...TIMELINE_STYLE.comment
       })
     }
@@ -284,11 +288,13 @@ export const useTicketActivity = (options: {
       id: item.id,
       type: item.type,
       actor: {
+        id: item.user.id,
         name: item.user.name,
         avatarUrl: item.user.avatarUrl
       },
       content: item.message,
       timestamp: item.timestamp,
+      commentId: item.commentId,
       icon: item.icon,
       color: item.color
     }))
