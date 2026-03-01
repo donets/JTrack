@@ -20,7 +20,7 @@ type WeeklyTechnicianSchedule = DispatchTechnician & {
   jobsByDay: Record<string, DispatchScheduledJob[]>
 }
 
-const INACTIVE_STATUSES: TicketStatus[] = ['Done', 'Paid', 'Canceled']
+const INACTIVE_STATUSES: TicketStatus[] = ['Done', 'Invoiced', 'Paid', 'Canceled']
 
 export const useDispatchBoard = (selectedDate: Ref<string>) => {
   const db = useRxdb()

@@ -13,7 +13,6 @@ export type TableColumn = {
   sortable?: boolean
   align?: 'left' | 'center' | 'right'
   width?: string
-  hideClass?: string
   rowHeader?: boolean
   hideClass?: string
 }
