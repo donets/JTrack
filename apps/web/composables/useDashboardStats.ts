@@ -1,6 +1,12 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { PaymentRecord, Ticket, TicketComment, TicketStatus } from '@jtrack/shared'
 import type { TimelineItem } from '~/types/ui'
+import {
+  priorityToBadgeVariant,
+  statusToBadgeVariant,
+  statusToLabel,
+  type BadgeVariant
+} from '~/utils/ticket-status'
 
 interface LocationUser {
   id: string
@@ -8,8 +14,6 @@ interface LocationUser {
   role: string
   membershipStatus: string
 }
-
-type BadgeVariant = 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'
 
 type RxDoc<T> = {
   toJSON: () => T
@@ -28,7 +32,6 @@ export interface DashboardStatusSlice {
 
 export interface DashboardUnassignedTicket {
   id: string
-  ticketCode: string
   title: string
   priorityLabel: string
   priorityVariant: BadgeVariant
@@ -47,7 +50,6 @@ export interface DashboardTeamAvailability {
 
 export interface DashboardScheduleTicket {
   id: string
-  ticketCode: string
   title: string
   status: TicketStatus
   statusLabel: string
@@ -109,58 +111,6 @@ const inRange = (
   }
 
   return timestamp >= range.startMs && timestamp < range.endMs
-}
-
-const formatTicketCode = (ticketId: string) => `#${ticketId.slice(0, 8).toUpperCase()}`
-
-const toStatusLabel = (status: TicketStatus) => {
-  if (status === 'InProgress') {
-    return 'In Progress'
-  }
-
-  return status
-}
-
-const statusToVariant = (status: TicketStatus): BadgeVariant => {
-  if (status === 'New') {
-    return 'sky'
-  }
-
-  if (status === 'Scheduled') {
-    return 'violet'
-  }
-
-  if (status === 'InProgress') {
-    return 'flame'
-  }
-
-  if (status === 'Done' || status === 'Invoiced' || status === 'Paid') {
-    return 'mint'
-  }
-
-  if (status === 'Canceled') {
-    return 'rose'
-  }
-
-  return 'mist'
-}
-
-const priorityToVariant = (priority: string | null): BadgeVariant => {
-  const normalized = priority?.toLowerCase()
-
-  if (normalized === 'high' || normalized === 'urgent') {
-    return 'rose'
-  }
-
-  if (normalized === 'medium') {
-    return 'flame'
-  }
-
-  if (normalized === 'low') {
-    return 'mist'
-  }
-
-  return 'mist'
 }
 
 const formatPriority = (priority: string | null) => {
@@ -431,19 +381,19 @@ export const useDashboardStats = () => {
         key: 'New',
         label: 'New',
         count: activeTickets.value.filter((ticket) => ticket.status === 'New').length,
-        variant: 'sky'
+        variant: statusToBadgeVariant('New')
       },
       {
         key: 'Scheduled',
         label: 'Scheduled',
         count: activeTickets.value.filter((ticket) => ticket.status === 'Scheduled').length,
-        variant: 'violet'
+        variant: statusToBadgeVariant('Scheduled')
       },
       {
         key: 'InProgress',
         label: 'In Progress',
         count: activeTickets.value.filter((ticket) => ticket.status === 'InProgress').length,
-        variant: 'flame'
+        variant: statusToBadgeVariant('InProgress')
       },
       {
         key: 'Done',
@@ -463,10 +413,9 @@ export const useDashboardStats = () => {
       .slice(0, 6)
       .map<DashboardUnassignedTicket>((ticket) => ({
         id: ticket.id,
-        ticketCode: formatTicketCode(ticket.id),
         title: ticket.title,
         priorityLabel: formatPriority(ticket.priority),
-        priorityVariant: priorityToVariant(ticket.priority),
+        priorityVariant: priorityToBadgeVariant(ticket.priority),
         createdAt: ticket.createdAt,
         createdLabel: formatRelativeTime(ticket.createdAt, now.value)
       }))
@@ -549,7 +498,7 @@ export const useDashboardStats = () => {
         actor: {
           name: resolveUserName(ticket.createdByUserId)
         },
-        content: `${formatTicketCode(ticket.id)} created`,
+        content: `${ticket.title} created`,
         timestamp: ticket.createdAt
       })
 
@@ -560,7 +509,7 @@ export const useDashboardStats = () => {
           actor: {
             name: 'System'
           },
-          content: `${formatTicketCode(ticket.id)} moved to ${toStatusLabel(ticket.status)}`,
+          content: `${ticket.title} moved to ${statusToLabel(ticket.status)}`,
           timestamp: ticket.updatedAt
         })
       }
@@ -573,13 +522,13 @@ export const useDashboardStats = () => {
         actor: {
           name: resolveUserName(comment.authorUserId)
         },
-        content: `Comment on ${formatTicketCode(comment.ticketId)}: ${comment.body.slice(0, 80)}`,
+        content: `Comment on ${ticketTitleById.get(comment.ticketId) ?? 'ticket'}: ${comment.body.slice(0, 80)}`,
         timestamp: comment.createdAt
       })
     }
 
     for (const payment of payments.value) {
-      const ticketTitle = ticketTitleById.get(payment.ticketId) ?? formatTicketCode(payment.ticketId)
+      const ticketTitle = ticketTitleById.get(payment.ticketId) ?? 'ticket'
       activityItems.push({
         id: `payment-${payment.id}`,
         type: 'payment',
@@ -638,11 +587,10 @@ export const useDashboardStats = () => {
       })
       .map<DashboardScheduleTicket>((ticket) => ({
         id: ticket.id,
-        ticketCode: formatTicketCode(ticket.id),
         title: ticket.title,
         status: ticket.status,
-        statusLabel: toStatusLabel(ticket.status),
-        statusVariant: statusToVariant(ticket.status),
+        statusLabel: statusToLabel(ticket.status),
+        statusVariant: statusToBadgeVariant(ticket.status),
         timeLabel:
           ticket.scheduledStartAt && ticket.scheduledEndAt
             ? `${formatTime(ticket.scheduledStartAt)} - ${formatTime(ticket.scheduledEndAt)}`
@@ -681,7 +629,6 @@ export const useDashboardStats = () => {
     todayLabel,
     usersLoading,
     ownerManager,
-    technician,
-    formatTicketCode
+    technician
   }
 }

@@ -2,8 +2,8 @@ import type {
   CreateAttachmentMetadataInput,
   CreateCommentInput,
   CreatePaymentRecordInput,
-  CreateTicketInput,
-  Ticket
+  Ticket,
+  TicketStatus
 } from '@jtrack/shared'
 
 type OutboxEntity = 'tickets' | 'ticketComments' | 'ticketAttachments' | 'paymentRecords'
@@ -17,6 +17,19 @@ interface PendingAttachmentUploadInput {
   base64: string
   width?: number
   height?: number
+}
+
+interface SaveTicketInput {
+  id?: string
+  title?: string
+  description?: string | null
+  status?: TicketStatus
+  assignedToUserId?: string | null
+  scheduledStartAt?: string | null
+  scheduledEndAt?: string | null
+  priority?: string | null
+  totalAmountCents?: number | null
+  currency?: string
 }
 
 const MAX_OFFLINE_ATTACHMENT_SIZE_BYTES = 25 * 1024 * 1024
@@ -56,7 +69,7 @@ export const useOfflineRepository = () => {
     })
   }
 
-  const saveTicket = async (input: Partial<CreateTicketInput> & Partial<Ticket> & { id?: string }) => {
+  const saveTicket = async (input: SaveTicketInput) => {
     const { userId, locationId } = requireContext()
     const now = new Date().toISOString()
     const ticketId = input.id ?? crypto.randomUUID()

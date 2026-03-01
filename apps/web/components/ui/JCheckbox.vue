@@ -1,5 +1,11 @@
 <template>
-  <label :for="inputId" class="inline-flex items-center gap-2">
+  <label
+    :for="inputId"
+    :class="[
+      'inline-flex items-center gap-2',
+      disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+    ]"
+  >
     <span class="relative inline-flex h-4 w-4 items-center justify-center">
       <input
         :id="inputId"

@@ -27,7 +27,7 @@
         </div>
 
         <h3 class="text-base font-semibold text-ink">
-          {{ technician.nextJob.ticketCode }} {{ technician.nextJob.title }}
+          {{ technician.nextJob.title }}
         </h3>
 
         <p class="mt-2 text-sm text-slate-600">
@@ -114,7 +114,7 @@ const scheduleRows = computed(() =>
   technician.value.schedule.map((ticket) => ({
     id: ticket.id,
     time: ticket.timeLabel,
-    job: `${ticket.ticketCode} ${ticket.title}`,
+    job: ticket.title,
     location: ticket.locationLabel,
     statusLabel: ticket.statusLabel,
     statusVariant: ticket.statusVariant

@@ -33,6 +33,8 @@ flowchart LR
   W --> R["RxDB (IndexedDB/Dexie)"]
 ```
 
+For local Docker development, `docker/docker-compose.yml` runs a production-like web runtime from Nuxt `.output`. To enable HMR without rebuilding images, use the dev override: `docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d`.
+
 ## 4. API Layer (NestJS)
 ### 4.1 Module Boundaries
 - `auth`: login/refresh/logout/me, invite onboarding completion, JWT issuance, refresh token rotation.
@@ -124,6 +126,7 @@ sequenceDiagram
   - API/Web Dockerfiles use multi-stage builds (`deps` -> `builder` -> `runner`) to reduce runtime image size.
   - Docker build context filtering uses repository `.dockerignore`; docker-local mirror rules are stored in `docker/.dockerignore`.
   - Startup via `docker/docker-compose.yml` (`docker-compose up -d --build`).
+  - Default local container endpoints: web `http://localhost:3010`, API `http://localhost:3011`, Postgres `localhost:5433`.
   - API container startup runs `node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma` before app start.
   - If `SEED_DEMO_DATA=true`, startup also runs `node apps/api/dist/prisma/seed.js` (idempotent upserts for demo users/location).
   - DB service has network alias `jtrack`; API uses `postgresql://...@jtrack:5432/...`.
@@ -139,7 +142,9 @@ sequenceDiagram
   - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
     - Publishes `apps/web/.output/public`.
+    - Root route `/` is explicitly prerendered in Nuxt route rules to guarantee static entrypoint generation.
     - Critical auth/navigation entry routes are explicitly prerendered (`/`, `/login`, `/dashboard`, `/locations`) to prevent 404s when SPA rewrites are unavailable or bypassed.
+    - App routes (`/login`, `/dashboard`, etc.) are served via SPA rewrite fallback and are not prerendered to avoid route payload fetches (`/_payload.json`) on client navigation.
     - Nuxt payload extraction is disabled in web config to prevent runtime `/_payload.json` requests in static SPA mode.
     - SPA fallback rewrite to `/index.html`.
 - Production target:

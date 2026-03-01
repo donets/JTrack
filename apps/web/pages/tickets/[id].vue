@@ -1,199 +1,276 @@
 <template>
-  <section v-if="ticket">
-    <div class="flex flex-col gap-6 md:flex-row">
-      <!-- Left column — main content -->
-      <div class="min-w-0 flex-[3] space-y-6">
-        <div class="rounded-lg border border-slate-200 bg-white px-3 py-3 sm:px-5 sm:py-4">
-          <div class="mb-3 flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <input
-                v-if="editing"
-                v-model="editForm.title"
-                class="w-full bg-transparent text-xl font-bold leading-normal text-ink outline-none placeholder:text-slate-300"
-                placeholder="Ticket title"
-              />
-              <h1
-                v-else
-                class="cursor-pointer text-xl font-bold leading-normal text-ink"
-                @click="startEditing"
-              >
-                {{ ticket.title }}
-              </h1>
-            </div>
-            <div class="flex shrink-0 items-center gap-2">
-              <template v-if="editing">
-                <JButton variant="secondary" @click="cancelEditing">Cancel</JButton>
-                <JButton :loading="saving" @click="saveEdits">Save</JButton>
-              </template>
-              <JButton v-else @click="startEditing">Edit Ticket</JButton>
-            </div>
-          </div>
-          <div>
-            <textarea
-              v-if="editing"
-              ref="descriptionInput"
-              v-model="editForm.description"
-              class="w-full resize-none bg-transparent text-base leading-relaxed text-slate-700 outline-none placeholder:text-slate-300"
-              placeholder="Add a description…"
-              rows="1"
-              @input="autoResizeDescription"
-            />
-            <p
-              v-else-if="ticket.description"
-              class="cursor-pointer whitespace-pre-wrap text-base leading-relaxed text-slate-700"
-              @click="startEditing"
-            >
-              {{ ticket.description }}
-            </p>
-            <p
-              v-else
-              class="cursor-pointer text-base italic text-slate-300"
-              @click="startEditing"
-            >
-              Click to add a description…
-            </p>
-          </div>
-        </div>
+  <section v-if="ticket" class="space-y-4">
+    <JPageHeader
+      :title="ticket.title"
+      :breadcrumbs="breadcrumbs"
+    >
+      <template #status>
+        <JBadge :variant="statusToBadgeVariant(ticket.status)">{{ statusToLabel(ticket.status) }}</JBadge>
+      </template>
 
-        <!-- Activity / Comments -->
-        <div class="rounded-lg border border-slate-200 bg-white">
-          <form class="flex items-start gap-2 border-b border-slate-100 px-3 py-3 sm:gap-3 sm:px-5 sm:py-4" @submit.prevent="addComment">
-            <JAvatar :name="currentUserName" size="md" class="mt-[1px] hidden shrink-0 sm:block" />
-            <div class="min-w-0 flex-1" @keydown.enter.exact.prevent="submitComment">
-              <JTextarea
-                v-model="commentBody"
-                placeholder="Leave a comment…"
-                :rows="1"
-              />
-            </div>
-            <div class="mt-[1px] flex shrink-0 items-center gap-1.5 sm:gap-2.5">
-              <JButton type="submit" :disabled="!commentBody.trim()">Send</JButton>
-              <button type="button" class="hidden rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 sm:block" title="Upload file" @click="openFileDialog">
-                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                </svg>
-              </button>
-              <button type="button" class="hidden rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 sm:block" title="Capture photo" @click="capturePhoto">
-                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                </svg>
-              </button>
+      <template #actions>
+        <JButton size="sm" variant="secondary" @click="openEditModal">Edit</JButton>
+        <JButton size="sm" variant="danger" :disabled="!canCancel || updatingStatus" @click="cancelTicket">
+          Cancel
+        </JButton>
+      </template>
+    </JPageHeader>
+
+    <div class="grid grid-cols-3 gap-2 md:hidden">
+      <JButton size="sm" :disabled="!canStartJob || updatingStatus" @click="updateTicketStatus('InProgress')">
+        Start Job
+      </JButton>
+      <JButton size="sm" variant="secondary">Navigate</JButton>
+      <JButton size="sm" variant="secondary">Call</JButton>
+    </div>
+
+    <div class="flex flex-col gap-6 md:flex-row">
+      <div class="min-w-0 flex-[3] space-y-6">
+        <JCard title="Description">
+          <p class="text-sm text-ink-light">
+            {{ ticket.description || 'No description provided.' }}
+          </p>
+        </JCard>
+
+        <JCard title="Activity">
+          <JTimeline :items="timelineItems" />
+        </JCard>
+
+        <JCard>
+          <form class="space-y-3" @submit.prevent="addComment">
+            <JTextarea
+              v-model="commentBody"
+              placeholder="Write a comment..."
+              :rows="3"
+            />
+
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="openFileDialog">
+                Attach
+              </JButton>
+              <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="capturePhoto">
+                Photo
+              </JButton>
+              <JButton size="sm" type="submit" :disabled="!commentBody.trim()" :loading="submittingComment">
+                Send
+              </JButton>
             </div>
           </form>
+        </JCard>
 
-          <div v-if="comments.length" class="divide-y divide-slate-100">
-            <article
-              v-for="comment in comments"
-              :key="comment.id"
-              class="flex gap-2 px-3 py-3 sm:gap-3 sm:px-5 sm:py-4"
+        <JCard :title="`Attachments (${attachments.length})`" :padding="false">
+          <div class="space-y-3 p-4">
+            <button
+              type="button"
+              class="w-full rounded-md border border-dashed px-4 py-6 text-center text-sm hover:border-mint hover:text-ink"
+              :class="isDragOver ? 'border-mint bg-mint-light text-ink' : 'border-slate-300 text-slate-500'"
+              aria-dropeffect="copy"
+              :disabled="uploadingAttachment"
+              @click="openFileDialog"
+              @dragenter.prevent="isDragOver = true"
+              @dragleave.prevent="isDragOver = false"
+              @drop.prevent="onDropFiles"
+              @dragover.prevent
             >
-              <JAvatar :name="comment.userId ?? 'User'" size="md" class="mt-0.5 shrink-0" />
-              <div class="min-w-0 flex-1">
-                <div class="flex items-baseline gap-2">
-                  <span class="text-base font-semibold text-slate-900">{{ comment.userId?.slice(0, 8) ?? 'User' }}</span>
-                  <span class="text-sm text-slate-400" :title="formatTooltipDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</span>
-                </div>
-                <p class="mt-1 whitespace-pre-wrap text-base leading-relaxed text-slate-600">{{ comment.body }}</p>
-              </div>
-            </article>
-          </div>
-          <div v-else class="px-5 py-8 text-center">
-            <p class="text-base text-slate-400">No comments yet</p>
-          </div>
-        </div>
+              Drag & drop files here, or click to upload
+            </button>
 
+            <div v-if="attachments.length > 0" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <article
+                v-for="attachment in attachments"
+                :key="attachment.id"
+                class="overflow-hidden rounded-md border border-slate-200 bg-white"
+              >
+                <div v-if="isImageAttachment(attachment)" class="aspect-video bg-slate-100">
+                  <img
+                    :src="attachmentUrl(attachment.url)"
+                    :alt="attachment.storageKey"
+                    class="h-full w-full object-cover"
+                  />
+                </div>
+                <div v-else class="flex aspect-video items-center justify-center bg-slate-50 text-3xl text-slate-300">
+                  📎
+                </div>
+
+                <div class="space-y-1 p-3 text-xs">
+                  <p class="truncate font-semibold text-ink">{{ attachment.storageKey }}</p>
+                  <p class="text-slate-500">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
+                  <p v-if="attachment.storageKey.startsWith('pending/')" class="text-amber-700">Pending upload</p>
+                </div>
+              </article>
+            </div>
+
+            <p v-else class="text-sm text-slate-500">No attachments yet.</p>
+          </div>
+        </JCard>
       </div>
 
-      <!-- Right column — sidebar -->
-      <div class="w-full space-y-6 md:max-w-[280px] lg:max-w-[320px]">
-        <!-- Details -->
+      <div class="w-full space-y-4 md:max-w-[300px] lg:max-w-[320px]">
         <JCard title="Details">
-          <dl class="space-y-4">
-            <div class="flex items-center justify-between">
-              <dt class="text-base font-medium text-slate-500">Status</dt>
-              <dd><JBadge :variant="statusVariant(ticket.status)">{{ ticket.status }}</JBadge></dd>
-            </div>
-            <div class="flex items-center justify-between">
-              <dt class="text-base font-medium text-slate-500">Priority</dt>
-              <dd v-if="editingPriority" @focusout="editingPriority = false">
-                <JSelect v-model="editForm.priority" :options="priorityOptions" placeholder="None" class="[&_select]:py-1 [&_select]:text-xs" @update:model-value="savePriority" />
-              </dd>
-              <dd v-else>
-                <button type="button" class="cursor-pointer" @click="startEditingPriority">
-                  <JBadge :variant="priorityVariant(ticket.priority)">{{ ticket.priority ?? 'None' }}</JBadge>
-                </button>
+          <dl class="space-y-3 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Status</dt>
+              <dd>
+                <div class="flex items-center gap-2">
+                  <JBadge :variant="statusToBadgeVariant(ticket.status)">{{ statusToLabel(ticket.status) }}</JBadge>
+                  <JDropdown v-if="statusDropdownItems.length > 0" :items="statusDropdownItems" align="right">
+                    <template #trigger>
+                      <JButton size="sm" variant="ghost" :disabled="updatingStatus">Change</JButton>
+                    </template>
+                  </JDropdown>
+                </div>
               </dd>
             </div>
-            <div class="flex items-center justify-between">
-              <dt class="text-base font-medium text-slate-500">Created</dt>
-              <dd class="text-base text-slate-700" :title="formatTooltipDate(ticket.createdAt)">{{ timeAgo(ticket.createdAt) }}</dd>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Priority</dt>
+              <dd>
+                <JBadge :variant="priorityToBadgeVariant(ticket.priority)">{{ formatPriorityLabel(ticket.priority) }}</JBadge>
+              </dd>
             </div>
-            <div class="flex items-center justify-between">
-              <dt class="text-base font-medium text-slate-500">Updated</dt>
-              <dd class="text-base text-slate-700" :title="formatTooltipDate(ticket.updatedAt)">{{ timeAgo(ticket.updatedAt) }}</dd>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Assigned</dt>
+              <dd class="text-right text-ink">{{ assignedLabel }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Created by</dt>
+              <dd class="text-right text-ink">{{ createdByLabel }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Created</dt>
+              <dd class="text-right text-ink">{{ formatDateTime(ticket.createdAt) }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Scheduled</dt>
+              <dd class="text-right text-ink">{{ scheduledRangeLabel }}</dd>
             </div>
           </dl>
         </JCard>
 
-        <!-- Attachments -->
-        <JCard title="Attachments">
-          <template #action>
-            <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
-            <div class="flex gap-1.5">
-              <JButton variant="ghost" size="sm" @click="openFileDialog">
-                <template #icon>
-                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                  </svg>
-                </template>
-                Upload
-              </JButton>
-              <JButton variant="ghost" size="sm" @click="capturePhoto">
-                <template #icon>
-                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                  </svg>
-                </template>
-                Capture
-              </JButton>
+        <JCard title="Financial">
+          <dl class="space-y-3 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Total amount</dt>
+              <dd class="font-semibold text-ink">{{ totalAmountLabel }}</dd>
             </div>
-          </template>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Paid</dt>
+              <dd class="font-semibold text-ink">{{ paidAmountLabel }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Balance</dt>
+              <dd class="font-semibold text-ink">{{ balanceAmountLabel }}</dd>
+            </div>
+          </dl>
 
-          <ul v-if="attachments.length" class="space-y-2">
-            <li
-              v-for="attachment in attachments"
-              :key="attachment.id"
-              class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2"
-            >
-              <div class="flex size-8 shrink-0 items-center justify-center rounded bg-slate-200">
-                <svg class="size-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
-                </svg>
-              </div>
-              <div class="min-w-0 flex-1">
-                <template v-if="attachment.storageKey?.startsWith('pending/')">
-                  <p class="truncate text-base font-medium text-amber-600">{{ attachment.storageKey }}</p>
-                  <p class="text-sm text-amber-500">Pending upload</p>
-                </template>
-                <template v-else>
-                  <a
-                    :href="attachmentUrl(attachment.url)"
-                    class="block truncate text-base font-medium text-slate-900 hover:text-mint-700 hover:underline"
-                    target="_blank"
-                  >
-                    {{ attachment.storageKey }}
-                  </a>
-                  <p class="text-sm text-slate-400">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
-                </template>
-              </div>
+          <JButton class="mt-4 w-full" size="sm" variant="secondary" @click="openPaymentModal">
+            + Record Payment
+          </JButton>
+        </JCard>
+
+        <JCard title="Checklist">
+          <p class="mb-2 text-xs text-slate-500">{{ completedChecklistCount }}/{{ checklistItems.length }}</p>
+          <JProgress :value="completedChecklistCount" :max="checklistItems.length" variant="mint" />
+
+          <ul class="mt-3 space-y-2">
+            <li v-for="item in checklistItems" :key="item.id">
+              <JCheckbox
+                v-model="item.done"
+                :label="item.label"
+              />
             </li>
           </ul>
-          <p v-else class="text-center text-base text-slate-400">No attachments yet.</p>
         </JCard>
       </div>
     </div>
+
+    <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
+
+    <JModal v-model="editModalOpen" title="Edit Ticket" size="lg">
+      <form id="edit-ticket-form" class="space-y-4" @submit.prevent="submitEditTicket">
+        <JInput
+          v-model="editForm.title"
+          label="Title *"
+          placeholder="Brief description of the job"
+          :error="editErrors.title"
+        />
+
+        <JTextarea
+          v-model="editForm.description"
+          label="Description"
+          placeholder="Detailed notes"
+          :rows="3"
+        />
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JSelect v-model="editForm.priority" label="Priority" :options="prioritySelectOptions" />
+          <JSelect v-model="editForm.assignee" label="Assign to" :options="assigneeSelectOptions" />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JDatePicker
+            v-model="editForm.scheduledStartAt"
+            include-time
+            label="Scheduled start"
+            :error="editErrors.scheduledStartAt"
+          />
+          <JDatePicker
+            v-model="editForm.scheduledEndAt"
+            include-time
+            label="Scheduled end"
+            :error="editErrors.scheduledEndAt"
+          />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JInput
+            v-model="editForm.amount"
+            type="number"
+            label="Amount"
+            placeholder="0.00"
+            :error="editErrors.amount"
+          />
+          <JSelect v-model="editForm.currency" label="Currency" :options="currencyOptions" />
+        </div>
+      </form>
+
+      <template #footer>
+        <JButton variant="secondary" :disabled="editSubmitting" @click="editModalOpen = false">Cancel</JButton>
+        <JButton type="submit" form="edit-ticket-form" :loading="editSubmitting">Save</JButton>
+      </template>
+    </JModal>
+
+    <JModal v-model="paymentModalOpen" title="Record Payment" size="md">
+      <form id="record-payment-form" class="space-y-4" @submit.prevent="submitPayment">
+        <div class="rounded-md bg-mist p-3 text-sm">
+          <p class="text-slate-600">Amount due</p>
+          <p class="mt-1 text-xl font-semibold text-ink">{{ balanceAmountLabel }}</p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <JInput
+            v-model="paymentForm.amount"
+            type="number"
+            label="Amount *"
+            placeholder="0.00"
+            :error="paymentErrors.amount"
+          />
+          <JSelect v-model="paymentForm.provider" label="Provider" :options="paymentProviderOptions" />
+        </div>
+
+        <JDatePicker v-model="paymentForm.date" label="Date" />
+        <JTextarea v-model="paymentForm.notes" label="Notes" :rows="3" />
+      </form>
+
+      <template #footer>
+        <JButton variant="secondary" :disabled="paymentSubmitting" @click="paymentModalOpen = false">Cancel</JButton>
+        <JButton type="submit" form="record-payment-form" :loading="paymentSubmitting">Record Payment</JButton>
+      </template>
+    </JModal>
   </section>
 
   <section v-else class="rounded-xl border border-slate-200 bg-white p-8 text-center text-base text-slate-500">
@@ -202,88 +279,358 @@
 </template>
 
 <script setup lang="ts">
-import type { BreadcrumbItem } from '~/types/ui'
+import type { BreadcrumbItem, DropdownItem, TimelineItem } from '~/types/ui'
+import type { PaymentRecord, Ticket, TicketAttachment, TicketComment, TicketStatus } from '@jtrack/shared'
+import {
+  priorityToBadgeVariant,
+  statusToBadgeVariant,
+  statusToLabel
+} from '~/utils/ticket-status'
+import {
+  formatAmountInput,
+  formatDateTime,
+  formatMoney,
+  formatPriorityLabel,
+  parseAmountToCents
+} from '~/utils/format'
+
+interface LocationUser {
+  id: string
+  name: string
+}
+
+const ALL_STATUSES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
+const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  New: ['Scheduled', 'InProgress', 'Canceled'],
+  Scheduled: ['InProgress', 'Canceled'],
+  InProgress: ['Done', 'Canceled'],
+  Done: ['Invoiced', 'Canceled'],
+  Invoiced: ['Paid', 'Canceled'],
+  Paid: [],
+  Canceled: []
+}
+
+const TECHNICIAN_TRANSITIONS: Partial<Record<TicketStatus, TicketStatus[]>> = {
+  New: ['InProgress'],
+  Scheduled: ['InProgress'],
+  InProgress: ['Done']
+}
+
+const STATUS_EVENT_PREFIX = '[status-change]'
 
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
-const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
 const adapter = useAttachmentAdapter()
-
-const currentUserName = computed(() => authStore.user?.name ?? 'User')
+const api = useApiClient()
+const toast = useToast()
 const { setBreadcrumbs } = useBreadcrumbs()
+const { activeRole, hasPrivilege } = useRbacGuard()
 
 const ticketId = route.params.id as string
 
-const ticket = ref<any | null>(null)
-const comments = ref<any[]>([])
-const attachments = ref<any[]>([])
+const ticket = ref<Ticket | null>(null)
+const comments = ref<TicketComment[]>([])
+const attachments = ref<TicketAttachment[]>([])
+const payments = ref<PaymentRecord[]>([])
+const users = ref<LocationUser[]>([])
 const commentBody = ref('')
+const submittingComment = ref(false)
+const uploadingAttachment = ref(false)
+const updatingStatus = ref(false)
+const isDragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
-const descriptionInput = ref<HTMLTextAreaElement | null>(null)
+const editModalOpen = ref(false)
+const editSubmitting = ref(false)
+const paymentModalOpen = ref(false)
+const paymentSubmitting = ref(false)
 
-// Inline editing state
-const editing = ref(false)
-const editingPriority = ref(false)
-const saving = ref(false)
-const editForm = reactive({ title: '', description: '', priority: '' })
-const priorityOptions = [
-  { value: '', label: 'None' },
+const editForm = reactive({
+  title: '',
+  description: '',
+  priority: 'medium',
+  assignee: '',
+  scheduledStartAt: '',
+  scheduledEndAt: '',
+  amount: '',
+  currency: 'EUR'
+})
+
+const editErrors = reactive({
+  title: '',
+  amount: '',
+  scheduledStartAt: '',
+  scheduledEndAt: ''
+})
+
+const paymentForm = reactive({
+  amount: '',
+  provider: 'manual',
+  date: '',
+  notes: ''
+})
+
+const paymentErrors = reactive({
+  amount: ''
+})
+
+const checklistItems = reactive([
+  { id: 'inspect', label: 'Inspect unit', done: false },
+  { id: 'refrigerant', label: 'Check refrigerant levels', done: false },
+  { id: 'thermostat', label: 'Test thermostat', done: false },
+  { id: 'signoff', label: 'Customer sign-off', done: false }
+])
+
+let ticketSub: { unsubscribe: () => void } | null = null
+let commentsSub: { unsubscribe: () => void } | null = null
+let attachmentsSub: { unsubscribe: () => void } | null = null
+let paymentsSub: { unsubscribe: () => void } | null = null
+
+const breadcrumbs = ref<BreadcrumbItem[]>([
+  { label: 'Dashboard', to: '/dashboard' },
+  { label: 'Tickets', to: '/tickets' },
+  { label: 'Ticket' }
+])
+
+watch(
+  () => ticket.value?.title,
+  (title) => {
+    breadcrumbs.value = [
+      { label: 'Dashboard', to: '/dashboard' },
+      { label: 'Tickets', to: '/tickets' },
+      { label: title || 'Ticket' }
+    ]
+
+    setBreadcrumbs(breadcrumbs.value)
+  },
+  { immediate: true }
+)
+
+const userNameById = computed(() => {
+  const map = new Map<string, string>()
+
+  for (const user of users.value) {
+    map.set(user.id, user.name)
+  }
+
+  return map
+})
+
+const prioritySelectOptions = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' }
 ]
 
-let ticketSub: any = null
-let commentsSub: any = null
-let attachmentsSub: any = null
+const currencyOptions = [
+  { value: 'EUR', label: 'EUR' },
+  { value: 'USD', label: 'USD' },
+  { value: 'GBP', label: 'GBP' }
+]
 
-watch(
-  () => ticket.value?.title,
-  (title) => {
-    const items: BreadcrumbItem[] = [
-      { label: 'Dashboard', to: '/dashboard' },
-      { label: 'Tickets', to: '/tickets' },
-      { label: title || `#${ticketId}` }
-    ]
-    setBreadcrumbs(items)
-  },
-  { immediate: true }
-)
+const paymentProviderOptions = [
+  { value: 'manual', label: 'Cash / Card / Bank Transfer' },
+  { value: 'stripe', label: 'Stripe' }
+]
 
-// Sync editForm when ticket data changes (only if not currently editing)
-const editStarted = ref(false)
-watch(
-  () => ticket.value,
-  (t) => {
-    if (t && !editing.value) {
-      editForm.title = t.title ?? ''
-      editForm.description = t.description ?? ''
+const assigneeSelectOptions = computed(() => [
+  { value: '', label: '— Unassigned —' },
+  ...users.value
+    .map((user) => ({ value: user.id, label: user.name }))
+    .sort((left, right) => left.label.localeCompare(right.label))
+])
+
+const assignedLabel = computed(() => {
+  if (!ticket.value?.assignedToUserId) {
+    return '— Unassigned —'
+  }
+
+  return userNameById.value.get(ticket.value.assignedToUserId) ?? `User ${ticket.value.assignedToUserId.slice(0, 8)}`
+})
+
+const createdByLabel = computed(() => {
+  if (!ticket.value) {
+    return '—'
+  }
+
+  return userNameById.value.get(ticket.value.createdByUserId) ?? `User ${ticket.value.createdByUserId.slice(0, 8)}`
+})
+
+const scheduledRangeLabel = computed(() => {
+  if (!ticket.value?.scheduledStartAt) {
+    return 'Not set'
+  }
+
+  if (!ticket.value.scheduledEndAt) {
+    return formatDateTime(ticket.value.scheduledStartAt)
+  }
+
+  return `${formatDateTime(ticket.value.scheduledStartAt)} - ${formatDateTime(ticket.value.scheduledEndAt)}`
+})
+
+const paidAmountCents = computed(() => payments.value.reduce((sum, payment) => sum + payment.amountCents, 0))
+
+const balanceAmountCents = computed(() => {
+  const total = ticket.value?.totalAmountCents
+  if (total === null || total === undefined) {
+    return null
+  }
+
+  return Math.max(total - paidAmountCents.value, 0)
+})
+
+const totalAmountLabel = computed(() => formatMoney(ticket.value?.totalAmountCents ?? null, ticket.value?.currency ?? 'EUR'))
+const paidAmountLabel = computed(() => formatMoney(paidAmountCents.value, ticket.value?.currency ?? 'EUR'))
+const balanceAmountLabel = computed(() => formatMoney(balanceAmountCents.value, ticket.value?.currency ?? 'EUR'))
+
+const completedChecklistCount = computed(() => checklistItems.filter((item) => item.done).length)
+
+const getAllowedTransitions = (current: TicketStatus) => {
+  const validForStatus = VALID_TRANSITIONS[current] ?? []
+
+  if (activeRole.value === 'Owner') {
+    return validForStatus
+  }
+
+  if (activeRole.value === 'Manager') {
+    return validForStatus.filter((status) => status !== 'Paid')
+  }
+
+  if (activeRole.value === 'Technician') {
+    const technicianTransitions = TECHNICIAN_TRANSITIONS[current] ?? []
+    return technicianTransitions.filter((status) => validForStatus.includes(status))
+  }
+
+  return []
+}
+
+const isTicketStatus = (value: string): value is TicketStatus =>
+  ALL_STATUSES.includes(value as TicketStatus)
+
+const parseStatusEventComment = (body: string) => {
+  if (!body.startsWith(STATUS_EVENT_PREFIX)) {
+    return null
+  }
+
+  const payload = body.slice(STATUS_EVENT_PREFIX.length).trim()
+  const [fromRaw, toRaw] = payload.split('->').map((part) => part.trim())
+
+  if (!fromRaw || !toRaw || !isTicketStatus(fromRaw) || !isTicketStatus(toRaw)) {
+    return null
+  }
+
+  return { from: fromRaw, to: toRaw }
+}
+
+const allowedNextStatuses = computed(() => {
+  if (!ticket.value) {
+    return []
+  }
+
+  return getAllowedTransitions(ticket.value.status)
+})
+
+const canStartJob = computed(() => allowedNextStatuses.value.includes('InProgress'))
+const canCancel = computed(() => allowedNextStatuses.value.includes('Canceled'))
+
+const statusDropdownItems = computed<DropdownItem[]>(() => {
+  if (!ticket.value) {
+    return []
+  }
+
+  return allowedNextStatuses.value.map((status) => ({
+    label: statusToLabel(status),
+    action: () => updateTicketStatus(status)
+  }))
+})
+
+const timelineItems = computed<TimelineItem[]>(() => {
+  const items: TimelineItem[] = []
+
+  if (ticket.value) {
+    items.push({
+      id: `${ticket.value.id}-created`,
+      type: 'status_change',
+      actor: {
+        name: createdByLabel.value
+      },
+      content: 'Ticket created',
+      timestamp: ticket.value.createdAt
+    })
+  }
+
+  for (const comment of comments.value) {
+    const statusEvent = parseStatusEventComment(comment.body)
+    if (statusEvent) {
+      items.push({
+        id: `status-${comment.id}`,
+        type: 'status_change',
+        actor: {
+          name: userNameById.value.get(comment.authorUserId) ?? `User ${comment.authorUserId.slice(0, 8)}`
+        },
+        content: `Ticket moved from ${statusToLabel(statusEvent.from)} to ${statusToLabel(statusEvent.to)}`,
+        timestamp: comment.createdAt
+      })
+      continue
     }
-    if (t && !editingPriority.value) {
-      editForm.priority = t.priority ?? ''
+
+    items.push({
+      id: comment.id,
+      type: 'comment',
+      actor: {
+        name: userNameById.value.get(comment.authorUserId) ?? `User ${comment.authorUserId.slice(0, 8)}`
+      },
+      content: comment.body,
+      timestamp: comment.createdAt
+    })
+  }
+
+  for (const payment of payments.value) {
+    items.push({
+      id: payment.id,
+      type: 'payment',
+      actor: {
+        name: 'System'
+      },
+      content: `${providerLabel(payment.provider)} payment ${formatMoney(payment.amountCents, payment.currency)} (${payment.status})`,
+      timestamp: payment.createdAt
+    })
+  }
+
+  return items.sort((left, right) => {
+    const leftTs = new Date(left.timestamp).getTime()
+    const rightTs = new Date(right.timestamp).getTime()
+
+    if (Number.isNaN(leftTs) && Number.isNaN(rightTs)) {
+      return 0
     }
-    // Auto-enter edit mode when navigated with ?edit=1
-    if (t && !editStarted.value && route.query.edit === '1') {
-      editStarted.value = true
-      startEditing()
+
+    if (Number.isNaN(leftTs)) {
+      return 1
     }
-  },
-  { immediate: true }
-)
+
+    if (Number.isNaN(rightTs)) {
+      return -1
+    }
+
+    return rightTs - leftTs
+  })
+})
 
 const bindStreams = () => {
   ticketSub?.unsubscribe()
   commentsSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
+  paymentsSub?.unsubscribe()
 
   if (!locationStore.activeLocationId) {
     ticket.value = null
     comments.value = []
     attachments.value = []
+    payments.value = []
     return
   }
 
@@ -295,7 +642,7 @@ const bindStreams = () => {
       }
     })
     .$
-    .subscribe((doc: any | null) => {
+    .subscribe((doc: { toJSON: () => Ticket } | null) => {
       ticket.value = doc?.toJSON() ?? null
     })
 
@@ -307,11 +654,10 @@ const bindStreams = () => {
       }
     })
     .$
-    .subscribe((docs: any[]) => {
+    .subscribe((docs: Array<{ toJSON: () => TicketComment }>) => {
       comments.value = docs
         .map((doc) => doc.toJSON())
         .filter((comment) => !comment.deletedAt)
-        .sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1))
     })
 
   attachmentsSub = db.collections.ticketAttachments
@@ -322,122 +668,416 @@ const bindStreams = () => {
       }
     })
     .$
-    .subscribe((docs: any[]) => {
+    .subscribe((docs: Array<{ toJSON: () => TicketAttachment }>) => {
       attachments.value = docs
         .map((doc) => doc.toJSON())
         .filter((attachment) => !attachment.deletedAt)
-        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .sort((left, right) => (left.createdAt < right.createdAt ? 1 : -1))
+    })
+
+  paymentsSub = db.collections.paymentRecords
+    .find({
+      selector: {
+        ticketId,
+        locationId: locationStore.activeLocationId
+      }
+    })
+    .$
+    .subscribe((docs: Array<{ toJSON: () => PaymentRecord }>) => {
+      payments.value = docs.map((doc) => doc.toJSON())
     })
 }
 
+const loadUsers = async () => {
+  if (!locationStore.activeLocationId || !hasPrivilege('users.read')) {
+    users.value = []
+    return
+  }
+
+  try {
+    const payload = await api.get<Array<{ id: string; name: string }>>('/users')
+    users.value = payload
+  } catch {
+    users.value = []
+  }
+}
+
 watch(() => locationStore.activeLocationId, bindStreams, { immediate: true })
+watch(() => locationStore.activeLocationId, loadUsers, { immediate: true })
 
 onUnmounted(() => {
   ticketSub?.unsubscribe()
   commentsSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
+  paymentsSub?.unsubscribe()
 })
 
-// --- Inline editing ---
+const updateTicketStatus = async (status: TicketStatus) => {
+  if (!ticket.value || ticket.value.status === status || updatingStatus.value) {
+    return
+  }
 
-function autoResizeDescription() {
-  const el = descriptionInput.value
-  if (!el) return
-  el.style.height = 'auto'
-  el.style.height = `${el.scrollHeight}px`
-}
+  const currentStatus = ticket.value.status
+  const allowedTransitions = getAllowedTransitions(currentStatus)
 
-function startEditing() {
-  editForm.title = ticket.value?.title ?? ''
-  editForm.description = ticket.value?.description ?? ''
-  editing.value = true
-  nextTick(autoResizeDescription)
-}
+  if (!allowedTransitions.includes(status)) {
+    toast.show({
+      type: 'warning',
+      message: 'This status transition is not allowed for your role'
+    })
+    return
+  }
 
-function cancelEditing() {
-  editForm.title = ticket.value?.title ?? ''
-  editForm.description = ticket.value?.description ?? ''
-  editing.value = false
-}
+  updatingStatus.value = true
 
-async function saveEdits() {
-  if (!ticket.value) return
-  saving.value = true
   try {
     await repository.saveTicket({
       id: ticket.value.id,
-      title: editForm.title,
-      description: editForm.description
+      status
     })
-    editing.value = false
+
+    await repository.addComment({
+      ticketId: ticket.value.id,
+      body: `${STATUS_EVENT_PREFIX} ${currentStatus}->${status}`
+    })
+
     await syncStore.syncNow()
+
+    toast.show({
+      type: 'success',
+      message: `Status updated to ${statusToLabel(status)}`
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to update ticket status'
+    })
   } finally {
-    saving.value = false
+    updatingStatus.value = false
   }
 }
 
-function startEditingPriority() {
-  editForm.priority = ticket.value?.priority ?? ''
-  editingPriority.value = true
+const cancelTicket = async () => {
+  await updateTicketStatus('Canceled')
 }
 
-async function savePriority(value: string) {
-  if (!ticket.value) return
-  editingPriority.value = false
-  await repository.saveTicket({
-    id: ticket.value.id,
-    priority: value || undefined
-  })
-  await syncStore.syncNow()
+const resetEditErrors = () => {
+  editErrors.title = ''
+  editErrors.amount = ''
+  editErrors.scheduledStartAt = ''
+  editErrors.scheduledEndAt = ''
 }
 
-// --- Comments & Attachments ---
+const resetPaymentErrors = () => {
+  paymentErrors.amount = ''
+}
 
-const submitComment = () => {
-  if (commentBody.value.trim()) {
-    addComment()
+const openEditModal = () => {
+  if (!ticket.value) {
+    return
+  }
+
+  resetEditErrors()
+  editForm.title = ticket.value.title
+  editForm.description = ticket.value.description ?? ''
+  editForm.priority = ticket.value.priority?.toLowerCase() || 'medium'
+  editForm.assignee = ticket.value.assignedToUserId ?? ''
+  editForm.scheduledStartAt = ticket.value.scheduledStartAt ?? ''
+  editForm.scheduledEndAt = ticket.value.scheduledEndAt ?? ''
+  editForm.amount = formatAmountInput(ticket.value.totalAmountCents)
+  editForm.currency = ticket.value.currency || 'EUR'
+  editModalOpen.value = true
+}
+
+const validateEditForm = () => {
+  resetEditErrors()
+
+  let valid = true
+
+  if (!editForm.title.trim()) {
+    editErrors.title = 'Title is required'
+    valid = false
+  }
+
+  const parsedAmount = parseAmountToCents(editForm.amount)
+  if (Number.isNaN(parsedAmount)) {
+    editErrors.amount = 'Amount must be a valid non-negative number'
+    valid = false
+  }
+
+  const startTimestamp = editForm.scheduledStartAt ? new Date(editForm.scheduledStartAt).getTime() : null
+  const endTimestamp = editForm.scheduledEndAt ? new Date(editForm.scheduledEndAt).getTime() : null
+
+  if (startTimestamp !== null && Number.isNaN(startTimestamp)) {
+    editErrors.scheduledStartAt = 'Invalid start date'
+    valid = false
+  }
+
+  if (endTimestamp !== null && Number.isNaN(endTimestamp)) {
+    editErrors.scheduledEndAt = 'Invalid end date'
+    valid = false
+  }
+
+  if (
+    startTimestamp !== null &&
+    endTimestamp !== null &&
+    !Number.isNaN(startTimestamp) &&
+    !Number.isNaN(endTimestamp) &&
+    endTimestamp < startTimestamp
+  ) {
+    editErrors.scheduledEndAt = 'End date must be after start date'
+    valid = false
+  }
+
+  return valid
+}
+
+const submitEditTicket = async () => {
+  if (!ticket.value || editSubmitting.value) {
+    return
+  }
+
+  if (!validateEditForm()) {
+    return
+  }
+
+  const parsedAmount = parseAmountToCents(editForm.amount)
+  const patch: {
+    title?: string
+    description?: string | null
+    priority?: string | null
+    assignedToUserId?: string | null
+    scheduledStartAt?: string | null
+    scheduledEndAt?: string | null
+    totalAmountCents?: number | null
+    currency?: string
+  } = {}
+
+  const nextTitle = editForm.title.trim()
+  if (nextTitle !== ticket.value.title) {
+    patch.title = nextTitle
+  }
+
+  const nextDescription = editForm.description.trim() || null
+  if (nextDescription !== ticket.value.description) {
+    patch.description = nextDescription
+  }
+
+  const nextPriority = editForm.priority || null
+  if (nextPriority !== ticket.value.priority) {
+    patch.priority = nextPriority
+  }
+
+  const nextAssignee = editForm.assignee || null
+  if (nextAssignee !== ticket.value.assignedToUserId) {
+    patch.assignedToUserId = nextAssignee
+  }
+
+  const nextStart = editForm.scheduledStartAt || null
+  if (nextStart !== ticket.value.scheduledStartAt) {
+    patch.scheduledStartAt = nextStart
+  }
+
+  const nextEnd = editForm.scheduledEndAt || null
+  if (nextEnd !== ticket.value.scheduledEndAt) {
+    patch.scheduledEndAt = nextEnd
+  }
+
+  if (parsedAmount !== ticket.value.totalAmountCents) {
+    patch.totalAmountCents = parsedAmount
+  }
+
+  if (editForm.currency !== ticket.value.currency) {
+    patch.currency = editForm.currency
+  }
+
+  if (Object.keys(patch).length === 0) {
+    editModalOpen.value = false
+    return
+  }
+
+  editSubmitting.value = true
+
+  try {
+    await repository.saveTicket({
+      id: ticket.value.id,
+      ...patch
+    })
+
+    await syncStore.syncNow()
+    editModalOpen.value = false
+
+    toast.show({
+      type: 'success',
+      message: 'Ticket updated'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to update ticket'
+    })
+  } finally {
+    editSubmitting.value = false
+  }
+}
+
+const openPaymentModal = () => {
+  resetPaymentErrors()
+  paymentForm.provider = 'manual'
+  paymentForm.date = new Date().toISOString().slice(0, 10)
+  paymentForm.notes = ''
+
+  const suggestedAmount = balanceAmountCents.value ?? ticket.value?.totalAmountCents ?? null
+  paymentForm.amount = suggestedAmount !== null && suggestedAmount > 0 ? formatAmountInput(suggestedAmount) : ''
+  paymentModalOpen.value = true
+}
+
+const submitPayment = async () => {
+  if (!ticket.value || paymentSubmitting.value) {
+    return
+  }
+
+  resetPaymentErrors()
+
+  const amountCents = parseAmountToCents(paymentForm.amount)
+  if (amountCents === null || Number.isNaN(amountCents) || amountCents <= 0) {
+    paymentErrors.amount = 'Amount must be greater than 0'
+    return
+  }
+
+  paymentSubmitting.value = true
+
+  try {
+    await repository.addPaymentRecord({
+      ticketId: ticket.value.id,
+      provider: paymentForm.provider as 'manual' | 'stripe',
+      amountCents,
+      currency: ticket.value.currency || 'EUR',
+      status: paymentForm.provider === 'manual' ? 'Succeeded' : 'Pending'
+    })
+
+    if (paymentForm.notes.trim()) {
+      const notePrefix = paymentForm.date ? `${paymentForm.date}: ` : ''
+
+      await repository.addComment({
+        ticketId: ticket.value.id,
+        body: `Payment note — ${notePrefix}${paymentForm.notes.trim()}`
+      })
+    }
+
+    await syncStore.syncNow()
+    paymentModalOpen.value = false
+
+    toast.show({
+      type: 'success',
+      message: 'Payment recorded'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to record payment'
+    })
+  } finally {
+    paymentSubmitting.value = false
   }
 }
 
 const addComment = async () => {
-  if (!commentBody.value.trim()) {
+  if (!commentBody.value.trim() || submittingComment.value) {
     return
   }
 
-  await repository.addComment({
-    ticketId,
-    body: commentBody.value
-  })
+  submittingComment.value = true
 
-  commentBody.value = ''
-  await syncStore.syncNow()
+  try {
+    await repository.addComment({
+      ticketId,
+      body: commentBody.value.trim()
+    })
+
+    commentBody.value = ''
+    await syncStore.syncNow()
+    toast.show({
+      type: 'success',
+      message: 'Comment added'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to add comment'
+    })
+  } finally {
+    submittingComment.value = false
+  }
 }
 
 const openFileDialog = () => {
   fileInput.value?.click()
 }
 
+const uploadFile = async (file: File) => {
+  try {
+    uploadingAttachment.value = true
+    const payload = await adapter.fromFile(file)
+    await adapter.uploadAttachment(ticketId, payload)
+    await syncStore.syncNow()
+    toast.show({
+      type: 'success',
+      message: `Uploaded ${file.name}`
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: `Failed to upload ${file.name}`
+    })
+  } finally {
+    uploadingAttachment.value = false
+  }
+}
+
 const onWebFileSelected = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
+  const input = event.target as HTMLInputElement | null
+  const file = input?.files?.[0]
 
   if (!file) {
     return
   }
 
-  const payload = await adapter.fromFile(file)
-  await adapter.uploadAttachment(ticketId, payload)
-  await syncStore.syncNow()
-  input.value = ''
+  await uploadFile(file)
+
+  if (input) {
+    input.value = ''
+  }
+}
+
+const onDropFiles = async (event: DragEvent) => {
+  isDragOver.value = false
+  const files = Array.from(event.dataTransfer?.files ?? [])
+
+  if (files.length === 0) {
+    return
+  }
+
+  for (const file of files) {
+    await uploadFile(file)
+  }
 }
 
 const capturePhoto = async () => {
+  if (uploadingAttachment.value) {
+    return
+  }
+
+  uploadingAttachment.value = true
+
   try {
     const payload = await adapter.captureFromDevice()
     await adapter.uploadAttachment(ticketId, payload)
     await syncStore.syncNow()
   } catch {
     // Ignore when camera is unavailable outside mobile shell
+  } finally {
+    uploadingAttachment.value = false
   }
 }
 
@@ -449,61 +1089,32 @@ const attachmentUrl = (url: string) => {
   return `${config.public.apiBase}${url}`
 }
 
-// --- Helpers ---
+const isImageAttachment = (attachment: TicketAttachment) =>
+  attachment.mimeType.startsWith('image/') &&
+  Boolean(attachment.url) &&
+  !attachment.storageKey.startsWith('pending/')
 
-function statusVariant(s: string): 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist' {
-  const map: Record<string, 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'> = {
-    New: 'sky',
-    Scheduled: 'violet',
-    InProgress: 'flame',
-    Done: 'mint',
-    Invoiced: 'sky',
-    Paid: 'mint',
-    Canceled: 'mist'
+const formatBytes = (size: number) => {
+  if (size < 1024) {
+    return `${size} B`
   }
-  return map[s] ?? 'mist'
-}
 
-function priorityVariant(p: string | null | undefined): 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist' {
-  if (!p) return 'mist'
-  const map: Record<string, 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'> = {
-    high: 'rose',
-    medium: 'flame',
-    low: 'mist'
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`
   }
-  return map[p.toLowerCase()] ?? 'mist'
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function formatTooltipDate(iso: string | null | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  const day = d.toLocaleDateString('en-US', { weekday: 'long' })
-  const month = d.toLocaleDateString('en-US', { month: 'short' })
-  const date = d.getDate()
-  const hour = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-  return `${day} ${month} ${date}, ${hour}`
-}
+const providerLabel = (provider: string) => {
+  if (provider === 'stripe') {
+    return 'Stripe'
+  }
 
-function timeAgo(iso: string | null | undefined): string {
-  if (!iso) return '—'
-  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`
-  const years = Math.floor(months / 12)
-  return `${years} year${years === 1 ? '' : 's'} ago`
-}
+  if (provider === 'manual') {
+    return 'Manual'
+  }
 
-function formatBytes(bytes: number | null | undefined): string {
-  if (!bytes) return '0 B'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return provider
 }
 </script>

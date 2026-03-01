@@ -27,7 +27,7 @@ async function bootstrap() {
     prefix: '/uploads'
   })
 
-  const port = Number(process.env.API_PORT ?? process.env.PORT ?? '3001')
+  const port = Number(process.env.API_PORT ?? process.env.PORT ?? '3011')
   await app.listen(port)
   console.log(`API listening on http://localhost:${port}`)
 }
