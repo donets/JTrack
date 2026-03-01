@@ -10,7 +10,7 @@
         >
           <template #selected="{ option }">
             <div class="inline-flex w-full items-center gap-2">
-              <JAvatar :name="option.avatarName" size="sm" />
+              <JAvatar :name="option.avatarName ?? option.label" size="sm" />
               <span class="truncate text-sm font-medium text-ink">{{ option.label }}</span>
               <span class="ml-auto shrink-0 text-xs text-slate-500">
                 {{ formatJobCount(option.jobCount ?? 0) }}
@@ -20,7 +20,7 @@
 
           <template #option="{ option }">
             <div class="inline-flex w-full items-center gap-2">
-              <JAvatar :name="option.avatarName" size="sm" />
+              <JAvatar :name="option.avatarName ?? option.label" size="sm" />
               <span class="truncate text-sm font-medium text-ink">{{ option.label }}</span>
               <span class="ml-auto shrink-0 text-xs text-slate-500">
                 {{ formatJobCount(option.jobCount ?? 0) }}
