@@ -42,6 +42,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - `locations`: tenant container lifecycle.
 - `users`: membership and operator management (including per-location role/status updates through `PATCH /users/:id` with `x-location-id` context).
 - `tickets`, `comments`, `attachments`, `payments`: core domain CRUD.
+  - Ticket status transitions are validated server-side against shared role-based transition rules.
 - `sync`: delta pull/push and conflict handling.
 - `health`: readiness/liveness probe endpoint with DB connectivity check.
 - `prisma`: DB access abstraction and lifecycle.

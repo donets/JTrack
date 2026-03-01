@@ -13,6 +13,7 @@
 - Multi-location tenancy: each domain record belongs to a `locationId`.
 - RBAC: role/privilege model with guards on each protected endpoint.
 - Core entities: tickets, comments, attachments, payment records.
+- Ticket status updates are role-constrained and validated by shared transition policy.
 - Offline sync: pull/push protocol over deterministic change-sets.
 
 ## 3. Runtime Components

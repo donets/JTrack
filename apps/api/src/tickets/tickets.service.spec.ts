@@ -27,14 +27,22 @@ describe('TicketsService', () => {
   let prisma: {
     ticket: {
       findMany: ReturnType<typeof vi.fn>
+      findFirst: ReturnType<typeof vi.fn>
+      updateMany: ReturnType<typeof vi.fn>
+      aggregate: ReturnType<typeof vi.fn>
     }
+    $transaction: ReturnType<typeof vi.fn>
   }
 
   beforeEach(() => {
     prisma = {
       ticket: {
-        findMany: vi.fn()
-      }
+        findMany: vi.fn(),
+        findFirst: vi.fn(),
+        updateMany: vi.fn(),
+        aggregate: vi.fn()
+      },
+      $transaction: vi.fn()
     }
 
     service = new TicketsService(prisma as never)
@@ -89,6 +97,47 @@ describe('TicketsService', () => {
       offset: 0,
       nextOffset: null,
       hasMore: false
+    })
+  })
+
+  it('transitionStatus rejects invalid transitions for role', async () => {
+    prisma.ticket.findFirst.mockResolvedValue({ status: 'New' })
+
+    await expect(
+      service.transitionStatus(LOCATION_ID, 'Technician', 'ticket-1', 'Done')
+    ).rejects.toThrow('cannot transition')
+
+    expect(prisma.ticket.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('transitionStatus updates status when transition is valid', async () => {
+    prisma.ticket.findFirst.mockResolvedValue({ status: 'New' })
+    prisma.ticket.updateMany.mockResolvedValue({ count: 1 })
+    vi.spyOn(service, 'getById').mockResolvedValue({
+      id: 'ticket-1',
+      locationId: LOCATION_ID
+    } as never)
+
+    const result = await service.transitionStatus(
+      LOCATION_ID,
+      'Technician',
+      'ticket-1',
+      'InProgress'
+    )
+
+    expect(prisma.ticket.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'ticket-1',
+        locationId: LOCATION_ID,
+        deletedAt: null
+      },
+      data: {
+        status: 'InProgress'
+      }
+    })
+    expect(result).toEqual({
+      id: 'ticket-1',
+      locationId: LOCATION_ID
     })
   })
 })

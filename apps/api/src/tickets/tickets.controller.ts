@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
 import {
   createTicketSchema,
+  type RoleKey,
   type CreateTicketInput,
   ticketListQuerySchema,
   ticketStatusUpdateInputSchema,
@@ -10,6 +11,7 @@ import {
   type UpdateTicketInput
 } from '@jtrack/shared'
 import { CurrentLocation } from '@/common/current-location.decorator'
+import { CurrentLocationRole } from '@/common/current-location-role.decorator'
 import { CurrentUser } from '@/common/current-user.decorator'
 import type { JwtUser } from '@/common/types'
 import { ZodValidationPipe } from '@/common/zod-validation.pipe'
@@ -59,10 +61,11 @@ export class TicketsController {
   @RequirePrivileges(['tickets.status.update'])
   async transitionStatus(
     @CurrentLocation() locationId: string,
+    @CurrentLocationRole() role: RoleKey,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(ticketStatusUpdateInputSchema)) body: UpdateTicketStatusInput
   ) {
-    return this.ticketsService.transitionStatus(locationId, id, body.status)
+    return this.ticketsService.transitionStatus(locationId, role, id, body.status)
   }
 
   @Delete(':id')

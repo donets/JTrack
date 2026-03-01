@@ -280,7 +280,14 @@
 
 <script setup lang="ts">
 import type { BreadcrumbItem, DropdownItem, TimelineItem } from '~/types/ui'
-import type { PaymentRecord, Ticket, TicketAttachment, TicketComment, TicketStatus } from '@jtrack/shared'
+import {
+  listAllowedStatusTransitions,
+  type PaymentRecord,
+  type Ticket,
+  type TicketAttachment,
+  type TicketComment,
+  type TicketStatus
+} from '@jtrack/shared'
 import {
   priorityToBadgeVariant,
   statusToBadgeVariant,
@@ -301,22 +308,6 @@ interface LocationUser {
 }
 
 const ALL_STATUSES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
-const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-  New: ['Scheduled', 'InProgress', 'Canceled'],
-  Scheduled: ['InProgress', 'Canceled'],
-  InProgress: ['Done', 'Canceled'],
-  Done: ['Invoiced', 'Canceled'],
-  Invoiced: ['Paid', 'Canceled'],
-  Paid: [],
-  Canceled: []
-}
-
-const TECHNICIAN_TRANSITIONS: Partial<Record<TicketStatus, TicketStatus[]>> = {
-  New: ['InProgress'],
-  Scheduled: ['InProgress'],
-  InProgress: ['Done']
-}
-
 const STATUS_EVENT_PREFIX = '[status-change]'
 
 const route = useRoute()
@@ -498,22 +489,11 @@ const balanceAmountLabel = computed(() => formatMoney(balanceAmountCents.value, 
 const completedChecklistCount = computed(() => checklistItems.filter((item) => item.done).length)
 
 const getAllowedTransitions = (current: TicketStatus) => {
-  const validForStatus = VALID_TRANSITIONS[current] ?? []
-
-  if (activeRole.value === 'Owner') {
-    return validForStatus
+  if (!activeRole.value) {
+    return []
   }
 
-  if (activeRole.value === 'Manager') {
-    return validForStatus.filter((status) => status !== 'Paid')
-  }
-
-  if (activeRole.value === 'Technician') {
-    const technicianTransitions = TECHNICIAN_TRANSITIONS[current] ?? []
-    return technicianTransitions.filter((status) => validForStatus.includes(status))
-  }
-
-  return []
+  return listAllowedStatusTransitions(current, activeRole.value)
 }
 
 const isTicketStatus = (value: string): value is TicketStatus =>

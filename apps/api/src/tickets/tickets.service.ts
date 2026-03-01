@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException
+} from '@nestjs/common'
 import {
   type CreateTicketInput,
+  type RoleKey,
   type TicketListQuery,
   type TicketListResponse,
   type TicketStatus,
-  type UpdateTicketInput
+  type UpdateTicketInput,
+  validateStatusTransition
 } from '@jtrack/shared'
 import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
@@ -131,7 +137,30 @@ export class TicketsService {
     return this.getById(locationId, ticketId)
   }
 
-  async transitionStatus(locationId: string, ticketId: string, status: TicketStatus) {
+  async transitionStatus(
+    locationId: string,
+    role: RoleKey,
+    ticketId: string,
+    status: TicketStatus
+  ) {
+    const existing = await this.prisma.ticket.findFirst({
+      where: {
+        id: ticketId,
+        locationId,
+        deletedAt: null
+      },
+      select: { status: true }
+    })
+
+    if (!existing) {
+      throw new NotFoundException('Ticket not found')
+    }
+
+    const validation = validateStatusTransition(existing.status, status, role)
+    if (!validation.valid) {
+      throw new UnprocessableEntityException(validation.reason ?? 'Invalid status transition')
+    }
+
     const updated = await this.prisma.ticket.updateMany({
       where: {
         id: ticketId,

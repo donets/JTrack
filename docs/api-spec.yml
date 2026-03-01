@@ -642,6 +642,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TicketDetails'
+        '422':
+          description: Invalid status transition for current role/workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Ticket not found
           content:
