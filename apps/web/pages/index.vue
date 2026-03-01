@@ -1,8 +1,6 @@
 <script setup lang="ts">
-const router = useRouter()
-
-onMounted(() => {
-  void router.replace('/dashboard')
+definePageMeta({
+  middleware: 'root-redirect'
 })
 </script>
 
