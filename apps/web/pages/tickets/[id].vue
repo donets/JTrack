@@ -1,6 +1,7 @@
 <template>
   <section v-if="ticket" class="space-y-4">
     <JPageHeader
+      class="hidden md:block"
       :title="ticketTitle"
       :breadcrumbs="breadcrumbs"
     >
@@ -16,23 +17,145 @@
       </template>
     </JPageHeader>
 
+    <section class="rounded-lg border border-slate-200 bg-white p-3 md:hidden">
+      <button type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-700" @click="goBackToTickets">
+        ← Back to tickets
+      </button>
+      <div class="mt-2 flex items-start justify-between gap-3">
+        <h1 class="text-lg font-bold text-ink">{{ ticketTitle }}</h1>
+        <JBadge :variant="statusToBadgeVariant(ticket.status)">{{ statusToLabel(ticket.status) }}</JBadge>
+      </div>
+    </section>
+
     <div class="grid grid-cols-3 gap-2 md:hidden">
       <JButton size="sm" :disabled="!canStartJob || updatingStatus" @click="updateTicketStatus('InProgress')">
         Start Job
       </JButton>
-      <JButton size="sm" variant="secondary">Navigate</JButton>
-      <JButton size="sm" variant="secondary">Call</JButton>
+      <JButton size="sm" variant="secondary" :disabled="!navigationUrl" @click="openNavigation">Navigate</JButton>
+      <JButton size="sm" variant="secondary" :disabled="!customerPhone" @click="callCustomer">Call Customer</JButton>
     </div>
+
+    <section class="space-y-2 md:hidden">
+      <article class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-ink"
+          @click="toggleMobileSection('details')"
+        >
+          <span>Details</span>
+          <span class="text-slate-500">{{ mobileSections.details ? '−' : '+' }}</span>
+        </button>
+        <div v-if="mobileSections.details" class="border-t border-slate-200 p-4">
+          <dl class="space-y-3 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Status</dt>
+              <dd>
+                <div class="flex items-center gap-2">
+                  <JBadge :variant="statusToBadgeVariant(ticket.status)">{{ statusToLabel(ticket.status) }}</JBadge>
+                  <JDropdown v-if="statusDropdownItems.length > 0" :items="statusDropdownItems" align="right">
+                    <template #trigger>
+                      <JButton size="sm" variant="ghost" :disabled="updatingStatus">Change</JButton>
+                    </template>
+                  </JDropdown>
+                </div>
+              </dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Priority</dt>
+              <dd>
+                <JBadge :variant="priorityToBadgeVariant(ticket.priority)">{{ formatPriorityLabel(ticket.priority) }}</JBadge>
+              </dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Assigned</dt>
+              <dd class="text-right text-ink">{{ assignedLabel }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Created by</dt>
+              <dd class="text-right text-ink">{{ createdByLabel }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Created</dt>
+              <dd class="text-right text-ink">{{ formatDateTime(ticket.createdAt) }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Scheduled</dt>
+              <dd class="text-right text-ink">{{ scheduledRangeLabel }}</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-ink"
+          @click="toggleMobileSection('description')"
+        >
+          <span>Description</span>
+          <span class="text-slate-500">{{ mobileSections.description ? '−' : '+' }}</span>
+        </button>
+        <div v-if="mobileSections.description" class="border-t border-slate-200 p-4">
+          <p class="text-sm text-ink-light">
+            {{ ticket.description || 'No description provided.' }}
+          </p>
+        </div>
+      </article>
+
+      <article class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-ink"
+          @click="toggleMobileSection('comments')"
+        >
+          <span>Comments</span>
+          <span class="text-slate-500">{{ mobileSections.comments ? '−' : '+' }}</span>
+        </button>
+        <div v-if="mobileSections.comments" class="space-y-4 border-t border-slate-200 p-4">
+          <JTimeline
+            :items="timelineItems"
+            :deletable-comment-ids="deletableCommentIds"
+            :deleting-comment-id="deletingCommentId"
+            @delete-comment="deleteComment"
+          />
+
+          <form class="space-y-3" @submit.prevent="addComment">
+            <JTextarea
+              v-model="commentBody"
+              placeholder="Write a comment..."
+              :rows="3"
+            />
+
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="openFileDialog">
+                Attach
+              </JButton>
+              <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="capturePhoto">
+                Photo
+              </JButton>
+              <JButton size="sm" type="submit" :disabled="!commentBody.trim()" :loading="submittingComment">
+                Send
+              </JButton>
+            </div>
+          </form>
+        </div>
+      </article>
+    </section>
 
     <div class="flex flex-col gap-6 md:flex-row">
       <div class="min-w-0 flex-[3] space-y-6">
-        <JCard title="Description">
+        <JCard class="hidden md:block" title="Description">
           <p class="text-sm text-ink-light">
             {{ ticket.description || 'No description provided.' }}
           </p>
         </JCard>
 
-        <JCard title="Activity">
+        <JCard class="hidden md:block" title="Activity">
           <JTimeline
             :items="timelineItems"
             :deletable-comment-ids="deletableCommentIds"
@@ -41,7 +164,7 @@
           />
         </JCard>
 
-        <JCard>
+        <JCard class="hidden md:block">
           <form class="space-y-3" @submit.prevent="addComment">
             <JTextarea
               v-model="commentBody"
@@ -159,7 +282,7 @@
       </div>
 
       <div class="w-full space-y-4 md:max-w-[300px] lg:max-w-[320px]">
-        <JCard title="Details">
+        <JCard class="hidden md:block" title="Details">
           <dl class="space-y-3 text-sm">
             <div class="flex items-center justify-between gap-3">
               <dt class="text-slate-500">Status</dt>
@@ -401,6 +524,11 @@ const previewAttachment = ref<TicketAttachment | null>(null)
 const uploadProgressItems = ref<UploadProgressItem[]>([])
 const isDragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const mobileSections = reactive({
+  details: false,
+  description: true,
+  comments: true
+})
 const editModalOpen = ref(false)
 const editSubmitting = ref(false)
 const paymentModalOpen = ref(false)
@@ -589,6 +717,23 @@ const allowedNextStatuses = computed(() => {
 
 const canStartJob = computed(() => allowedNextStatuses.value.includes('InProgress'))
 const canCancel = computed(() => allowedNextStatuses.value.includes('Canceled'))
+const navigationUrl = computed(() => {
+  const address = locationStore.activeLocation?.address?.trim()
+  if (!address) {
+    return ''
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+})
+const customerPhone = computed(() => {
+  const description = ticket.value?.description ?? ''
+  const match = description.match(/(\+?\d[\d\s\-()]{6,}\d)/)
+  if (!match?.[1]) {
+    return ''
+  }
+
+  return match[1].replace(/[^\d+]/g, '')
+})
 
 const statusDropdownItems = computed<DropdownItem[]>(() => {
   if (!ticket.value) {
@@ -752,6 +897,38 @@ const updateTicketStatus = async (status: TicketStatus) => {
   } finally {
     updatingStatus.value = false
   }
+}
+
+const toggleMobileSection = (section: keyof typeof mobileSections) => {
+  mobileSections[section] = !mobileSections[section]
+}
+
+const goBackToTickets = async () => {
+  await navigateTo('/tickets')
+}
+
+const openNavigation = () => {
+  if (!navigationUrl.value) {
+    toast.show({
+      type: 'warning',
+      message: 'Customer address is not available'
+    })
+    return
+  }
+
+  window.open(navigationUrl.value, '_blank', 'noopener')
+}
+
+const callCustomer = () => {
+  if (!customerPhone.value) {
+    toast.show({
+      type: 'warning',
+      message: 'Customer phone was not found in ticket description'
+    })
+    return
+  }
+
+  window.location.href = `tel:${customerPhone.value}`
 }
 
 const cancelTicket = async () => {

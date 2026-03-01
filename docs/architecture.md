@@ -87,6 +87,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Activity timeline renders author avatars and relative timestamps, and allows users to soft-delete their own comments.
 - `/tickets` view integrates `all`, `board`, `calendar`, and `map` tabs with shared filters and query-param state (`view=`).
 - Tickets list `all` tab includes explicit loading, empty, filtered-empty, and recoverable error states.
+- Mobile ticket detail includes compact back-header, quick action buttons (start/navigate/call), and collapsible details/description/comments sections.
 - Dispatch map tab uses Leaflet with OpenStreetMap tiles for interactive job visualization.
 - Until backend geo fields are introduced, map coordinates are deterministic mock points derived from `hash(ticketId + locationId)` inside a fixed viewport bounding box.
 

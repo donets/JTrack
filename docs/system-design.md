@@ -84,6 +84,7 @@
 - Ticket checklist state is updated through regular ticket outbox updates (no separate checklist entity/collection).
 - Tickets page exposes unified tabs (`all|board|calendar|map`) and persists active view through URL query (`view`).
 - Tickets `all` panel handles RxDB subscription lifecycle with dedicated loading skeleton, empty states, and retryable error state.
+- Ticket detail mobile mode exposes dedicated action row (`Start Job`, `Navigate`, `Call Customer`) and accordion-style sections.
 - On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 - Dispatch map view is implemented with Leaflet + OpenStreetMap tiles.
