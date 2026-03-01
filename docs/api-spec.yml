@@ -701,6 +701,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /tickets/{id}/activity:
+    get:
+      tags: [Tickets]
+      summary: Get ticket activity timeline
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Chronological activity items (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketActivity'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /comments:
     get:
       tags: [Comments]
@@ -1190,6 +1213,10 @@ components:
       type: string
       enum: [New, Scheduled, InProgress, Done, Invoiced, Paid, Canceled]
 
+    TicketActivityType:
+      type: string
+      enum: [status_change, assignment, comment, attachment, payment, created]
+
     AttachmentKind:
       type: string
       enum: [Photo, File]
@@ -1441,6 +1468,31 @@ components:
           format: date-time
           nullable: true
       required: [id, ticketId, locationId, authorUserId, body, createdAt, updatedAt]
+
+    TicketActivity:
+      type: object
+      properties:
+        id:
+          type: string
+        ticketId:
+          type: string
+        locationId:
+          type: string
+        userId:
+          type: string
+          nullable: true
+        type:
+          $ref: '#/components/schemas/TicketActivityType'
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, ticketId, locationId, type, metadata, createdAt, updatedAt]
 
     TicketAttachment:
       type: object
@@ -1747,6 +1799,23 @@ components:
             type: string
       required: [created, updated, deleted]
 
+    SyncEntityChangesActivity:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketActivity'
+        updated:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketActivity'
+        deleted:
+          type: array
+          items:
+            type: string
+      required: [created, updated, deleted]
+
     SyncEntityChangesAttachment:
       type: object
       properties:
@@ -1786,13 +1855,15 @@ components:
       properties:
         tickets:
           $ref: '#/components/schemas/SyncEntityChangesTicket'
+        ticketActivities:
+          $ref: '#/components/schemas/SyncEntityChangesActivity'
         ticketComments:
           $ref: '#/components/schemas/SyncEntityChangesComment'
         ticketAttachments:
           $ref: '#/components/schemas/SyncEntityChangesAttachment'
         paymentRecords:
           $ref: '#/components/schemas/SyncEntityChangesPayment'
-      required: [tickets, ticketComments, ticketAttachments, paymentRecords]
+      required: [tickets, ticketActivities, ticketComments, ticketAttachments, paymentRecords]
 
     SyncPullRequest:
       type: object
@@ -1823,6 +1894,9 @@ components:
         ticketsOffset:
           type: integer
           minimum: 0
+        ticketActivitiesOffset:
+          type: integer
+          minimum: 0
         ticketCommentsOffset:
           type: integer
           minimum: 0
@@ -1833,7 +1907,7 @@ components:
           type: integer
           minimum: 0
       required:
-        [snapshotAt, ticketsOffset, ticketCommentsOffset, ticketAttachmentsOffset, paymentRecordsOffset]
+        [snapshotAt, ticketsOffset, ticketActivitiesOffset, ticketCommentsOffset, ticketAttachmentsOffset, paymentRecordsOffset]
 
     SyncPullResponse:
       type: object

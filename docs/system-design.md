@@ -12,7 +12,7 @@
 - Invite onboarding: signed invite token + first-time password setup endpoint.
 - Multi-location tenancy: each domain record belongs to a `locationId`.
 - RBAC: role/privilege model with guards on each protected endpoint.
-- Core entities: tickets, comments, attachments, payment records.
+- Core entities: tickets, ticket activities, comments, attachments, payment records.
 - Ticket status updates are role-constrained and validated by shared transition policy.
 - Offline sync: pull/push protocol over deterministic change-sets.
 
@@ -55,6 +55,7 @@
   - `created[]`
   - `updated[]`
   - `deleted[]` (IDs only)
+- Current pull entities: `tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`.
 - Returns stable `timestamp` (equal to `snapshotAt`) for next client checkpoint.
 
 ### 6.2 Push (`POST /sync/push`)
@@ -75,7 +76,7 @@
   - Staged file payload is stored once (in `pendingAttachmentUploads`), while `ticketAttachments` keeps a lightweight pending placeholder.
   - Offline staging is bounded by max file size (25MB) to reduce IndexedDB quota pressure.
   - Pending uploads are flushed with per-item retry semantics: one failed file does not block subsequent files in the same sync run.
-- On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
+- On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 - Dispatch map view is implemented with Leaflet + OpenStreetMap tiles.
 - Current map positions are deterministic pseudo-coordinates derived from `hash(ticketId + locationId)` within a fixed bounding box, pending backend geolocation fields.

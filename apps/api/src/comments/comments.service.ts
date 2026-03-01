@@ -43,6 +43,19 @@ export class CommentsService {
       }
     })
 
+    await this.prisma.ticketActivity.create({
+      data: {
+        ticketId: input.ticketId,
+        locationId,
+        userId: authorUserId,
+        type: 'comment',
+        metadata: {
+          commentId: comment.id,
+          bodyPreview: input.body.slice(0, 160)
+        }
+      }
+    })
+
     return serializeDates(comment)
   }
 

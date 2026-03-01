@@ -2,6 +2,7 @@ import { z } from 'zod'
 import {
   idSchema,
   paymentRecordSchema,
+  ticketActivitySchema,
   ticketAttachmentSchema,
   ticketCommentSchema,
   ticketSchema
@@ -16,6 +17,7 @@ export const syncEntityChangesSchema = <TSchema extends z.ZodTypeAny>(entitySche
 
 export const syncChangesSchema = z.object({
   tickets: syncEntityChangesSchema(ticketSchema),
+  ticketActivities: syncEntityChangesSchema(ticketActivitySchema),
   ticketComments: syncEntityChangesSchema(ticketCommentSchema),
   ticketAttachments: syncEntityChangesSchema(ticketAttachmentSchema),
   paymentRecords: syncEntityChangesSchema(paymentRecordSchema)
@@ -26,6 +28,7 @@ const syncPullLimitSchema = z.number().int().min(1).max(200)
 export const syncPullCursorSchema = z.object({
   snapshotAt: z.number().int().nonnegative(),
   ticketsOffset: z.number().int().nonnegative(),
+  ticketActivitiesOffset: z.number().int().nonnegative(),
   ticketCommentsOffset: z.number().int().nonnegative(),
   ticketAttachmentsOffset: z.number().int().nonnegative(),
   paymentRecordsOffset: z.number().int().nonnegative()

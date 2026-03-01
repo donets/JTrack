@@ -13,7 +13,12 @@ interface SyncState {
   clientId: string
 }
 
-type EntityCollection = 'tickets' | 'ticketComments' | 'ticketAttachments' | 'paymentRecords'
+type EntityCollection =
+  | 'tickets'
+  | 'ticketActivities'
+  | 'ticketComments'
+  | 'ticketAttachments'
+  | 'paymentRecords'
 
 type OutboxEntity =
   | 'tickets'
@@ -23,6 +28,7 @@ type OutboxEntity =
 
 const entityCollections: EntityCollection[] = [
   'tickets',
+  'ticketActivities',
   'ticketComments',
   'ticketAttachments',
   'paymentRecords'
@@ -52,6 +58,7 @@ interface PendingAttachmentUpload {
 function createEmptyChanges(): SyncChanges {
   return {
     tickets: { created: [], updated: [], deleted: [] },
+    ticketActivities: { created: [], updated: [], deleted: [] },
     ticketComments: { created: [], updated: [], deleted: [] },
     ticketAttachments: { created: [], updated: [], deleted: [] },
     paymentRecords: { created: [], updated: [], deleted: [] }
@@ -423,6 +430,7 @@ export const useSyncStore = defineStore('sync', {
 
     async applyIncomingChanges(db: any, changes: SyncChanges) {
       await this.applyEntityChanges(db, 'tickets', changes.tickets)
+      await this.applyEntityChanges(db, 'ticketActivities', changes.ticketActivities)
       await this.applyEntityChanges(db, 'ticketComments', changes.ticketComments)
       await this.applyEntityChanges(db, 'ticketAttachments', changes.ticketAttachments)
       await this.applyEntityChanges(db, 'paymentRecords', changes.paymentRecords)

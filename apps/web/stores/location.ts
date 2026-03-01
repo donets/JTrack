@@ -122,6 +122,7 @@ export const useLocationStore = defineStore('location', {
 
       const locationScopedCollections = [
         db.collections.tickets,
+        db.collections.ticketActivities,
         db.collections.ticketComments,
         db.collections.ticketAttachments,
         db.collections.paymentRecords,

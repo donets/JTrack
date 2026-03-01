@@ -6,6 +6,7 @@ import {
   type SyncPullResponse,
   type SyncPushRequest,
   type SyncPushResponse,
+  type TicketActivity,
   type Ticket,
   type TicketAttachment,
   type TicketComment,
@@ -30,12 +31,13 @@ export class SyncService {
     const snapshotDate = new Date(snapshotAt)
     const offsets = {
       tickets: body.cursor?.ticketsOffset ?? 0,
+      ticketActivities: body.cursor?.ticketActivitiesOffset ?? 0,
       ticketComments: body.cursor?.ticketCommentsOffset ?? 0,
       ticketAttachments: body.cursor?.ticketAttachmentsOffset ?? 0,
       paymentRecords: body.cursor?.paymentRecordsOffset ?? 0
     }
 
-    const [ticketRows, ticketCommentRows, ticketAttachmentRows, paymentRecordRows] =
+    const [ticketRows, ticketActivityRows, ticketCommentRows, ticketAttachmentRows, paymentRecordRows] =
       await Promise.all([
         this.prisma.ticket.findMany({
           where: {
@@ -47,6 +49,15 @@ export class SyncService {
           },
           orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
           skip: offsets.tickets,
+          take: limit + 1
+        }),
+        this.prisma.ticketActivity.findMany({
+          where: {
+            locationId: body.locationId,
+            updatedAt: { gt: since, lte: snapshotDate }
+          },
+          orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+          skip: offsets.ticketActivities,
           take: limit + 1
         }),
         this.prisma.ticketComment.findMany({
@@ -85,16 +96,19 @@ export class SyncService {
       ])
 
     const tickets = ticketRows.slice(0, limit)
+    const ticketActivities = ticketActivityRows.slice(0, limit)
     const ticketComments = ticketCommentRows.slice(0, limit)
     const ticketAttachments = ticketAttachmentRows.slice(0, limit)
     const paymentRecords = paymentRecordRows.slice(0, limit)
     const ticketsHasMore = ticketRows.length > limit
+    const ticketActivitiesHasMore = ticketActivityRows.length > limit
     const ticketCommentsHasMore = ticketCommentRows.length > limit
     const ticketAttachmentsHasMore = ticketAttachmentRows.length > limit
     const paymentRecordsHasMore = paymentRecordRows.length > limit
 
     const changes: SyncChanges = {
       tickets: { created: [], updated: [], deleted: [] },
+      ticketActivities: { created: [], updated: [], deleted: [] },
       ticketComments: { created: [], updated: [], deleted: [] },
       ticketAttachments: { created: [], updated: [], deleted: [] },
       paymentRecords: { created: [], updated: [], deleted: [] }
@@ -107,6 +121,14 @@ export class SyncService {
         changes.tickets.created.push(this.serializeTicket(ticket))
       } else {
         changes.tickets.updated.push(this.serializeTicket(ticket))
+      }
+    }
+
+    for (const activity of ticketActivities) {
+      if (activity.createdAt.getTime() > lastPulledAt) {
+        changes.ticketActivities.created.push(this.serializeActivity(activity))
+      } else {
+        changes.ticketActivities.updated.push(this.serializeActivity(activity))
       }
     }
 
@@ -139,7 +161,11 @@ export class SyncService {
     }
 
     const hasMore =
-      ticketsHasMore || ticketCommentsHasMore || ticketAttachmentsHasMore || paymentRecordsHasMore
+      ticketsHasMore ||
+      ticketActivitiesHasMore ||
+      ticketCommentsHasMore ||
+      ticketAttachmentsHasMore ||
+      paymentRecordsHasMore
 
     return {
       changes,
@@ -149,6 +175,7 @@ export class SyncService {
         ? {
             snapshotAt,
             ticketsOffset: offsets.tickets + tickets.length,
+            ticketActivitiesOffset: offsets.ticketActivities + ticketActivities.length,
             ticketCommentsOffset: offsets.ticketComments + ticketComments.length,
             ticketAttachmentsOffset: offsets.ticketAttachments + ticketAttachments.length,
             paymentRecordsOffset: offsets.paymentRecords + paymentRecords.length
@@ -167,6 +194,7 @@ export class SyncService {
 
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await this.applyTicketChanges(tx, body.locationId, body.changes, lastPulledAt, now)
+      await this.applyActivityChanges(tx, body.locationId, body.changes, lastPulledAt, now)
       await this.applyCommentChanges(tx, body.locationId, body.changes, lastPulledAt, now)
       await this.applyAttachmentChanges(tx, body.locationId, body.changes, lastPulledAt, now)
       await this.applyPaymentChanges(tx, body.locationId, body.changes, lastPulledAt, now)
@@ -175,6 +203,60 @@ export class SyncService {
     return {
       ok: true,
       newTimestamp: now.getTime()
+    }
+  }
+
+  private async applyActivityChanges(
+    tx: Prisma.TransactionClient,
+    locationId: string,
+    changes: SyncChanges,
+    lastPulledAt: Date,
+    now: Date
+  ) {
+    const upsertRecords = [...changes.ticketActivities.created, ...changes.ticketActivities.updated]
+    const existingUpsertById = await this.loadExistingById(
+      upsertRecords.map((record) => record.id),
+      (ids: string[]) =>
+        tx.ticketActivity.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            locationId: true,
+            updatedAt: true
+          }
+        })
+    )
+
+    for (const record of upsertRecords) {
+      const existing = existingUpsertById.get(record.id)
+      if (existing && (existing.locationId !== locationId || existing.updatedAt > lastPulledAt)) {
+        continue
+      }
+
+      if (existing) {
+        await tx.ticketActivity.update({
+          where: { id: record.id },
+          data: {
+            type: record.type,
+            userId: record.userId,
+            metadata: record.metadata as Prisma.InputJsonValue,
+            updatedAt: now
+          }
+        })
+      } else {
+        await tx.ticketActivity.create({
+          data: {
+            id: record.id,
+            ticketId: record.ticketId,
+            locationId,
+            userId: record.userId,
+            type: record.type,
+            metadata: record.metadata as Prisma.InputJsonValue,
+            createdAt: new Date(record.createdAt),
+            updatedAt: now
+          }
+        })
+      }
     }
   }
 
@@ -575,6 +657,28 @@ export class SyncService {
     deletedAt: Date | null
   }): TicketComment {
     return serializeDates(comment) as TicketComment
+  }
+
+  private serializeActivity(activity: {
+    id: string
+    ticketId: string
+    locationId: string
+    userId: string | null
+    type: string
+    metadata: Prisma.JsonValue
+    createdAt: Date
+    updatedAt: Date
+  }): TicketActivity {
+    const serialized = serializeDates(activity)
+
+    return {
+      ...serialized,
+      type: activity.type as TicketActivity['type'],
+      metadata:
+        activity.metadata && typeof activity.metadata === 'object' && !Array.isArray(activity.metadata)
+          ? (activity.metadata as TicketActivity['metadata'])
+          : {}
+    }
   }
 
   private serializeAttachment(attachment: {

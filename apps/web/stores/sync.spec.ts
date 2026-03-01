@@ -6,6 +6,7 @@ import { useSyncStore } from './sync'
 
 const createEmptyChanges = () => ({
   tickets: { created: [], updated: [], deleted: [] },
+  ticketActivities: { created: [], updated: [], deleted: [] },
   ticketComments: { created: [], updated: [], deleted: [] },
   ticketAttachments: { created: [], updated: [], deleted: [] },
   paymentRecords: { created: [], updated: [], deleted: [] }
@@ -52,6 +53,7 @@ describe('sync store', () => {
           }))
         },
         tickets: createCollectionMock(),
+        ticketActivities: createCollectionMock(),
         ticketComments: createCollectionMock(),
         ticketAttachments: createCollectionMock(),
         paymentRecords: createCollectionMock()
@@ -155,6 +157,7 @@ describe('sync store', () => {
           }))
         },
         tickets: createCollectionMock(),
+        ticketActivities: createCollectionMock(),
         ticketComments: createCollectionMock(),
         ticketAttachments: createCollectionMock(),
         paymentRecords: createCollectionMock()
@@ -200,6 +203,7 @@ describe('sync store', () => {
     const paginationCursor = {
       snapshotAt: 1_700_000_003_000,
       ticketsOffset: 1,
+      ticketActivitiesOffset: 0,
       ticketCommentsOffset: 0,
       ticketAttachmentsOffset: 0,
       paymentRecordsOffset: 0
@@ -294,6 +298,7 @@ describe('sync store', () => {
           }))
         },
         tickets: ticketsCollection,
+        ticketActivities: createCollectionMock(),
         ticketComments: createCollectionMock(),
         ticketAttachments: createCollectionMock(),
         paymentRecords: createCollectionMock()
@@ -419,6 +424,7 @@ describe('sync store', () => {
           }))
         },
         tickets: ticketsCollection,
+        ticketActivities: createCollectionMock(),
         ticketComments: createCollectionMock(),
         ticketAttachments: createCollectionMock(),
         paymentRecords: createCollectionMock()
@@ -502,6 +508,7 @@ describe('sync store', () => {
           }))
         },
         tickets: ticketsCollection,
+        ticketActivities: createCollectionMock(),
         ticketComments: createCollectionMock(),
         ticketAttachments: createCollectionMock(),
         paymentRecords: createCollectionMock()

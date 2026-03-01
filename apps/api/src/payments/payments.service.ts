@@ -21,7 +21,7 @@ export class PaymentsService {
     return payments.map((payment: (typeof payments)[number]) => serializeDates(payment))
   }
 
-  async create(locationId: string, input: CreatePaymentRecordInput) {
+  async create(locationId: string, userId: string, input: CreatePaymentRecordInput) {
     const ticket = await this.prisma.ticket.findFirst({
       where: {
         id: input.ticketId,
@@ -43,6 +43,22 @@ export class PaymentsService {
         amountCents: input.amountCents,
         currency: input.currency,
         status: input.status
+      }
+    })
+
+    await this.prisma.ticketActivity.create({
+      data: {
+        ticketId: input.ticketId,
+        locationId,
+        userId,
+        type: 'payment',
+        metadata: {
+          paymentId: payment.id,
+          provider: payment.provider,
+          amountCents: payment.amountCents,
+          currency: payment.currency,
+          status: payment.status
+        }
       }
     })
 

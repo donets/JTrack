@@ -41,7 +41,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - `rbac`: role/privilege resolution and access checks.
 - `locations`: tenant container lifecycle.
 - `users`: membership and operator management (including per-location role/status updates through `PATCH /users/:id` with `x-location-id` context).
-- `tickets`, `comments`, `attachments`, `payments`: core domain CRUD.
+- `tickets`, `comments`, `attachments`, `payments`, `ticketActivities`: core domain CRUD and timeline events.
   - Ticket status transitions are validated server-side against shared role-based transition rules.
 - `sync`: delta pull/push and conflict handling.
 - `health`: readiness/liveness probe endpoint with DB connectivity check.
@@ -60,6 +60,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
   - enums for role/status/provider kinds,
   - referential integrity via foreign keys,
   - location-scoped sequential ticket numbering (`Ticket.ticketNumber`) for human-readable references,
+  - immutable per-ticket activity log records (`TicketActivity`) for timeline/audit surfaces,
   - indexes tuned for location-scoped queries and sync windows.
 - Soft-delete only where sync tombstones are required.
 - User deletion is hard-delete with transactional session invalidation (`refreshTokenHash` reset) and reassignment of historical `createdBy`/`assignedTo`/`author`/`uploadedBy` references to a reserved non-admin system user to satisfy FK constraints.
@@ -103,6 +104,7 @@ sequenceDiagram
 ```
 
 - `GET /tickets` uses offset pagination (`limit`, `offset`) and returns `{ items, page }`.
+- `GET /tickets/:id/activity` returns ticket timeline records ordered by `createdAt DESC`.
 - `POST /sync/pull` uses cursor pagination with per-entity offsets and a fixed `snapshotAt` timestamp to keep multipage pulls consistent.
 - `POST /sync/push` preloads existing records by batched `findMany(where: { id: { in: [...] } })` per entity to avoid N+1 lookups inside mutation loops.
 

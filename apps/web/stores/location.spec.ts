@@ -54,6 +54,7 @@ describe('location store', () => {
 
   it('removes records from non-active locations and old sync checkpoints', async () => {
     const tickets = createCollectionMock(['ticket-1'])
+    const activities = createCollectionMock(['activity-1'])
     const comments = createCollectionMock(['comment-1'])
     const attachments = createCollectionMock(['attachment-1'])
     const payments = createCollectionMock(['payment-1'])
@@ -64,6 +65,7 @@ describe('location store', () => {
     vi.stubGlobal('useRxdb', () => ({
       collections: {
         tickets,
+        ticketActivities: activities,
         ticketComments: comments,
         ticketAttachments: attachments,
         paymentRecords: payments,
@@ -77,7 +79,7 @@ describe('location store', () => {
 
     await locationStore.cleanupLocationScopedData('loc-2')
 
-    for (const collection of [tickets, comments, attachments, payments, outbox, pendingUploads]) {
+    for (const collection of [tickets, activities, comments, attachments, payments, outbox, pendingUploads]) {
       expect(collection.find).toHaveBeenCalledWith({
         selector: {
           locationId: { $ne: 'loc-2' }
@@ -96,6 +98,7 @@ describe('location store', () => {
 
   it('removes all location-scoped records when location is unset', async () => {
     const tickets = createCollectionMock(['ticket-1', 'ticket-2'])
+    const activities = createCollectionMock(['activity-1'])
     const comments = createCollectionMock(['comment-1'])
     const attachments = createCollectionMock(['attachment-1'])
     const payments = createCollectionMock(['payment-1'])
@@ -106,6 +109,7 @@ describe('location store', () => {
     vi.stubGlobal('useRxdb', () => ({
       collections: {
         tickets,
+        ticketActivities: activities,
         ticketComments: comments,
         ticketAttachments: attachments,
         paymentRecords: payments,
@@ -119,10 +123,11 @@ describe('location store', () => {
 
     await locationStore.cleanupLocationScopedData(null)
 
-    for (const collection of [tickets, comments, attachments, payments, outbox, pendingUploads]) {
+    for (const collection of [tickets, activities, comments, attachments, payments, outbox, pendingUploads]) {
       expect(collection.find).toHaveBeenCalledWith()
     }
     expect(tickets.bulkRemove).toHaveBeenCalledWith(['ticket-1', 'ticket-2'])
+    expect(activities.bulkRemove).toHaveBeenCalledWith(['activity-1'])
     expect(comments.bulkRemove).toHaveBeenCalledWith(['comment-1'])
     expect(attachments.bulkRemove).toHaveBeenCalledWith(['attachment-1'])
     expect(payments.bulkRemove).toHaveBeenCalledWith(['payment-1'])

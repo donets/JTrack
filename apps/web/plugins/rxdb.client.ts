@@ -45,6 +45,24 @@ const ticketCommentSchema = {
   required: ['id', 'ticketId', 'locationId', 'authorUserId', 'body', 'createdAt', 'updatedAt']
 }
 
+const ticketActivitySchema = {
+  title: 'ticketActivities',
+  version: 0,
+  primaryKey: 'id',
+  type: 'object',
+  properties: {
+    id: { type: 'string', maxLength: 64 },
+    ticketId: { type: 'string' },
+    locationId: { type: 'string' },
+    userId: { type: ['string', 'null'] },
+    type: { type: 'string' },
+    metadata: { type: 'object', additionalProperties: true },
+    createdAt: { type: 'string' },
+    updatedAt: { type: 'string' }
+  },
+  required: ['id', 'ticketId', 'locationId', 'type', 'metadata', 'createdAt', 'updatedAt']
+}
+
 const ticketAttachmentSchema = {
   title: 'ticketAttachments',
   version: 0,
@@ -172,6 +190,7 @@ async function createDatabase() {
 
   await database.addCollections({
     tickets: { schema: ticketSchema },
+    ticketActivities: { schema: ticketActivitySchema },
     ticketComments: { schema: ticketCommentSchema },
     ticketAttachments: { schema: ticketAttachmentSchema },
     paymentRecords: { schema: paymentRecordSchema },

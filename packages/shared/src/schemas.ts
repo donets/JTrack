@@ -45,6 +45,15 @@ export const ticketStatusSchema = z.enum([
   'Canceled'
 ])
 
+export const ticketActivityTypeSchema = z.enum([
+  'status_change',
+  'assignment',
+  'comment',
+  'attachment',
+  'payment',
+  'created'
+])
+
 export const ticketSchema = z.object({
   id: idSchema,
   locationId: idSchema,
@@ -73,6 +82,17 @@ export const ticketCommentSchema = z.object({
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
   deletedAt: timestampSchema.nullable()
+})
+
+export const ticketActivitySchema = z.object({
+  id: idSchema,
+  ticketId: idSchema,
+  locationId: idSchema,
+  userId: idSchema.nullable(),
+  type: ticketActivityTypeSchema,
+  metadata: z.record(z.unknown()),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema
 })
 
 export const attachmentKindSchema = z.enum(['Photo', 'File'])
@@ -296,8 +316,10 @@ export type Location = z.infer<typeof locationSchema>
 export type UserLocation = z.infer<typeof userLocationSchema>
 export type UserLocationStatus = z.infer<typeof userLocationStatusSchema>
 export type TicketStatus = z.infer<typeof ticketStatusSchema>
+export type TicketActivityType = z.infer<typeof ticketActivityTypeSchema>
 export type Ticket = z.infer<typeof ticketSchema>
 export type TicketComment = z.infer<typeof ticketCommentSchema>
+export type TicketActivity = z.infer<typeof ticketActivitySchema>
 export type AttachmentKind = z.infer<typeof attachmentKindSchema>
 export type TicketAttachment = z.infer<typeof ticketAttachmentSchema>
 export type PaymentProvider = z.infer<typeof paymentProviderSchema>

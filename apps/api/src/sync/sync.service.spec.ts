@@ -10,6 +10,7 @@ const TICKET_ID = 'ticket-1'
 
 const createEmptyChanges = (): SyncChanges => ({
   tickets: { created: [], updated: [], deleted: [] },
+  ticketActivities: { created: [], updated: [], deleted: [] },
   ticketComments: { created: [], updated: [], deleted: [] },
   ticketAttachments: { created: [], updated: [], deleted: [] },
   paymentRecords: { created: [], updated: [], deleted: [] }
@@ -19,6 +20,7 @@ describe('SyncService', () => {
   let service: SyncService
   let prisma: {
     ticket: { findMany: ReturnType<typeof vi.fn> }
+    ticketActivity: { findMany: ReturnType<typeof vi.fn> }
     ticketComment: { findMany: ReturnType<typeof vi.fn> }
     ticketAttachment: { findMany: ReturnType<typeof vi.fn> }
     paymentRecord: { findMany: ReturnType<typeof vi.fn> }
@@ -28,6 +30,7 @@ describe('SyncService', () => {
   beforeEach(() => {
     prisma = {
       ticket: { findMany: vi.fn() },
+      ticketActivity: { findMany: vi.fn() },
       ticketComment: { findMany: vi.fn() },
       ticketAttachment: { findMany: vi.fn() },
       paymentRecord: { findMany: vi.fn() },
@@ -151,6 +154,18 @@ describe('SyncService', () => {
         updatedAt: new Date('2026-02-24T08:05:00.000Z')
       }
     ])
+    prisma.ticketActivity.findMany.mockResolvedValue([
+      {
+        id: 'activity-created',
+        ticketId: TICKET_ID,
+        locationId: LOCATION_ID,
+        userId: USER_ID,
+        type: 'created',
+        metadata: { source: 'seed' },
+        createdAt: new Date('2026-02-24T08:02:30.000Z'),
+        updatedAt: new Date('2026-02-24T08:02:30.000Z')
+      }
+    ])
 
     const response = await service.pull(
       {
@@ -163,6 +178,7 @@ describe('SyncService', () => {
     expect(response.changes.tickets.created.map((item) => item.id)).toEqual(['ticket-created'])
     expect(response.changes.tickets.updated.map((item) => item.id)).toEqual(['ticket-updated'])
     expect(response.changes.tickets.deleted).toEqual(['ticket-deleted'])
+    expect(response.changes.ticketActivities.created.map((item) => item.id)).toEqual(['activity-created'])
     expect(response.changes.ticketComments.created.map((item) => item.id)).toEqual(['comment-created'])
     expect(response.changes.ticketAttachments.deleted).toEqual(['attachment-deleted'])
     expect(response.changes.paymentRecords.updated.map((item) => item.id)).toEqual(['payment-updated'])
@@ -215,6 +231,7 @@ describe('SyncService', () => {
       async ({ skip = 0, take = 101 }: { skip?: number; take?: number }) =>
         tickets.slice(skip, skip + take)
     )
+    prisma.ticketActivity.findMany.mockResolvedValue([])
     prisma.ticketComment.findMany.mockResolvedValue([])
     prisma.ticketAttachment.findMany.mockResolvedValue([])
     prisma.paymentRecord.findMany.mockResolvedValue([])
@@ -277,6 +294,12 @@ describe('SyncService', () => {
         findMany: vi.fn(async ({ where: { id: { in: ids } } }: { where: { id: { in: string[] } } }) =>
           existingTickets.filter((ticket) => ids.includes(ticket.id))
         ),
+        aggregate: vi.fn(async () => ({ _max: { ticketNumber: 99 } })),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      ticketActivity: {
+        findMany: vi.fn(async () => []),
         create: vi.fn(),
         update: vi.fn()
       },
@@ -419,6 +442,12 @@ describe('SyncService', () => {
             updatedAt: new Date(lastPulledAt + 60_000)
           }
         ]),
+        aggregate: vi.fn(async () => ({ _max: { ticketNumber: 99 } })),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      ticketActivity: {
+        findMany: vi.fn(async () => []),
         create: vi.fn(),
         update: vi.fn()
       },

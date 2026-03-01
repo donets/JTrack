@@ -6,6 +6,8 @@ import {
   type UpdatePaymentStatusInput
 } from '@jtrack/shared'
 import { CurrentLocation } from '@/common/current-location.decorator'
+import { CurrentUser } from '@/common/current-user.decorator'
+import type { JwtUser } from '@/common/types'
 import { ZodValidationPipe } from '@/common/zod-validation.pipe'
 import { RequirePrivileges } from '@/rbac/require-privileges.decorator'
 import { PaymentsService } from './payments.service'
@@ -24,9 +26,10 @@ export class PaymentsController {
   @RequirePrivileges(['payments.write'])
   async create(
     @CurrentLocation() locationId: string,
+    @CurrentUser() user: JwtUser,
     @Body(new ZodValidationPipe(createPaymentRecordSchema)) body: CreatePaymentRecordInput
   ) {
-    return this.paymentsService.create(locationId, body)
+    return this.paymentsService.create(locationId, user.sub, body)
   }
 
   @Patch(':id/status')

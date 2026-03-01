@@ -3,9 +3,11 @@ import {
   NotFoundException,
   UnprocessableEntityException
 } from '@nestjs/common'
+import type { Prisma } from '@prisma/client'
 import {
   type CreateTicketInput,
   type RoleKey,
+  type TicketActivity,
   type TicketListQuery,
   type TicketListResponse,
   type TicketStatus,
@@ -86,6 +88,31 @@ export class TicketsService {
     }
   }
 
+  async listActivity(locationId: string, ticketId: string): Promise<TicketActivity[]> {
+    const ticket = await this.prisma.ticket.findFirst({
+      where: {
+        id: ticketId,
+        locationId,
+        deletedAt: null
+      },
+      select: { id: true }
+    })
+
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found')
+    }
+
+    const activities = await this.prisma.ticketActivity.findMany({
+      where: {
+        locationId,
+        ticketId
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]
+    })
+
+    return activities.map((activity) => this.serializeActivity(activity))
+  }
+
   async create(locationId: string, createdByUserId: string, input: CreateTicketInput) {
     const ticket = await this.prisma.$transaction(async (tx) => {
       const nextTicketNumber = await this.getNextTicketNumber(locationId, tx)
@@ -107,10 +134,42 @@ export class TicketsService {
       })
     })
 
+    await this.createTicketActivity({
+      ticketId: ticket.id,
+      locationId,
+      userId: createdByUserId,
+      type: 'created',
+      metadata: {
+        status: ticket.status
+      }
+    })
+
     return this.serialize(ticket)
   }
 
-  async update(locationId: string, ticketId: string, input: UpdateTicketInput) {
+  async update(
+    locationId: string,
+    updatedByUserId: string,
+    ticketId: string,
+    input: UpdateTicketInput
+  ) {
+    const existing = await this.prisma.ticket.findFirst({
+      where: {
+        id: ticketId,
+        locationId,
+        deletedAt: null
+      },
+      select: {
+        id: true,
+        status: true,
+        assignedToUserId: true
+      }
+    })
+
+    if (!existing) {
+      throw new NotFoundException('Ticket not found')
+    }
+
     const ticket = await this.prisma.ticket.updateMany({
       where: {
         id: ticketId,
@@ -134,11 +193,41 @@ export class TicketsService {
       throw new NotFoundException('Ticket not found')
     }
 
+    if (
+      input.assignedToUserId !== undefined &&
+      input.assignedToUserId !== existing.assignedToUserId
+    ) {
+      await this.createTicketActivity({
+        ticketId,
+        locationId,
+        userId: updatedByUserId,
+        type: 'assignment',
+        metadata: {
+          fromAssignedToUserId: existing.assignedToUserId ?? null,
+          toAssignedToUserId: input.assignedToUserId ?? null
+        }
+      })
+    }
+
+    if (input.status && input.status !== existing.status) {
+      await this.createTicketActivity({
+        ticketId,
+        locationId,
+        userId: updatedByUserId,
+        type: 'status_change',
+        metadata: {
+          from: existing.status,
+          to: input.status
+        }
+      })
+    }
+
     return this.getById(locationId, ticketId)
   }
 
   async transitionStatus(
     locationId: string,
+    userId: string,
     role: RoleKey,
     ticketId: string,
     status: TicketStatus
@@ -174,6 +263,19 @@ export class TicketsService {
 
     if (updated.count === 0) {
       throw new NotFoundException('Ticket not found')
+    }
+
+    if (existing.status !== status) {
+      await this.createTicketActivity({
+        ticketId,
+        locationId,
+        userId,
+        type: 'status_change',
+        metadata: {
+          from: existing.status,
+          to: status
+        }
+      })
     }
 
     return this.getById(locationId, ticketId)
@@ -229,5 +331,45 @@ export class TicketsService {
     })
 
     return (aggregate._max.ticketNumber ?? 0) + 1
+  }
+
+  private serializeActivity(activity: {
+    id: string
+    ticketId: string
+    locationId: string
+    userId: string | null
+    type: string
+    metadata: unknown
+    createdAt: Date
+    updatedAt: Date
+  }): TicketActivity {
+    const serialized = serializeDates(activity)
+
+    return {
+      ...serialized,
+      type: activity.type as TicketActivity['type'],
+      metadata:
+        activity.metadata && typeof activity.metadata === 'object' && !Array.isArray(activity.metadata)
+          ? (activity.metadata as TicketActivity['metadata'])
+          : {}
+    }
+  }
+
+  private async createTicketActivity(input: {
+    ticketId: string
+    locationId: string
+    userId: string | null
+    type: TicketActivity['type']
+    metadata: TicketActivity['metadata']
+  }) {
+    await this.prisma.ticketActivity.create({
+      data: {
+        ticketId: input.ticketId,
+        locationId: input.locationId,
+        userId: input.userId,
+        type: input.type,
+        metadata: input.metadata as Prisma.InputJsonValue
+      }
+    })
   }
 }

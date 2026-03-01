@@ -19,6 +19,14 @@ export type TicketStatus =
   | 'Paid'
   | 'Canceled'
 
+export type TicketActivityType =
+  | 'status_change'
+  | 'assignment'
+  | 'comment'
+  | 'attachment'
+  | 'payment'
+  | 'created'
+
 export type AuthTokenType = 'EmailVerification' | 'PasswordReset' | 'InviteAccept'
 
 export type AttachmentKind = 'Photo' | 'File'
@@ -89,6 +97,17 @@ export interface TicketComment {
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
   deletedAt: IsoDateTime | null
+}
+
+export interface TicketActivity {
+  id: UUID
+  ticketId: UUID
+  locationId: UUID
+  userId: UUID | null
+  type: TicketActivityType
+  metadata: Record<string, unknown>
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
 }
 
 export interface TicketAttachment {
@@ -347,6 +366,7 @@ export interface SyncEntityChanges<T> {
 
 export interface SyncChanges {
   tickets: SyncEntityChanges<Ticket>
+  ticketActivities: SyncEntityChanges<TicketActivity>
   ticketComments: SyncEntityChanges<TicketComment>
   ticketAttachments: SyncEntityChanges<TicketAttachment>
   paymentRecords: SyncEntityChanges<PaymentRecord>
@@ -362,6 +382,7 @@ export interface SyncPullRequest {
 export interface SyncPullCursor {
   snapshotAt: UnixMs
   ticketsOffset: number
+  ticketActivitiesOffset: number
   ticketCommentsOffset: number
   ticketAttachmentsOffset: number
   paymentRecordsOffset: number
