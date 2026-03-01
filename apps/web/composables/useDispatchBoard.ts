@@ -122,7 +122,7 @@ export const useDispatchBoard = (selectedDate: Ref<string>) => {
           continue
         }
 
-        const ticketDay = formatDate(new Date(ticket.scheduledStartAt))
+        const ticketDay = isoDateUtc(ticket.scheduledStartAt)
         if (!weekSet.has(ticketDay)) {
           continue
         }
@@ -155,6 +155,7 @@ export const useDispatchBoard = (selectedDate: Ref<string>) => {
     activeTechnicians.value.map((technician) => ({
       id: technician.id,
       name: technician.name,
+      avatarName: technician.name,
       jobCount: technicians.value.find((item) => item.id === technician.id)?.jobs.length ?? 0
     }))
   )
@@ -249,35 +250,53 @@ function toScheduledJob(ticket: Ticket): DispatchScheduledJob {
 }
 
 function isSameDate(iso: string, date: string) {
-  return formatDate(new Date(iso)) === date
+  return isoDateUtc(iso) === date
 }
 
 function parseDate(value: string) {
-  const parsed = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date()
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) {
+    return new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()))
   }
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()))
+  }
+
   return parsed
 }
 
 function formatDate(date: Date) {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getDate()}`.padStart(2, '0')
+  const year = date.getUTCFullYear()
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getUTCDate()}`.padStart(2, '0')
   return `${year}-${month}-${day}`
 }
 
 function startOfWeek(date: Date) {
   const start = new Date(date)
-  const day = start.getDay()
+  const day = start.getUTCDay()
   const diff = day === 0 ? -6 : 1 - day
-  start.setDate(start.getDate() + diff)
-  start.setHours(0, 0, 0, 0)
+  start.setUTCDate(start.getUTCDate() + diff)
+  start.setUTCHours(0, 0, 0, 0)
   return start
 }
 
 function addDays(date: Date, days: number) {
   const next = new Date(date)
-  next.setDate(next.getDate() + days)
+  next.setUTCDate(next.getUTCDate() + days)
   return next
+}
+
+function isoDateUtc(iso: string) {
+  const parsed = new Date(iso)
+  if (Number.isNaN(parsed.getTime())) {
+    return ''
+  }
+  return formatDate(parsed)
 }

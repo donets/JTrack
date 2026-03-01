@@ -263,13 +263,13 @@ layouts/default.vue (CSS Grid)
 | # | Linear | Task | Est |
 |---|--------|------|-----|
 | 1 | JTR-64 | Create TicketKanbanCard (done 2026-03-01) | 2pt |
-| 2 | JTR-65 | Create TicketKanbanColumn (done 2026-03-01) | 3pt |
-| 3 | JTR-66 | Create kanban board view (done 2026-03-01) | 5pt |
+| 2 | JTR-65 | Create TicketKanbanColumn (done 2026-03-01, follow-up fixes 2026-03-01) | 3pt |
+| 3 | JTR-66 | Create kanban board view (done 2026-03-01, follow-up fixes 2026-03-01) | 5pt |
 | 4 | JTR-67 | Create DispatchTimeGrid (done 2026-03-01) | 3pt |
 | 5 | JTR-68 | Create DispatchGanttRow (done 2026-03-01) | 4pt |
 | 6 | JTR-69 | Dispatch unassigned sidebar (done 2026-03-01) | 3pt |
-| 7 | JTR-70 | Rewrite dispatch board page (done 2026-03-01) | 5pt |
-| 8 | JTR-71 | Ticket quick-assign modal (done 2026-03-01) | 2pt |
+| 7 | JTR-70 | Rewrite dispatch board page (done 2026-03-01, follow-up fixes 2026-03-01) | 5pt |
+| 8 | JTR-71 | Ticket quick-assign modal (done 2026-03-01, follow-up fixes 2026-03-01) | 2pt |
 
 #### Dispatch Follow-up
 | # | Linear | Task | Est |

@@ -43,6 +43,7 @@ const props = withDefaults(
   defineProps<{
     status: TicketStatus
     title?: string
+    color?: string
     tickets: KanbanTicketCardItem[]
     showTicketCode?: boolean
   }>(),
@@ -65,6 +66,10 @@ const count = computed(() => props.tickets.length)
 const title = computed(() => props.title ?? props.status)
 
 const dotClass = computed(() => {
+  if (props.color) {
+    return props.color
+  }
+
   const map: Record<string, string> = {
     New: 'text-sky',
     Scheduled: 'text-violet',

@@ -90,6 +90,7 @@
               :key="column.status"
               :status="column.status"
               :title="column.label"
+              :color="column.color"
               :tickets="kanbanColumns[column.status] ?? []"
               :show-ticket-code="false"
               @ticket-drop="onKanbanDrop"
@@ -168,12 +169,13 @@ const viewTabs: TabItem[] = [
 ]
 
 const boardColumns: KanbanColumnItem[] = [
-  { status: 'New', label: 'New' },
-  { status: 'Scheduled', label: 'Scheduled' },
-  { status: 'InProgress', label: 'In Progress' },
-  { status: 'Done', label: 'Done' },
-  { status: 'Invoiced', label: 'Invoiced' },
-  { status: 'Paid', label: 'Paid' }
+  { status: 'New', label: 'New', color: 'text-sky' },
+  { status: 'Scheduled', label: 'Scheduled', color: 'text-violet' },
+  { status: 'InProgress', label: 'In Progress', color: 'text-flame' },
+  { status: 'Done', label: 'Done', color: 'text-mint' },
+  { status: 'Invoiced', label: 'Invoiced', color: 'text-sky' },
+  { status: 'Paid', label: 'Paid', color: 'text-mint' },
+  { status: 'Canceled', label: 'Canceled', color: 'text-slate-400' }
 ]
 
 const getViewFromQuery = (value: QueryView): TicketView => {
@@ -320,6 +322,7 @@ const technicianOptions = computed<QuickAssignTechnicianOption[]>(() => {
     .map((member) => ({
       id: member.id,
       name: member.name,
+      avatarName: member.name,
       jobCount: jobsByTechnician.get(member.id) ?? 0
     }))
 })

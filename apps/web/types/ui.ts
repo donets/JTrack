@@ -64,6 +64,7 @@ export type KanbanColumnDropPayload = {
 export type KanbanColumnItem = {
   status: TicketStatus
   label: string
+  color?: string
 }
 
 export type QuickAssignPayload = {
@@ -76,7 +77,8 @@ export type QuickAssignPayload = {
 export type QuickAssignTechnicianOption = {
   id: string
   name: string
-  jobCount?: number
+  avatarName?: string
+  jobCount: number
 }
 
 export type DispatchScheduledJob = {

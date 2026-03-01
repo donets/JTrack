@@ -72,6 +72,8 @@ import type { ComponentPublicInstance } from 'vue'
 type ListboxOption = {
   value: string
   label: string
+  avatarName?: string
+  jobCount?: number
 }
 
 const props = withDefaults(

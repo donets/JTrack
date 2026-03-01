@@ -1,13 +1,37 @@
 <template>
   <JModal :model-value="modelValue" title="Quick Assign" size="md" @update:model-value="onToggle">
     <form class="space-y-4" @submit.prevent="submit">
-      <JSelect
-        v-model="form.technicianId"
-        label="Technician"
-        placeholder="Select technician"
-        :options="technicianOptions"
-        :error="errors.technicianId"
-      />
+      <div>
+        <JListbox
+          v-model="form.technicianId"
+          label="Technician"
+          placeholder="Select technician"
+          :options="technicianOptions"
+        >
+          <template #selected="{ option }">
+            <div class="inline-flex w-full items-center gap-2">
+              <JAvatar :name="option.avatarName" size="sm" />
+              <span class="truncate text-sm font-medium text-ink">{{ option.label }}</span>
+              <span class="ml-auto shrink-0 text-xs text-slate-500">
+                {{ formatJobCount(option.jobCount ?? 0) }}
+              </span>
+            </div>
+          </template>
+
+          <template #option="{ option }">
+            <div class="inline-flex w-full items-center gap-2">
+              <JAvatar :name="option.avatarName" size="sm" />
+              <span class="truncate text-sm font-medium text-ink">{{ option.label }}</span>
+              <span class="ml-auto shrink-0 text-xs text-slate-500">
+                {{ formatJobCount(option.jobCount ?? 0) }}
+              </span>
+            </div>
+          </template>
+        </JListbox>
+        <p v-if="errors.technicianId" class="mt-1 text-xs text-rose">
+          {{ errors.technicianId }}
+        </p>
+      </div>
 
       <div>
         <label class="mb-1 block text-xs font-semibold text-slate-600" for="quick-assign-start-at">
@@ -85,9 +109,9 @@ const durationOptions = durationValues.map((value) => ({
 const technicianOptions = computed(() =>
   props.technicians.map((technician) => ({
     value: technician.id,
-    label: technician.jobCount !== undefined
-      ? `${technician.name} (${technician.jobCount})`
-      : technician.name
+    label: technician.name,
+    avatarName: technician.avatarName ?? technician.name,
+    jobCount: technician.jobCount
   }))
 )
 
@@ -131,6 +155,8 @@ const submit = () => {
     scheduledEndAt: end.toISOString()
   })
 }
+
+const formatJobCount = (count: number) => `${count} job${count === 1 ? '' : 's'}`
 
 watch(
   () => props.modelValue,

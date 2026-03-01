@@ -85,7 +85,7 @@ const mapPoints = computed<MapPoint[]>(() =>
 const todayPoints = computed(() =>
   mapPoints.value.filter((point) =>
     point.ticket.scheduledStartAt
-    && formatDate(new Date(point.ticket.scheduledStartAt)) === props.selectedDate
+    && isoDateUtc(point.ticket.scheduledStartAt) === props.selectedDate
   )
 )
 
@@ -265,10 +265,15 @@ function normalizeHash(value: number) {
   return (value % 10000) / 10000
 }
 
-function formatDate(date: Date) {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getDate()}`.padStart(2, '0')
+function isoDateUtc(iso: string) {
+  const parsed = new Date(iso)
+  if (Number.isNaN(parsed.getTime())) {
+    return ''
+  }
+
+  const year = parsed.getUTCFullYear()
+  const month = `${parsed.getUTCMonth() + 1}`.padStart(2, '0')
+  const day = `${parsed.getUTCDate()}`.padStart(2, '0')
   return `${year}-${month}-${day}`
 }
 </script>
