@@ -131,7 +131,23 @@ export const useOfflineRepository = () => {
       ticket.currency = input.currency
     }
 
-    await db.collections.tickets.upsert(ticket)
+    if (existing) {
+      await existing.incrementalPatch({
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        assignedToUserId: ticket.assignedToUserId,
+        scheduledStartAt: ticket.scheduledStartAt,
+        scheduledEndAt: ticket.scheduledEndAt,
+        priority: ticket.priority,
+        totalAmountCents: ticket.totalAmountCents,
+        currency: ticket.currency,
+        updatedAt: ticket.updatedAt,
+        deletedAt: ticket.deletedAt
+      })
+    } else {
+      await db.collections.tickets.insert(ticket)
+    }
 
     await enqueueOutbox('tickets', existing ? 'update' : 'create', ticket)
 

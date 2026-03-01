@@ -13,7 +13,7 @@ export default defineNuxtConfig({
       pathPrefix: false
     }
   ],
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', 'leaflet/dist/leaflet.css'],
   typescript: {
     strict: true,
     shim: false,

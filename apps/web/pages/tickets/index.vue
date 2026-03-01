@@ -20,64 +20,98 @@
         <JListbox v-model="priorityFilter" :options="priorityOptions" />
         <JListbox v-model="assigneeFilter" :options="assigneeOptions" />
         <JListbox v-model="dateRangeFilter" :options="dateRangeOptions" />
-        <JListbox v-model="perPageModel" :options="perPageOptions" />
+        <JListbox v-if="activeView === 'all'" v-model="perPageModel" :options="perPageOptions" />
       </div>
 
       <div class="px-3 pb-3 text-xs text-slate-500 sm:px-5">{{ totalTickets }} tickets</div>
+
+      <div class="border-t border-slate-100 px-3 sm:px-5">
+        <JTabs
+          v-model="activeView"
+          :tabs="viewTabs"
+          id-prefix="tickets-tab"
+          panel-id-prefix="tickets-view-panel"
+        />
+      </div>
     </section>
 
-    <JTable
-      :columns="columns"
-      :rows="pageRows"
-      :sortable="true"
-      :row-clickable="true"
-      :sort-key="sortKey"
-      :sort-direction="sortDirection"
-      :empty-text="emptyText"
-      @sort-change="onSortChange"
-      @row-click="onTableRowClick"
+    <template v-if="activeView === 'all'">
+      <JTable
+        :columns="columns"
+        :rows="pageRows"
+        :sortable="true"
+        :row-clickable="true"
+        :sort-key="sortKey"
+        :sort-direction="sortDirection"
+        :empty-text="emptyText"
+        @sort-change="onSortChange"
+        @row-click="onTableRowClick"
+      >
+        <template #cell-title="{ row }">
+          <NuxtLink :to="`/tickets/${row.id}`" class="font-medium text-ink hover:text-mint hover:underline">
+            {{ row.title }}
+          </NuxtLink>
+        </template>
+
+        <template #cell-status="{ row }">
+          <JBadge :variant="statusToBadgeVariant(row.status)">{{ statusToLabel(row.status) }}</JBadge>
+        </template>
+
+        <template #cell-priority="{ row }">
+          <JBadge :variant="priorityToBadgeVariant(row.priority)">{{ formatPriorityLabel(row.priority) }}</JBadge>
+        </template>
+
+        <template #cell-assignedToUserId="{ row }">
+          <div v-if="row.assignedToUserId" class="inline-flex items-center gap-2">
+            <JAvatar :name="resolveAssigneeName(row.assignedToUserId)" size="sm" />
+            <span>{{ resolveAssigneeName(row.assignedToUserId) }}</span>
+          </div>
+          <span v-else class="text-slate-400">—</span>
+        </template>
+
+        <template #cell-scheduledStartAt="{ value }">
+          <span>{{ formatScheduled(value) }}</span>
+        </template>
+
+        <template #cell-totalAmountCents="{ row }">
+          <span>{{ formatMoney(row.totalAmountCents, row.currency) }}</span>
+        </template>
+
+        <template #cell-updatedAt="{ value }">
+          <span class="text-xs text-slate-600">{{ formatDateTime(value) }}</span>
+        </template>
+      </JTable>
+
+      <JPagination
+        :total="totalTickets"
+        :per-page="perPage"
+        :current-page="page"
+        @update:current-page="onPageChange"
+      />
+    </template>
+
+    <div
+      v-else
+      id="tickets-view-panel-board"
+      role="tabpanel"
+      aria-labelledby="tickets-tab-board"
+      class="overflow-x-auto rounded-xl border border-slate-200 bg-white px-3 py-3 sm:px-5"
     >
-      <template #cell-title="{ row }">
-        <NuxtLink :to="`/tickets/${row.id}`" class="font-medium text-ink hover:text-mint hover:underline">
-          {{ row.title }}
-        </NuxtLink>
-      </template>
-
-      <template #cell-status="{ row }">
-        <JBadge :variant="statusToBadgeVariant(row.status)">{{ statusToLabel(row.status) }}</JBadge>
-      </template>
-
-      <template #cell-priority="{ row }">
-        <JBadge :variant="priorityToBadgeVariant(row.priority)">{{ formatPriorityLabel(row.priority) }}</JBadge>
-      </template>
-
-      <template #cell-assignedToUserId="{ row }">
-        <div v-if="row.assignedToUserId" class="inline-flex items-center gap-2">
-          <JAvatar :name="resolveAssigneeName(row.assignedToUserId)" size="sm" />
-          <span>{{ resolveAssigneeName(row.assignedToUserId) }}</span>
-        </div>
-        <span v-else class="text-slate-400">—</span>
-      </template>
-
-      <template #cell-scheduledStartAt="{ value }">
-        <span>{{ formatScheduled(value) }}</span>
-      </template>
-
-      <template #cell-totalAmountCents="{ row }">
-        <span>{{ formatMoney(row.totalAmountCents, row.currency) }}</span>
-      </template>
-
-      <template #cell-updatedAt="{ value }">
-        <span class="text-xs text-slate-600">{{ formatDateTime(value) }}</span>
-      </template>
-    </JTable>
-
-    <JPagination
-      :total="totalTickets"
-      :per-page="perPage"
-      :current-page="page"
-      @update:current-page="onPageChange"
-    />
+      <div class="flex min-w-max items-start gap-3 pb-1">
+        <TicketKanbanColumn
+          v-for="column in boardColumns"
+          :key="column.status"
+          :status="column.status"
+          :title="column.label"
+          :color="column.color"
+          :tickets="kanbanColumns[column.status] ?? []"
+          :show-ticket-code="false"
+          @ticket-drop="onKanbanDrop"
+          @open-ticket="openTicket"
+          @quick-assign="openQuickAssign"
+        />
+      </div>
+    </div>
 
     <JModal v-model="createModalOpen" title="Create New Ticket" size="lg">
       <form id="create-ticket-form" class="space-y-4" @submit.prevent="submitCreateTicket">
@@ -132,12 +166,30 @@
         <JButton type="submit" form="create-ticket-form" :loading="createSubmitting">Create Ticket</JButton>
       </template>
     </JModal>
+
+    <TicketQuickAssignModal
+      :model-value="quickAssignOpen"
+      :ticket-id="quickAssignTicketId"
+      :technicians="technicianOptions"
+      :submitting="quickAssignSubmitting"
+      @update:model-value="quickAssignOpen = $event"
+      @submit="submitQuickAssign"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import type { LocationQuery, LocationQueryRaw, LocationQueryValue } from 'vue-router'
-import type { TableColumn, BreadcrumbItem } from '~/types/ui'
+import type {
+  TableColumn,
+  BreadcrumbItem,
+  KanbanColumnDropPayload,
+  KanbanColumnItem,
+  KanbanTicketCardItem,
+  QuickAssignPayload,
+  QuickAssignTechnicianOption,
+  TabItem
+} from '~/types/ui'
 import type { Ticket, TicketStatus } from '@jtrack/shared'
 import {
   priorityToBadgeVariant,
@@ -171,6 +223,8 @@ interface TeamMember {
 type SortDirection = 'asc' | 'desc'
 type SortKey = 'title' | 'status' | 'priority' | 'updatedAt'
 type DateRangeValue = '' | 'today' | 'next7d' | 'next30d'
+type TicketView = 'all' | 'board'
+type QueryView = string | null | (string | null)[] | undefined
 
 const SORT_KEYS = new Set<SortKey>(['title', 'status', 'priority', 'updatedAt'])
 const PER_PAGE_VALUES = [25, 50, 100] as const
@@ -178,13 +232,28 @@ const STATUS_VALUES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done',
 const PRIORITY_VALUES = ['low', 'medium', 'high'] as const
 const DATE_RANGE_VALUES: DateRangeValue[] = ['', 'today', 'next7d', 'next30d']
 
+const viewTabs: TabItem[] = [
+  { key: 'all', label: 'All' },
+  { key: 'board', label: 'Board' }
+]
+
+const boardColumns: KanbanColumnItem[] = [
+  { status: 'New', label: 'New', color: 'text-sky' },
+  { status: 'Scheduled', label: 'Scheduled', color: 'text-violet' },
+  { status: 'InProgress', label: 'In Progress', color: 'text-flame' },
+  { status: 'Done', label: 'Done', color: 'text-mint' },
+  { status: 'Invoiced', label: 'Invoiced', color: 'text-sky' },
+  { status: 'Paid', label: 'Paid', color: 'text-mint' },
+  { status: 'Canceled', label: 'Canceled', color: 'text-slate-400' }
+]
+
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const locationStore = useLocationStore()
+const teamStore = useTeamStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
-const api = useApiClient()
 const db = useRxdb()
 const toast = useToast()
 const { hasPrivilege } = useRbacGuard()
@@ -196,6 +265,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 ]
 
 setBreadcrumbs(breadcrumbs)
+
+const getViewFromQuery = (value: QueryView): TicketView => {
+  const raw = Array.isArray(value) ? value[0] : value
+  return raw === 'board' ? 'board' : 'all'
+}
 
 const tickets = ref<Ticket[]>([])
 const teamMembers = ref<TeamMember[]>([])
@@ -210,9 +284,14 @@ const sortKey = ref<SortKey>('updatedAt')
 const sortDirection = ref<SortDirection>('desc')
 const loadingUsers = ref(false)
 const isApplyingRouteQuery = ref(false)
+const activeView = ref<TicketView>(getViewFromQuery(route.query.view))
 
 const createModalOpen = ref(false)
 const createSubmitting = ref(false)
+
+const quickAssignOpen = ref(false)
+const quickAssignSubmitting = ref(false)
+const quickAssignTicketId = ref('')
 
 const createForm = reactive({
   title: '',
@@ -335,6 +414,28 @@ const perPageModel = computed({
   }
 })
 
+const technicianOptions = computed<QuickAssignTechnicianOption[]>(() => {
+  const jobsByTechnician = new Map<string, number>()
+
+  const activeStatuses: TicketStatus[] = ['New', 'Scheduled', 'InProgress']
+  for (const ticket of tickets.value) {
+    if (!ticket.assignedToUserId || !activeStatuses.includes(ticket.status)) continue
+    jobsByTechnician.set(
+      ticket.assignedToUserId,
+      (jobsByTechnician.get(ticket.assignedToUserId) ?? 0) + 1
+    )
+  }
+
+  return teamStore.members
+    .filter((member) => member.role === 'Technician' && member.membershipStatus === 'active')
+    .map((member) => ({
+      id: member.id,
+      name: member.name,
+      avatarName: member.name,
+      jobCount: jobsByTechnician.get(member.id) ?? 0
+    }))
+})
+
 const queryValue = (value: LocationQueryValue | LocationQueryValue[] | undefined) => {
   if (Array.isArray(value)) {
     return value[0] ?? ''
@@ -425,6 +526,10 @@ const applyQuery = (query: LocationQuery) => {
 
 const buildQuery = (): LocationQueryRaw => {
   const query: LocationQueryRaw = {}
+
+  if (activeView.value === 'board') {
+    query.view = 'board'
+  }
 
   if (statusFilter.value) {
     query.status = statusFilter.value
@@ -524,8 +629,8 @@ const loadTeamMembers = async () => {
   loadingUsers.value = true
 
   try {
-    const users = await api.get<Array<{ id: string; name: string }>>('/users')
-    teamMembers.value = users
+    const members = await teamStore.fetchMembers()
+    teamMembers.value = (members ?? [])
       .map((user) => ({ id: user.id, name: user.name }))
       .filter((user) => user.name.trim().length > 0)
   } catch {
@@ -649,6 +754,37 @@ const pageRows = computed<TicketRow[]>(() =>
   }))
 )
 
+const boardTickets = computed<KanbanTicketCardItem[]>(() =>
+  filteredByDate.value.map((ticket) => ({
+    id: ticket.id,
+    title: ticket.title,
+    status: ticket.status,
+    priority: ticket.priority,
+    assignedToUserId: ticket.assignedToUserId,
+    assigneeName: ticket.assignedToUserId
+      ? assigneeNameMap.value.get(ticket.assignedToUserId)
+      : undefined,
+    dueAt: ticket.scheduledStartAt,
+    scheduledStartAt: ticket.scheduledStartAt,
+    scheduledEndAt: ticket.scheduledEndAt,
+    updatedAt: ticket.updatedAt
+  }))
+)
+
+const kanbanColumns = computed<Record<string, KanbanTicketCardItem[]>>(() => {
+  const grouped: Record<string, KanbanTicketCardItem[]> = Object.fromEntries(
+    boardColumns.map((column) => [column.status, [] as KanbanTicketCardItem[]])
+  )
+
+  for (const ticket of boardTickets.value) {
+    if (grouped[ticket.status]) {
+      grouped[ticket.status]?.push(ticket)
+    }
+  }
+
+  return grouped
+})
+
 const emptyText = computed(() => {
   if (loadingUsers.value) {
     return 'Loading tickets...'
@@ -670,6 +806,30 @@ watch(
   },
   { immediate: true }
 )
+
+watch(
+  () => route.query.view,
+  (queryView) => {
+    const next = getViewFromQuery(queryView)
+    if (next !== activeView.value) {
+      activeView.value = next
+    }
+  }
+)
+
+watch(activeView, async (view) => {
+  const current = getViewFromQuery(route.query.view)
+  if (current === view) {
+    return
+  }
+
+  const nextQuery = buildQuery()
+  if (queryEquals(route.query, nextQuery)) {
+    return
+  }
+
+  await router.replace({ query: nextQuery })
+})
 
 watch([statusFilter, priorityFilter, assigneeFilter, dateRangeFilter, searchQuery, perPage], () => {
   if (isApplyingRouteQuery.value) {
@@ -733,6 +893,53 @@ const onTableRowClick = (row: Record<string, unknown>) => {
   }
 
   navigateTo(`/tickets/${ticketId}`)
+}
+
+const openTicket = async (ticketId: string) => {
+  await navigateTo(`/tickets/${ticketId}`)
+}
+
+const onKanbanDrop = async ({ ticketId, toStatus }: KanbanColumnDropPayload) => {
+  const existing = tickets.value.find((ticket) => ticket.id === ticketId)
+  if (!existing || existing.status === toStatus) {
+    return
+  }
+
+  try {
+    await repository.saveTicket({ id: ticketId, status: toStatus })
+    await syncStore.syncNow()
+    toast.show({ type: 'success', message: `Ticket moved to ${toStatus}` })
+  } catch {
+    toast.show({ type: 'error', message: 'Failed to update ticket status' })
+  }
+}
+
+const openQuickAssign = (ticketId: string) => {
+  quickAssignTicketId.value = ticketId
+  quickAssignOpen.value = true
+}
+
+const submitQuickAssign = async (payload: QuickAssignPayload) => {
+  quickAssignSubmitting.value = true
+
+  try {
+    await repository.saveTicket({
+      id: payload.ticketId,
+      assignedToUserId: payload.assignedToUserId,
+      scheduledStartAt: payload.scheduledStartAt,
+      scheduledEndAt: payload.scheduledEndAt,
+      status: 'Scheduled'
+    })
+    await syncStore.syncNow()
+
+    quickAssignOpen.value = false
+    quickAssignTicketId.value = ''
+    toast.show({ type: 'success', message: 'Ticket assigned successfully' })
+  } catch {
+    toast.show({ type: 'error', message: 'Failed to assign ticket' })
+  } finally {
+    quickAssignSubmitting.value = false
+  }
 }
 
 const resetCreateErrors = () => {

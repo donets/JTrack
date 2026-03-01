@@ -75,6 +75,8 @@
   - Pending uploads are flushed with per-item retry semantics: one failed file does not block subsequent files in the same sync run.
 - On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
+- Dispatch map view is implemented with Leaflet + OpenStreetMap tiles.
+- Current map positions are deterministic pseudo-coordinates derived from `hash(ticketId + locationId)` within a fixed bounding box, pending backend geolocation fields.
 
 ## 7. Consistency and Conflict Rules
 - Canonical state is always server DB.
@@ -110,7 +112,7 @@
 - Operability:
   - Dockerized local stack with separate containers for web/api/postgres.
   - Default local container endpoints: web `http://localhost:3010`, API `http://localhost:3011`, Postgres `localhost:5433`.
-  - Frontend HMR mode is available via compose override: `docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d` (runs `web` in `nuxt dev` with bind-mounted sources).
+  - Local `docker/docker-compose.yml` runs `web` in `nuxt dev` mode with bind-mounted sources, so HMR works by default.
   - API/Web images are built via multi-stage Dockerfiles to keep runtime layers lean.
   - Docker build context excludes heavy local artifacts via `.dockerignore`.
   - Single-command monorepo dev workflow via Turbo.
