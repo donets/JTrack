@@ -82,6 +82,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
   - background push + pull convergence.
 - On active location switch, client prunes location-scoped RxDB records for non-active locations to prevent cross-tenant accumulation/leakage.
 - Offline attachments are staged in RxDB (`pendingAttachmentUploads`) and converted to regular attachment outbox records after deferred upload when connectivity returns; base64 file payload is stored only in staging collection (attachment placeholder keeps pending metadata without duplicating file bytes).
+- Ticket detail attachments UI separates image thumbnails (with preview modal) and file list metadata, with per-item soft-delete actions.
 - Dispatch map tab uses Leaflet with OpenStreetMap tiles for interactive job visualization.
 - Until backend geo fields are introduced, map coordinates are deterministic mock points derived from `hash(ticketId + locationId)` inside a fixed viewport bounding box.
 

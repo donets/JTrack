@@ -75,32 +75,66 @@
               Drag & drop files here, or click to upload
             </button>
 
-            <div v-if="attachments.length > 0" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div v-if="imageAttachments.length > 0" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <article
-                v-for="attachment in attachments"
+                v-for="attachment in imageAttachments"
                 :key="attachment.id"
-                class="overflow-hidden rounded-md border border-slate-200 bg-white"
+                class="relative overflow-hidden rounded-md border border-slate-200 bg-white"
               >
-                <div v-if="isImageAttachment(attachment)" class="aspect-video bg-slate-100">
+                <button
+                  type="button"
+                  class="aspect-video w-full bg-slate-100"
+                  @click="openAttachmentPreview(attachment)"
+                >
                   <img
                     :src="attachmentUrl(attachment.url)"
-                    :alt="attachment.storageKey"
+                    :alt="attachmentDisplayName(attachment)"
                     class="h-full w-full object-cover"
                   />
-                </div>
-                <div v-else class="flex aspect-video items-center justify-center bg-slate-50 text-3xl text-slate-300">
-                  📎
+                </button>
+                <div class="space-y-1 p-3 text-xs">
+                  <p class="truncate font-semibold text-ink">{{ attachmentDisplayName(attachment) }}</p>
+                  <p class="text-slate-500">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
+                  <p v-if="isPendingAttachment(attachment)" class="text-amber-700">Pending upload</p>
                 </div>
 
-                <div class="space-y-1 p-3 text-xs">
-                  <p class="truncate font-semibold text-ink">{{ attachment.storageKey }}</p>
-                  <p class="text-slate-500">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
-                  <p v-if="attachment.storageKey.startsWith('pending/')" class="text-amber-700">Pending upload</p>
-                </div>
+                <button
+                  type="button"
+                  class="absolute right-2 top-2 rounded bg-white/90 px-2 py-1 text-xs text-rose-600 shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="deletingAttachmentId === attachment.id || uploadingAttachment"
+                  @click="deleteAttachment(attachment)"
+                >
+                  Delete
+                </button>
               </article>
             </div>
 
-            <p v-else class="text-sm text-slate-500">No attachments yet.</p>
+            <ul v-if="fileAttachments.length > 0" class="space-y-2">
+              <li
+                v-for="attachment in fileAttachments"
+                :key="attachment.id"
+                class="flex items-start justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-ink">
+                    {{ fileIcon(attachment.mimeType) }} {{ attachmentDisplayName(attachment) }}
+                  </p>
+                  <p class="text-xs text-slate-500">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
+                  <p v-if="isPendingAttachment(attachment)" class="text-xs text-amber-700">Pending upload</p>
+                </div>
+
+                <button
+                  type="button"
+                  class="shrink-0 rounded px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="deletingAttachmentId === attachment.id || uploadingAttachment"
+                  @click="deleteAttachment(attachment)"
+                >
+                  Delete
+                </button>
+              </li>
+            </ul>
+
+            <p v-if="attachments.length === 0" class="text-sm text-slate-500">No attachments yet.</p>
           </div>
         </JCard>
       </div>
@@ -177,6 +211,21 @@
     </div>
 
     <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
+
+    <JModal v-model="attachmentPreviewOpen" title="Attachment Preview" size="lg">
+      <div class="space-y-3">
+        <img
+          v-if="previewAttachment"
+          :src="attachmentUrl(previewAttachment.url)"
+          :alt="attachmentDisplayName(previewAttachment)"
+          class="max-h-[65vh] w-full rounded-md border border-slate-200 object-contain"
+        />
+        <div v-if="previewAttachment" class="text-xs text-slate-500">
+          {{ attachmentDisplayName(previewAttachment) }} · {{ previewAttachment.mimeType }} ·
+          {{ formatBytes(previewAttachment.size) }}
+        </div>
+      </div>
+    </JModal>
 
     <JModal v-model="editModalOpen" title="Edit Ticket" size="lg">
       <form id="edit-ticket-form" class="space-y-4" @submit.prevent="submitEditTicket">
@@ -318,6 +367,9 @@ const submittingComment = ref(false)
 const uploadingAttachment = ref(false)
 const updatingStatus = ref(false)
 const checklistSaving = ref(false)
+const deletingAttachmentId = ref<string | null>(null)
+const attachmentPreviewOpen = ref(false)
+const previewAttachment = ref<TicketAttachment | null>(null)
 const isDragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const editModalOpen = ref(false)
@@ -471,6 +523,8 @@ const balanceAmountCents = computed(() => {
 const totalAmountLabel = computed(() => formatMoney(ticket.value?.totalAmountCents ?? null, ticket.value?.currency ?? 'EUR'))
 const paidAmountLabel = computed(() => formatMoney(paidAmountCents.value, ticket.value?.currency ?? 'EUR'))
 const balanceAmountLabel = computed(() => formatMoney(balanceAmountCents.value, ticket.value?.currency ?? 'EUR'))
+const imageAttachments = computed(() => attachments.value.filter((attachment) => isImageAttachment(attachment)))
+const fileAttachments = computed(() => attachments.value.filter((attachment) => !isImageAttachment(attachment)))
 
 const { timelineItems } = useTicketActivity({
   ticketId: computed(() => ticketId),
@@ -984,6 +1038,61 @@ const capturePhoto = async () => {
   }
 }
 
+const openAttachmentPreview = (attachment: TicketAttachment) => {
+  previewAttachment.value = attachment
+  attachmentPreviewOpen.value = true
+}
+
+const attachmentDisplayName = (attachment: TicketAttachment) => {
+  const trimmed = attachment.storageKey.trim()
+  if (!trimmed) {
+    return attachment.id
+  }
+
+  const parts = trimmed.split('/')
+  return parts[parts.length - 1] || trimmed
+}
+
+const isPendingAttachment = (attachment: TicketAttachment) =>
+  attachment.storageKey.startsWith('pending/')
+
+const deleteAttachment = async (attachment: TicketAttachment) => {
+  if (deletingAttachmentId.value || uploadingAttachment.value) {
+    return
+  }
+
+  if (typeof window !== 'undefined') {
+    const confirmed = window.confirm(`Delete attachment "${attachmentDisplayName(attachment)}"?`)
+    if (!confirmed) {
+      return
+    }
+  }
+
+  deletingAttachmentId.value = attachment.id
+
+  try {
+    await repository.deleteAttachment(attachment.id)
+    await syncStore.syncNow()
+
+    if (previewAttachment.value?.id === attachment.id) {
+      attachmentPreviewOpen.value = false
+      previewAttachment.value = null
+    }
+
+    toast.show({
+      type: 'success',
+      message: 'Attachment deleted'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to delete attachment'
+    })
+  } finally {
+    deletingAttachmentId.value = null
+  }
+}
+
 const attachmentUrl = (url: string) => {
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url
@@ -1007,6 +1116,26 @@ const formatBytes = (size: number) => {
   }
 
   return `${(size / (1024 * 1024)).toFixed(1)} MB`
+}
+
+const fileIcon = (mimeType: string) => {
+  if (mimeType.startsWith('image/')) {
+    return '🖼️'
+  }
+
+  if (mimeType.includes('pdf')) {
+    return '📄'
+  }
+
+  if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv')) {
+    return '📊'
+  }
+
+  if (mimeType.includes('word') || mimeType.includes('text')) {
+    return '📝'
+  }
+
+  return '📎'
 }
 
 </script>

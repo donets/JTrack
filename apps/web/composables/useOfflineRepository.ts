@@ -232,6 +232,35 @@ export const useOfflineRepository = () => {
     return attachment
   }
 
+  const deleteAttachment = async (attachmentId: string) => {
+    const attachment = await db.collections.ticketAttachments.findOne(attachmentId).exec()
+
+    if (!attachment) {
+      return
+    }
+
+    const now = new Date().toISOString()
+
+    await attachment.incrementalPatch({
+      deletedAt: now,
+      updatedAt: now
+    })
+
+    const pendingUploads = await db.collections.pendingAttachmentUploads
+      .find({
+        selector: {
+          attachmentId
+        }
+      })
+      .exec()
+
+    if (pendingUploads.length > 0) {
+      await db.collections.pendingAttachmentUploads.bulkRemove(pendingUploads.map((doc) => doc.primary))
+    }
+
+    await enqueueOutbox('ticketAttachments', 'delete', { id: attachmentId })
+  }
+
   const stageAttachmentUpload = async (input: PendingAttachmentUploadInput) => {
     const { userId, locationId } = requireContext()
     const now = new Date().toISOString()
@@ -308,6 +337,7 @@ export const useOfflineRepository = () => {
     deleteTicket,
     addComment,
     addAttachmentMetadata,
+    deleteAttachment,
     stageAttachmentUpload,
     addPaymentRecord
   }

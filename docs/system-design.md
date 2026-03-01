@@ -77,6 +77,7 @@
   - Staged file payload is stored once (in `pendingAttachmentUploads`), while `ticketAttachments` keeps a lightweight pending placeholder.
   - Offline staging is bounded by max file size (25MB) to reduce IndexedDB quota pressure.
   - Pending uploads are flushed with per-item retry semantics: one failed file does not block subsequent files in the same sync run.
+- Ticket detail attachment card renders image thumbnails and file metadata rows separately, with soft-delete actions enqueued through outbox.
 - Ticket detail activity feed merges `ticketActivities` with non-deleted `ticketComments` and sorts by `createdAt DESC`.
 - Ticket checklist state is updated through regular ticket outbox updates (no separate checklist entity/collection).
 - On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
