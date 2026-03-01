@@ -1,5 +1,6 @@
 import { createRxDatabase, type RxDatabase } from 'rxdb'
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
+import { removeRxDatabase } from 'rxdb/plugins/core'
 
 const ticketSchema = {
   title: 'tickets',
@@ -193,11 +194,21 @@ const pendingAttachmentUploadSchema = {
 
 let rxdbPromise: Promise<RxDatabase> | null = null
 let rxdbInstance: RxDatabase | null = null
+const DATABASE_NAME = 'jtrack_crm'
+const rxStorage = getRxStorageDexie()
+
+const isSchemaMismatchError = (error: unknown) =>
+  Boolean(
+    error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: string }).code === 'DB6'
+  )
 
 async function createDatabase() {
   const database = await createRxDatabase({
-    name: 'jtrack_crm',
-    storage: getRxStorageDexie(),
+    name: DATABASE_NAME,
+    storage: rxStorage,
     closeDuplicates: true
   })
 
@@ -215,9 +226,23 @@ async function createDatabase() {
   return database
 }
 
+async function createDatabaseWithRecovery() {
+  try {
+    return await createDatabase()
+  } catch (error) {
+    if (!isSchemaMismatchError(error)) {
+      throw error
+    }
+
+    // When local schema drifts from persisted IndexedDB state, reset and rehydrate from sync.
+    await removeRxDatabase(DATABASE_NAME, rxStorage)
+    return createDatabase()
+  }
+}
+
 async function getOrCreateDatabase() {
   if (!rxdbPromise) {
-    rxdbPromise = createDatabase().then((database) => {
+    rxdbPromise = createDatabaseWithRecovery().then((database) => {
       rxdbInstance = database
       return database
     })
