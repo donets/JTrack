@@ -12,15 +12,21 @@
 
     <div
       ref="timelineRef"
-      class="relative"
+      class="relative transition-colors"
+      :class="isDropActive ? 'bg-sky-light/25 ring-2 ring-inset ring-sky/40' : ''"
+      @dragenter="onDragEnter"
       @dragover="onDragOver"
       @dragleave="onDragLeave"
       @drop="onDrop"
     >
       <div
         v-if="isDropActive"
-        class="pointer-events-none absolute inset-0 z-10 border-2 border-dashed border-sky bg-sky-light/20"
-      />
+        class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-sky bg-sky-light/20"
+      >
+        <span class="rounded bg-white/90 px-2 py-1 text-[11px] font-semibold text-sky shadow-sm">
+          Drop to assign and schedule
+        </span>
+      </div>
 
       <button
         v-for="job in jobs"
@@ -73,6 +79,7 @@ const emit = defineEmits<{
 
 const timelineRef = ref<HTMLElement | null>(null)
 const isDropActive = ref(false)
+const dragDepth = ref(0)
 
 const gridStyle = computed(() => ({
   gridTemplateColumns: `${props.labelWidthPx}px ${Math.max(0, props.endHour - props.startHour) * props.hourWidthPx}px`
@@ -113,6 +120,16 @@ const extractTicketId = (event: DragEvent) =>
   || event.dataTransfer?.getData('text/plain')
   || ''
 
+const onDragEnter = (event: DragEvent) => {
+  event.preventDefault()
+  dragDepth.value += 1
+  isDropActive.value = true
+
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+}
+
 const onDragOver = (event: DragEvent) => {
   event.preventDefault()
   isDropActive.value = true
@@ -123,11 +140,15 @@ const onDragOver = (event: DragEvent) => {
 }
 
 const onDragLeave = () => {
-  isDropActive.value = false
+  dragDepth.value = Math.max(0, dragDepth.value - 1)
+  if (dragDepth.value === 0) {
+    isDropActive.value = false
+  }
 }
 
 const onDrop = (event: DragEvent) => {
   event.preventDefault()
+  dragDepth.value = 0
   isDropActive.value = false
 
   const ticketId = extractTicketId(event)
