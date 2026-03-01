@@ -112,7 +112,7 @@
 - Operability:
   - Dockerized local stack with separate containers for web/api/postgres.
   - Default local container endpoints: web `http://localhost:3010`, API `http://localhost:3011`, Postgres `localhost:5433`.
-  - Frontend HMR mode is available via compose override: `docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d` (runs `web` in `nuxt dev` with bind-mounted sources).
+  - Local `docker/docker-compose.yml` runs `web` in `nuxt dev` mode with bind-mounted sources, so HMR works by default.
   - API/Web images are built via multi-stage Dockerfiles to keep runtime layers lean.
   - Docker build context excludes heavy local artifacts via `.dockerignore`.
   - Single-command monorepo dev workflow via Turbo.

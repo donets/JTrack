@@ -30,9 +30,9 @@ Monorepo:
 - `packages/shared` — Zod schemas, RBAC constants, sync contracts
 
 Default local ports:
-- Web: `http://localhost:3000`
-- API: `http://localhost:3001`
-- Postgres: `localhost:5432`
+- Web: `http://localhost:3010`
+- API: `http://localhost:3011`
+- Postgres: `localhost:5433`
 
 ## 3) Local Setup and Run
 
@@ -51,9 +51,13 @@ pnpm dev
 Containerized runtime (separate web/api/postgres containers):
 
 ```bash
-docker-compose -f docker/docker-compose.yml up -d --build
+docker-compose -f docker/docker-compose.yml up -d
 docker-compose -f docker/docker-compose.yml logs -f
 ```
+
+Local Docker rule:
+- `docker/docker-compose.yml` runs `web` in `nuxt dev` mode with bind-mounted sources.
+- Frontend changes should appear via HMR without `--build`.
 
 Useful checks:
 

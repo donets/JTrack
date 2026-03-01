@@ -33,7 +33,7 @@ flowchart LR
   W --> R["RxDB (IndexedDB/Dexie)"]
 ```
 
-For local Docker development, `docker/docker-compose.yml` runs a production-like web runtime from Nuxt `.output`. To enable HMR without rebuilding images, use the dev override: `docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d`.
+For local Docker development, `docker/docker-compose.yml` runs the `web` service in `nuxt dev` mode with source bind-mounts, so UI changes hot-reload without rebuilding images.
 
 ## 4. API Layer (NestJS)
 ### 4.1 Module Boundaries
@@ -125,7 +125,7 @@ sequenceDiagram
     - `postgres:16` -> `jtrack-postgres`
   - API/Web Dockerfiles use multi-stage builds (`deps` -> `builder` -> `runner`) to reduce runtime image size.
   - Docker build context filtering uses repository `.dockerignore`; docker-local mirror rules are stored in `docker/.dockerignore`.
-  - Startup via `docker/docker-compose.yml` (`docker-compose up -d --build`).
+  - Startup via `docker/docker-compose.yml` (`docker-compose up -d`).
   - Default local container endpoints: web `http://localhost:3010`, API `http://localhost:3011`, Postgres `localhost:5433`.
   - API container startup runs `node apps/api/node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma` before app start.
   - If `SEED_DEMO_DATA=true`, startup also runs `node apps/api/dist/prisma/seed.js` (idempotent upserts for demo users/location).

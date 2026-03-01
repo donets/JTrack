@@ -44,17 +44,14 @@ Default services:
 - API: `http://localhost:3011`
 - Postgres: `localhost:5433`
 
-### Docker HMR Mode (Web)
+### Docker Local Mode (Web)
 
-Default `docker-compose.yml` runs production-like web runtime (`nuxt build` output), so UI changes require image rebuild.
-
-For frontend development with HMR, start compose with the dev override:
+Default `docker-compose.yml` runs `web` in `nuxt dev` mode with source bind-mounts and file polling.
+Frontend changes hot-reload without image rebuild.
 
 ```bash
-docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d
+docker-compose -f docker/docker-compose.yml up -d
 ```
-
-This switches only `web` service to `nuxt dev` with source bind-mounts and file polling, so Vue/Nuxt changes hot-reload without `--build`.
 
 Demo credentials:
 - Owner user: `owner@demo.local` / `password123`
