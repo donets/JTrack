@@ -75,6 +75,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
 - Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
 - Ticket detail timeline is composed on client from `ticketActivities` and `ticketComments` streams via `useTicketActivity`.
+- Ticket detail checklist toggles are persisted through ticket patch updates (offline-first) and synchronized via outbox.
 - Outbox pattern:
   - local mutation first,
   - enqueue operation,

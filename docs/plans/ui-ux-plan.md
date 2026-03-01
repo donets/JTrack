@@ -330,7 +330,7 @@ pnpm typecheck
 | 3 | JTR-125 | Add TicketActivity entity, API endpoints, and RxDB collection | done (2026-03-02) |
 | 4 | JTR-126 | Create useTicketActivity composable | done (2026-03-02) |
 | 5 | JTR-134 | Add checklist data model and API | done (2026-03-02) |
-| 6 | JTR-113 | Create ticket checklist card component | pending |
+| 6 | JTR-113 | Create ticket checklist card component | done (2026-03-02) |
 | 7 | JTR-129 | Create attachment thumbnail grid with file metadata | pending |
 | 8 | JTR-130 | Add drag-and-drop upload zone for attachments | pending |
 | 9 | JTR-135 | Enhance ticket comment display and interactions | pending |

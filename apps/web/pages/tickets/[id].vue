@@ -172,19 +172,7 @@
           </JButton>
         </JCard>
 
-        <JCard title="Checklist">
-          <p class="mb-2 text-xs text-slate-500">{{ completedChecklistCount }}/{{ checklistItems.length }}</p>
-          <JProgress :value="completedChecklistCount" :max="checklistItems.length" variant="mint" />
-
-          <ul class="mt-3 space-y-2">
-            <li v-for="item in checklistItems" :key="item.id">
-              <JCheckbox
-                v-model="item.done"
-                :label="item.label"
-              />
-            </li>
-          </ul>
-        </JCard>
+        <TicketChecklistCard :items="checklistItems" :disabled="checklistSaving" @toggle="onChecklistToggle" />
       </div>
     </div>
 
@@ -285,6 +273,7 @@ import {
   type PaymentRecord,
   type Ticket,
   type TicketAttachment,
+  type TicketChecklistItem,
   type TicketStatus
 } from '@jtrack/shared'
 import {
@@ -328,6 +317,7 @@ const commentBody = ref('')
 const submittingComment = ref(false)
 const uploadingAttachment = ref(false)
 const updatingStatus = ref(false)
+const checklistSaving = ref(false)
 const isDragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const editModalOpen = ref(false)
@@ -364,12 +354,14 @@ const paymentErrors = reactive({
   amount: ''
 })
 
-const checklistItems = reactive([
-  { id: 'inspect', label: 'Inspect unit', done: false },
-  { id: 'refrigerant', label: 'Check refrigerant levels', done: false },
-  { id: 'thermostat', label: 'Test thermostat', done: false },
-  { id: 'signoff', label: 'Customer sign-off', done: false }
-])
+const DEFAULT_CHECKLIST_ITEMS: TicketChecklistItem[] = [
+  { id: 'inspect', label: 'Inspect unit', checked: false },
+  { id: 'refrigerant', label: 'Check refrigerant levels', checked: false },
+  { id: 'thermostat', label: 'Test thermostat', checked: false },
+  { id: 'signoff', label: 'Customer sign-off', checked: false }
+]
+
+const checklistItems = ref<TicketChecklistItem[]>([])
 
 let ticketSub: { unsubscribe: () => void } | null = null
 let attachmentsSub: { unsubscribe: () => void } | null = null
@@ -480,8 +472,6 @@ const totalAmountLabel = computed(() => formatMoney(ticket.value?.totalAmountCen
 const paidAmountLabel = computed(() => formatMoney(paidAmountCents.value, ticket.value?.currency ?? 'EUR'))
 const balanceAmountLabel = computed(() => formatMoney(balanceAmountCents.value, ticket.value?.currency ?? 'EUR'))
 
-const completedChecklistCount = computed(() => checklistItems.filter((item) => item.done).length)
-
 const { timelineItems } = useTicketActivity({
   ticketId: computed(() => ticketId),
   users: computed(() => users.value)
@@ -585,12 +575,51 @@ const loadUsers = async () => {
 
 watch(() => locationStore.activeLocationId, bindStreams, { immediate: true })
 watch(() => locationStore.activeLocationId, loadUsers, { immediate: true })
+watch(
+  () => ticket.value?.checklist,
+  (value) => {
+    const source = value && value.length > 0 ? value : DEFAULT_CHECKLIST_ITEMS
+    checklistItems.value = source.map((item) => ({
+      id: item.id,
+      label: item.label,
+      checked: item.checked
+    }))
+  },
+  { immediate: true, deep: true }
+)
 
 onUnmounted(() => {
   ticketSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
   paymentsSub?.unsubscribe()
 })
+
+const onChecklistToggle = async ({ id, checked }: { id: string; checked: boolean }) => {
+  if (!ticket.value || checklistSaving.value) {
+    return
+  }
+
+  const previous = checklistItems.value
+  const next = checklistItems.value.map((item) => (item.id === id ? { ...item, checked } : item))
+  checklistItems.value = next
+  checklistSaving.value = true
+
+  try {
+    await repository.saveTicket({
+      id: ticket.value.id,
+      checklist: next
+    })
+    await syncStore.syncNow()
+  } catch {
+    checklistItems.value = previous
+    toast.show({
+      type: 'error',
+      message: 'Failed to update checklist'
+    })
+  } finally {
+    checklistSaving.value = false
+  }
+}
 
 const updateTicketStatus = async (status: TicketStatus) => {
   if (!ticket.value || ticket.value.status === status || updatingStatus.value) {

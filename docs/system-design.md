@@ -78,6 +78,7 @@
   - Offline staging is bounded by max file size (25MB) to reduce IndexedDB quota pressure.
   - Pending uploads are flushed with per-item retry semantics: one failed file does not block subsequent files in the same sync run.
 - Ticket detail activity feed merges `ticketActivities` with non-deleted `ticketComments` and sorts by `createdAt DESC`.
+- Ticket checklist state is updated through regular ticket outbox updates (no separate checklist entity/collection).
 - On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 - Dispatch map view is implemented with Leaflet + OpenStreetMap tiles.
