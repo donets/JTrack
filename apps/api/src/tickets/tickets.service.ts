@@ -8,6 +8,7 @@ import {
   type CreateTicketInput,
   type RoleKey,
   type TicketActivity,
+  type TicketChecklistItem,
   type TicketListQuery,
   type TicketListResponse,
   type TicketStatus,
@@ -125,6 +126,9 @@ export class TicketsService {
           assignedToUserId: input.assignedToUserId,
           title: input.title,
           description: input.description,
+          checklist: input.checklist
+            ? (input.checklist as unknown as Prisma.InputJsonValue)
+            : undefined,
           scheduledStartAt: input.scheduledStartAt ? new Date(input.scheduledStartAt) : null,
           scheduledEndAt: input.scheduledEndAt ? new Date(input.scheduledEndAt) : null,
           priority: input.priority,
@@ -180,6 +184,10 @@ export class TicketsService {
         title: input.title,
         description: input.description,
         assignedToUserId: input.assignedToUserId,
+        checklist:
+          input.checklist === undefined
+            ? undefined
+            : (input.checklist as unknown as Prisma.InputJsonValue),
         status: input.status,
         scheduledStartAt: input.scheduledStartAt ? new Date(input.scheduledStartAt) : undefined,
         scheduledEndAt: input.scheduledEndAt ? new Date(input.scheduledEndAt) : undefined,
@@ -308,6 +316,7 @@ export class TicketsService {
     assignedToUserId: string | null
     title: string
     description: string | null
+    checklist: unknown
     status: TicketStatus
     scheduledStartAt: Date | null
     scheduledEndAt: Date | null
@@ -318,7 +327,12 @@ export class TicketsService {
     updatedAt: Date
     deletedAt: Date | null
   }) {
-    return serializeDates(ticket)
+    const serialized = serializeDates(ticket)
+
+    return {
+      ...serialized,
+      checklist: this.normalizeChecklist(ticket.checklist)
+    }
   }
 
   private async getNextTicketNumber(
@@ -371,5 +385,33 @@ export class TicketsService {
         metadata: input.metadata as Prisma.InputJsonValue
       }
     })
+  }
+
+  private normalizeChecklist(raw: unknown): TicketChecklistItem[] {
+    if (!Array.isArray(raw)) {
+      return []
+    }
+
+    const normalized: TicketChecklistItem[] = []
+    for (const item of raw) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        continue
+      }
+
+      const record = item as Record<string, unknown>
+      if (
+        typeof record.id === 'string' &&
+        typeof record.label === 'string' &&
+        typeof record.checked === 'boolean'
+      ) {
+        normalized.push({
+          id: record.id,
+          label: record.label,
+          checked: record.checked
+        })
+      }
+    }
+
+    return normalized
   }
 }

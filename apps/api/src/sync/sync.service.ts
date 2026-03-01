@@ -7,6 +7,7 @@ import {
   type SyncPushRequest,
   type SyncPushResponse,
   type TicketActivity,
+  type TicketChecklistItem,
   type Ticket,
   type TicketAttachment,
   type TicketComment,
@@ -297,6 +298,7 @@ export class SyncService {
             status: record.status,
             ticketNumber: record.ticketNumber,
             assignedToUserId: record.assignedToUserId,
+            checklist: (record.checklist ?? []) as unknown as Prisma.InputJsonValue,
             scheduledStartAt: record.scheduledStartAt ? new Date(record.scheduledStartAt) : null,
             scheduledEndAt: record.scheduledEndAt ? new Date(record.scheduledEndAt) : null,
             priority: record.priority,
@@ -319,6 +321,7 @@ export class SyncService {
             assignedToUserId: record.assignedToUserId,
             title: record.title,
             description: record.description,
+            checklist: (record.checklist ?? []) as unknown as Prisma.InputJsonValue,
             status: record.status,
             scheduledStartAt: record.scheduledStartAt ? new Date(record.scheduledStartAt) : null,
             scheduledEndAt: record.scheduledEndAt ? new Date(record.scheduledEndAt) : null,
@@ -628,6 +631,7 @@ export class SyncService {
     assignedToUserId: string | null
     title: string
     description: string | null
+    checklist: unknown
     status: string
     scheduledStartAt: Date | null
     scheduledEndAt: Date | null
@@ -642,7 +646,8 @@ export class SyncService {
 
     return {
       ...serialized,
-      status: ticket.status as Ticket['status']
+      status: ticket.status as Ticket['status'],
+      checklist: this.normalizeChecklist(ticket.checklist)
     }
   }
 
@@ -723,5 +728,33 @@ export class SyncService {
       provider: payment.provider as PaymentRecord['provider'],
       status: payment.status as PaymentRecord['status']
     }
+  }
+
+  private normalizeChecklist(raw: unknown): TicketChecklistItem[] {
+    if (!Array.isArray(raw)) {
+      return []
+    }
+
+    const normalized: TicketChecklistItem[] = []
+    for (const item of raw) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        continue
+      }
+
+      const record = item as Record<string, unknown>
+      if (
+        typeof record.id === 'string' &&
+        typeof record.label === 'string' &&
+        typeof record.checked === 'boolean'
+      ) {
+        normalized.push({
+          id: record.id,
+          label: record.label,
+          checked: record.checked
+        })
+      }
+    }
+
+    return normalized
   }
 }

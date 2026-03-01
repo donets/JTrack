@@ -14,6 +14,19 @@ const ticketSchema = {
     assignedToUserId: { type: ['string', 'null'] },
     title: { type: 'string' },
     description: { type: ['string', 'null'] },
+    checklist: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          checked: { type: 'boolean' }
+        },
+        required: ['id', 'label', 'checked'],
+        additionalProperties: false
+      }
+    },
     status: { type: 'string' },
     scheduledStartAt: { type: ['string', 'null'] },
     scheduledEndAt: { type: ['string', 'null'] },

@@ -141,6 +141,7 @@ CREATE TABLE "Ticket" (
   "assignedToUserId" UUID,
   "title" TEXT NOT NULL,
   "description" TEXT,
+  "checklist" JSONB NOT NULL DEFAULT '[]'::jsonb,
   "status" "TicketStatus" NOT NULL DEFAULT 'New',
   "scheduledStartAt" TIMESTAMP(3),
   "scheduledEndAt" TIMESTAMP(3),

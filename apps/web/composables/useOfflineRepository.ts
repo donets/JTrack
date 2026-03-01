@@ -2,6 +2,7 @@ import type {
   CreateAttachmentMetadataInput,
   CreateCommentInput,
   CreatePaymentRecordInput,
+  TicketChecklistItem,
   Ticket,
   TicketStatus
 } from '@jtrack/shared'
@@ -24,6 +25,7 @@ interface SaveTicketInput {
   ticketNumber?: number | null
   title?: string
   description?: string | null
+  checklist?: TicketChecklistItem[]
   status?: TicketStatus
   assignedToUserId?: string | null
   scheduledStartAt?: string | null
@@ -86,6 +88,7 @@ export const useOfflineRepository = () => {
       assignedToUserId: existingTicket?.assignedToUserId ?? null,
       title: existingTicket?.title ?? 'Untitled Ticket',
       description: existingTicket?.description ?? null,
+      checklist: existingTicket?.checklist ?? [],
       status: existingTicket?.status ?? 'New',
       scheduledStartAt: existingTicket?.scheduledStartAt ?? null,
       scheduledEndAt: existingTicket?.scheduledEndAt ?? null,
@@ -107,6 +110,10 @@ export const useOfflineRepository = () => {
 
     if (input.description !== undefined) {
       ticket.description = input.description ?? null
+    }
+
+    if (input.checklist !== undefined) {
+      ticket.checklist = input.checklist
     }
 
     if (input.status !== undefined) {
@@ -142,6 +149,7 @@ export const useOfflineRepository = () => {
         title: ticket.title,
         ticketNumber: ticket.ticketNumber,
         description: ticket.description,
+        checklist: ticket.checklist,
         status: ticket.status,
         assignedToUserId: ticket.assignedToUserId,
         scheduledStartAt: ticket.scheduledStartAt,

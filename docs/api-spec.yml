@@ -1405,6 +1405,10 @@ components:
         description:
           type: string
           nullable: true
+        checklist:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketChecklistItem'
         status:
           $ref: '#/components/schemas/TicketStatus'
         scheduledStartAt:
@@ -1439,10 +1443,22 @@ components:
         - ticketNumber
         - createdByUserId
         - title
+        - checklist
         - status
         - currency
         - createdAt
         - updatedAt
+
+    TicketChecklistItem:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        checked:
+          type: boolean
+      required: [id, label, checked]
 
     TicketComment:
       type: object
@@ -1633,6 +1649,10 @@ components:
           minLength: 1
         description:
           type: string
+        checklist:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketChecklistItem'
         assignedToUserId:
           type: string
         scheduledStartAt:

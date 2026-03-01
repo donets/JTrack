@@ -60,6 +60,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
   - enums for role/status/provider kinds,
   - referential integrity via foreign keys,
   - location-scoped sequential ticket numbering (`Ticket.ticketNumber`) for human-readable references,
+  - ticket checklist persisted as JSON array on `Ticket.checklist` (`id`, `label`, `checked`),
   - immutable per-ticket activity log records (`TicketActivity`) for timeline/audit surfaces,
   - indexes tuned for location-scoped queries and sync windows.
 - Soft-delete only where sync tombstones are required.

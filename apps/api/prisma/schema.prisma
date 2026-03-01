@@ -180,6 +180,7 @@ model Ticket {
   assignedToUserId String?            @db.Uuid
   title            String
   description      String?
+  checklist        Json               @default("[]")
   status           TicketStatus       @default(New)
   scheduledStartAt DateTime?
   scheduledEndAt   DateTime?

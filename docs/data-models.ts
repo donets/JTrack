@@ -77,6 +77,7 @@ export interface Ticket {
   assignedToUserId: UUID | null
   title: string
   description: string | null
+  checklist: TicketChecklistItem[]
   status: TicketStatus
   scheduledStartAt: IsoDateTime | null
   scheduledEndAt: IsoDateTime | null
@@ -86,6 +87,12 @@ export interface Ticket {
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
   deletedAt: IsoDateTime | null
+}
+
+export interface TicketChecklistItem {
+  id: string
+  label: string
+  checked: boolean
 }
 
 export interface TicketComment {
@@ -275,6 +282,7 @@ export interface UpdateLocationInput {
 export interface CreateTicketInput {
   title: string
   description?: string
+  checklist?: TicketChecklistItem[]
   assignedToUserId?: UUID
   scheduledStartAt?: IsoDateTime
   scheduledEndAt?: IsoDateTime
