@@ -36,59 +36,90 @@
     </section>
 
     <template v-if="activeView === 'all'">
-      <JTable
-        :columns="columns"
-        :rows="pageRows"
-        :sortable="true"
-        :row-clickable="true"
-        :sort-key="sortKey"
-        :sort-direction="sortDirection"
-        :empty-text="emptyText"
-        @sort-change="onSortChange"
-        @row-click="onTableRowClick"
-      >
-        <template #cell-title="{ row }">
-          <NuxtLink :to="`/tickets/${row.id}`" class="font-medium text-ink hover:text-mint hover:underline">
-            <span class="mr-1 text-slate-500">{{ formatTicketNumber(row.ticketNumber, row.id) }}</span>
-            <span>{{ row.title }}</span>
-          </NuxtLink>
-        </template>
+      <div v-if="ticketsLoading" class="space-y-2 rounded-xl border border-slate-200 bg-white p-3 sm:p-5">
+        <div v-for="rowIndex in 6" :key="`tickets-loading-${rowIndex}`" class="grid grid-cols-7 gap-3">
+          <JSkeleton v-for="columnIndex in 7" :key="`tickets-loading-${rowIndex}-${columnIndex}`" height="18px" />
+        </div>
+      </div>
 
-        <template #cell-status="{ row }">
-          <JBadge :variant="statusToBadgeVariant(row.status)">{{ statusToLabel(row.status) }}</JBadge>
-        </template>
-
-        <template #cell-priority="{ row }">
-          <JBadge :variant="priorityToBadgeVariant(row.priority)">{{ formatPriorityLabel(row.priority) }}</JBadge>
-        </template>
-
-        <template #cell-assignedToUserId="{ row }">
-          <div v-if="row.assignedToUserId" class="inline-flex items-center gap-2">
-            <JAvatar :name="resolveAssigneeName(row.assignedToUserId)" size="sm" />
-            <span>{{ resolveAssigneeName(row.assignedToUserId) }}</span>
-          </div>
-          <span v-else class="text-slate-400">—</span>
-        </template>
-
-        <template #cell-scheduledStartAt="{ value }">
-          <span>{{ formatScheduled(value) }}</span>
-        </template>
-
-        <template #cell-totalAmountCents="{ row }">
-          <span>{{ formatMoney(row.totalAmountCents, row.currency) }}</span>
-        </template>
-
-        <template #cell-updatedAt="{ value }">
-          <span class="text-xs text-slate-600">{{ formatDateTime(value) }}</span>
-        </template>
-      </JTable>
-
-      <JPagination
-        :total="totalTickets"
-        :per-page="perPage"
-        :current-page="page"
-        @update:current-page="onPageChange"
+      <JEmptyState
+        v-else-if="ticketsLoadError"
+        icon="⚠️"
+        title="Could not load tickets"
+        description="The local ticket store could not be read. Retry to restore the list."
+        :action="{ label: 'Retry', onClick: retryTicketsLoad }"
       />
+
+      <JEmptyState
+        v-else-if="totalTickets === 0 && !hasActiveFilters"
+        icon="🧾"
+        title="No tickets yet"
+        description="Create your first ticket to get started."
+        :action="{ label: '+ New Ticket', onClick: openCreateModal }"
+      />
+
+      <JEmptyState
+        v-else-if="totalTickets === 0"
+        icon="🔎"
+        title="No tickets match your filters"
+        description="Try adjusting your filters or search terms."
+        :action="{ label: 'Clear filters', onClick: clearFilters }"
+      />
+
+      <template v-else>
+        <JTable
+          :columns="columns"
+          :rows="pageRows"
+          :sortable="true"
+          :row-clickable="true"
+          :sort-key="sortKey"
+          :sort-direction="sortDirection"
+          @sort-change="onSortChange"
+          @row-click="onTableRowClick"
+        >
+          <template #cell-title="{ row }">
+            <NuxtLink :to="`/tickets/${row.id}`" class="font-medium text-ink hover:text-mint hover:underline">
+              <span class="mr-1 text-slate-500">{{ formatTicketNumber(row.ticketNumber, row.id) }}</span>
+              <span>{{ row.title }}</span>
+            </NuxtLink>
+          </template>
+
+          <template #cell-status="{ row }">
+            <JBadge :variant="statusToBadgeVariant(row.status)">{{ statusToLabel(row.status) }}</JBadge>
+          </template>
+
+          <template #cell-priority="{ row }">
+            <JBadge :variant="priorityToBadgeVariant(row.priority)">{{ formatPriorityLabel(row.priority) }}</JBadge>
+          </template>
+
+          <template #cell-assignedToUserId="{ row }">
+            <div v-if="row.assignedToUserId" class="inline-flex items-center gap-2">
+              <JAvatar :name="resolveAssigneeName(row.assignedToUserId)" size="sm" />
+              <span>{{ resolveAssigneeName(row.assignedToUserId) }}</span>
+            </div>
+            <span v-else class="text-slate-400">—</span>
+          </template>
+
+          <template #cell-scheduledStartAt="{ value }">
+            <span>{{ formatScheduled(value) }}</span>
+          </template>
+
+          <template #cell-totalAmountCents="{ row }">
+            <span>{{ formatMoney(row.totalAmountCents, row.currency) }}</span>
+          </template>
+
+          <template #cell-updatedAt="{ value }">
+            <span class="text-xs text-slate-600">{{ formatDateTime(value) }}</span>
+          </template>
+        </JTable>
+
+        <JPagination
+          :total="totalTickets"
+          :per-page="perPage"
+          :current-page="page"
+          @update:current-page="onPageChange"
+        />
+      </template>
     </template>
 
     <div
@@ -345,6 +376,8 @@ const page = ref(1)
 const sortKey = ref<SortKey>('updatedAt')
 const sortDirection = ref<SortDirection>('desc')
 const loadingUsers = ref(false)
+const ticketsLoading = ref(true)
+const ticketsLoadError = ref<string | null>(null)
 const isApplyingRouteQuery = ref(false)
 const activeView = ref<TicketView>(getViewFromQuery(route.query.view))
 
@@ -666,20 +699,51 @@ const ticketSelector = computed<Record<string, unknown> | null>(() => {
 
 const subscribeToTickets = () => {
   ticketSubscription?.unsubscribe()
+  ticketsLoadError.value = null
+  ticketsLoading.value = true
 
   if (!ticketSelector.value) {
     tickets.value = []
+    ticketsLoading.value = false
     return
   }
 
-  ticketSubscription = db.collections.tickets
-    .find({
-      selector: ticketSelector.value
-    })
-    .$
-    .subscribe((docs: Array<{ toJSON: () => Ticket }>) => {
-      tickets.value = docs.map((doc) => doc.toJSON()).filter((ticket) => !ticket.deletedAt)
-    })
+  try {
+    ticketSubscription = db.collections.tickets
+      .find({
+        selector: ticketSelector.value
+      })
+      .$
+      .subscribe(
+        (docs: Array<{ toJSON: () => Ticket }>) => {
+          tickets.value = docs.map((doc) => doc.toJSON()).filter((ticket) => !ticket.deletedAt)
+          ticketsLoading.value = false
+          ticketsLoadError.value = null
+        },
+        () => {
+          tickets.value = []
+          ticketsLoading.value = false
+          ticketsLoadError.value = 'rxdb-subscription-failed'
+        }
+      )
+  } catch {
+    tickets.value = []
+    ticketsLoading.value = false
+    ticketsLoadError.value = 'rxdb-query-failed'
+  }
+}
+
+const retryTicketsLoad = () => {
+  subscribeToTickets()
+}
+
+const clearFilters = () => {
+  statusFilter.value = ''
+  priorityFilter.value = ''
+  assigneeFilter.value = ''
+  dateRangeFilter.value = ''
+  searchQuery.value = ''
+  page.value = 1
 }
 
 const loadTeamMembers = async () => {
@@ -713,6 +777,15 @@ const filteredBySearch = computed(() => {
     return haystack.includes(needle)
   })
 })
+
+const hasActiveFilters = computed(
+  () =>
+    Boolean(statusFilter.value) ||
+    Boolean(priorityFilter.value) ||
+    Boolean(assigneeFilter.value) ||
+    Boolean(dateRangeFilter.value) ||
+    Boolean(searchQuery.value.trim())
+)
 
 const filteredByDate = computed(() => {
   if (!dateRangeFilter.value) {
@@ -927,18 +1000,6 @@ const kanbanColumns = computed<Record<string, KanbanTicketCardItem[]>>(() => {
   }
 
   return grouped
-})
-
-const emptyText = computed(() => {
-  if (loadingUsers.value) {
-    return 'Loading tickets...'
-  }
-
-  if (tickets.value.length === 0) {
-    return 'No tickets in local store'
-  }
-
-  return 'No tickets match current filters'
 })
 
 watch(
