@@ -1359,6 +1359,9 @@ components:
           type: string
         locationId:
           type: string
+        ticketNumber:
+          type: integer
+          minimum: 1
         createdByUserId:
           type: string
         assignedToUserId:
@@ -1400,6 +1403,7 @@ components:
       required:
         - id
         - locationId
+        - ticketNumber
         - createdByUserId
         - title
         - status

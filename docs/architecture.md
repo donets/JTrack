@@ -58,6 +58,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Prisma schema defines:
   - enums for role/status/provider kinds,
   - referential integrity via foreign keys,
+  - location-scoped sequential ticket numbering (`Ticket.ticketNumber`) for human-readable references,
   - indexes tuned for location-scoped queries and sync windows.
 - Soft-delete only where sync tombstones are required.
 - User deletion is hard-delete with transactional session invalidation (`refreshTokenHash` reset) and reassignment of historical `createdBy`/`assignedTo`/`author`/`uploadedBy` references to a reserved non-admin system user to satisfy FK constraints.

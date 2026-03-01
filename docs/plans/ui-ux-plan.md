@@ -318,3 +318,22 @@ pnpm typecheck
 ```
 
 ## Total: ~159 story points across 9 epics
+
+---
+
+## Epic: Tickets Backlog (2026-03)
+
+| # | Linear | Task | Status |
+|---|--------|------|--------|
+| 1 | JTR-132 | Add ticket sequential numbering system | done (2026-03-02) |
+| 2 | JTR-133 | Add ticket status transition validation (API) | pending |
+| 3 | JTR-125 | Add TicketActivity entity, API endpoints, and RxDB collection | pending |
+| 4 | JTR-126 | Create useTicketActivity composable | pending |
+| 5 | JTR-134 | Add checklist data model and API | pending |
+| 6 | JTR-113 | Create ticket checklist card component | pending |
+| 7 | JTR-129 | Create attachment thumbnail grid with file metadata | pending |
+| 8 | JTR-130 | Add drag-and-drop upload zone for attachments | pending |
+| 9 | JTR-135 | Enhance ticket comment display and interactions | pending |
+| 10 | JTR-131 | Create ticket view tabs navigation | pending |
+| 11 | JTR-136 | Add ticket list empty and loading states | pending |
+| 12 | JTR-114 | Create ticket detail mobile view with actions | pending |

@@ -1,7 +1,7 @@
 <template>
   <section v-if="ticket" class="space-y-4">
     <JPageHeader
-      :title="ticket.title"
+      :title="ticketTitle"
       :breadcrumbs="breadcrumbs"
     >
       <template #status>
@@ -290,6 +290,7 @@ import {
   formatAmountInput,
   formatDateTime,
   formatMoney,
+  formatTicketNumber,
   formatPriorityLabel,
   parseAmountToCents
 } from '~/utils/format'
@@ -417,6 +418,14 @@ const userNameById = computed(() => {
   }
 
   return map
+})
+
+const ticketTitle = computed(() => {
+  if (!ticket.value) {
+    return 'Ticket'
+  }
+
+  return `${formatTicketNumber(ticket.value.ticketNumber, ticket.value.id)} ${ticket.value.title}`
 })
 
 const prioritySelectOptions = [

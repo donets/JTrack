@@ -45,6 +45,7 @@ export type BadgeVariant = 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'
 
 export type KanbanTicketCardItem = {
   id: string
+  ticketNumber?: number
   title: string
   status: TicketStatus
   priority: string | null
@@ -83,6 +84,7 @@ export type QuickAssignTechnicianOption = {
 
 export type DispatchScheduledJob = {
   id: string
+  ticketNumber?: number
   title: string
   status: TicketStatus
   priority: string | null
@@ -126,6 +128,7 @@ export type DispatchGanttRowOpenPayload = {
 
 export type DispatchMapTicket = {
   id: string
+  ticketNumber?: number
   locationId: string
   title: string
   status: TicketStatus

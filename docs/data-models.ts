@@ -64,6 +64,7 @@ export interface LocationWithMembership extends Location {
 export interface Ticket {
   id: UUID
   locationId: UUID
+  ticketNumber: number
   createdByUserId: UUID
   assignedToUserId: UUID | null
   title: string

@@ -9,6 +9,7 @@ const ticketSchema = {
   properties: {
     id: { type: 'string', maxLength: 64 },
     locationId: { type: 'string' },
+    ticketNumber: { type: ['number', 'null'] },
     createdByUserId: { type: 'string' },
     assignedToUserId: { type: ['string', 'null'] },
     title: { type: 'string' },

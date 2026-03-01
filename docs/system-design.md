@@ -31,6 +31,7 @@
 
 ## 5. Data Model Strategy
 - Relational core with explicit foreign keys.
+- Tickets include a location-scoped sequential `ticketNumber` used as the human-readable identifier in UI.
 - Soft-delete for user-generated mutable records:
   - `Ticket.deletedAt`
   - `TicketComment.deletedAt`

@@ -1,4 +1,19 @@
-export const formatTicketCode = (ticketId: string) => `#${ticketId.slice(0, 8).toUpperCase()}`
+export const formatTicketNumber = (
+  ticketNumber: number | null | undefined,
+  ticketId?: string
+) => {
+  if (typeof ticketNumber === 'number' && Number.isFinite(ticketNumber) && ticketNumber > 0) {
+    return `#${ticketNumber}`
+  }
+
+  if (ticketId) {
+    return `#${ticketId.slice(0, 8).toUpperCase()}`
+  }
+
+  return '#—'
+}
+
+export const formatTicketCode = (ticketId: string) => formatTicketNumber(undefined, ticketId)
 
 export const formatPriorityLabel = (priority: string | null | undefined) => {
   const normalized = priority?.trim().toLowerCase()

@@ -1,4 +1,5 @@
 import type { BadgeVariant } from '~/types/ui'
+import { formatTicketNumber } from './format'
 
 export const statusToBadgeVariant = (status: string): BadgeVariant => {
   const map: Record<string, BadgeVariant> = {
@@ -28,6 +29,7 @@ export const priorityToBadgeVariant = (priority: string | null | undefined): Bad
   return map[priority.toLowerCase()] ?? 'mist'
 }
 
-export const formatTicketCode = (ticketId: string) => `#${ticketId.slice(0, 8).toUpperCase()}`
+export const formatTicketCode = (ticketId: string, ticketNumber?: number | null) =>
+  formatTicketNumber(ticketNumber, ticketId)
 
 export const shouldShowTicketCode = (showTicketCode?: boolean) => Boolean(showTicketCode)

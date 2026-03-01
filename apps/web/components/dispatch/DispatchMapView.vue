@@ -20,7 +20,9 @@
           class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-left transition-colors hover:bg-slate-50"
           @click="focusTicket(point.ticket.id)"
         >
-          <p class="truncate text-xs font-semibold text-ink">{{ point.ticket.title }}</p>
+          <p class="truncate text-xs font-semibold text-ink">
+            {{ formatTicketNumber(point.ticket.ticketNumber, point.ticket.id) }} {{ point.ticket.title }}
+          </p>
           <p class="mt-0.5 text-[11px] text-slate-500">
             {{ point.technicianLabel }} · {{ timeLabel(point.ticket.scheduledStartAt) }}
           </p>
@@ -41,6 +43,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import type { DispatchMapTicket } from '~/types/ui'
+import { formatTicketNumber } from '~/utils/format'
 
 type MapPoint = {
   ticket: DispatchMapTicket
@@ -159,7 +162,7 @@ const buildPopup = (point: MapPoint) => {
 
   const title = document.createElement('p')
   title.className = 'font-semibold text-slate-800'
-  title.textContent = point.ticket.title
+  title.textContent = `${formatTicketNumber(point.ticket.ticketNumber, point.ticket.id)} ${point.ticket.title}`
 
   const meta = document.createElement('p')
   meta.className = 'text-slate-500'

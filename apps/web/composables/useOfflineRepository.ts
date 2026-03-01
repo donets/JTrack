@@ -21,6 +21,7 @@ interface PendingAttachmentUploadInput {
 
 interface SaveTicketInput {
   id?: string
+  ticketNumber?: number | null
   title?: string
   description?: string | null
   status?: TicketStatus
@@ -80,6 +81,7 @@ export const useOfflineRepository = () => {
     const ticket: Ticket = {
       id: ticketId,
       locationId: existingTicket?.locationId ?? locationId,
+      ticketNumber: existingTicket?.ticketNumber,
       createdByUserId: existingTicket?.createdByUserId ?? userId,
       assignedToUserId: existingTicket?.assignedToUserId ?? null,
       title: existingTicket?.title ?? 'Untitled Ticket',
@@ -97,6 +99,10 @@ export const useOfflineRepository = () => {
 
     if (input.title !== undefined) {
       ticket.title = input.title
+    }
+
+    if (input.ticketNumber !== undefined) {
+      ticket.ticketNumber = input.ticketNumber ?? undefined
     }
 
     if (input.description !== undefined) {
@@ -134,6 +140,7 @@ export const useOfflineRepository = () => {
     if (existing) {
       await existing.incrementalPatch({
         title: ticket.title,
+        ticketNumber: ticket.ticketNumber,
         description: ticket.description,
         status: ticket.status,
         assignedToUserId: ticket.assignedToUserId,

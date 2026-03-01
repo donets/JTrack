@@ -6,6 +6,7 @@ const LOCATION_ID = 'loc-1'
 const createTicketRecord = (id: string) => ({
   id,
   locationId: LOCATION_ID,
+  ticketNumber: 42,
   createdByUserId: 'user-1',
   assignedToUserId: null,
   title: `Ticket ${id}`,

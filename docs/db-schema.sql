@@ -135,6 +135,7 @@ CREATE TABLE "RolePrivilege" (
 CREATE TABLE "Ticket" (
   "id" UUID NOT NULL,
   "locationId" UUID NOT NULL,
+  "ticketNumber" INTEGER NOT NULL,
   "createdByUserId" UUID NOT NULL,
   "assignedToUserId" UUID,
   "title" TEXT NOT NULL,
@@ -158,6 +159,7 @@ CREATE TABLE "Ticket" (
 );
 
 CREATE INDEX "Ticket_locationId_updatedAt_idx" ON "Ticket"("locationId", "updatedAt");
+CREATE UNIQUE INDEX "Ticket_locationId_ticketNumber_key" ON "Ticket"("locationId", "ticketNumber");
 CREATE INDEX "Ticket_locationId_status_idx" ON "Ticket"("locationId", "status");
 CREATE INDEX "Ticket_locationId_assignedToUserId_idx" ON "Ticket"("locationId", "assignedToUserId");
 CREATE INDEX "Ticket_deletedAt_idx" ON "Ticket"("deletedAt");

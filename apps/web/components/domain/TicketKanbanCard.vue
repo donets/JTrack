@@ -73,7 +73,7 @@ const emit = defineEmits<{
 }>()
 
 const showCode = computed(() => shouldShowTicketCode(props.showTicketCode))
-const ticketCode = computed(() => formatTicketCode(props.ticket.id))
+const ticketCode = computed(() => formatTicketCode(props.ticket.id, props.ticket.ticketNumber))
 
 const assigneeLabel = computed(() => props.ticket.assigneeName || 'Unassigned')
 const dueLabel = computed(() => formatDue(props.ticket.dueAt ?? props.ticket.scheduledStartAt ?? null))

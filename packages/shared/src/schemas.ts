@@ -48,6 +48,7 @@ export const ticketStatusSchema = z.enum([
 export const ticketSchema = z.object({
   id: idSchema,
   locationId: idSchema,
+  ticketNumber: z.number().int().positive().optional(),
   createdByUserId: idSchema,
   assignedToUserId: idSchema.nullable(),
   title: z.string().min(1),

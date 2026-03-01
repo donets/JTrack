@@ -123,6 +123,7 @@ async function seedDemoData() {
     where: { id: '22222222-2222-2222-2222-222222222221' },
     update: {
       title: 'Boiler inspection',
+      ticketNumber: 1,
       status: 'Scheduled',
       assignedToUserId: ownerUser.id,
       locationId: location.id,
@@ -131,6 +132,7 @@ async function seedDemoData() {
     create: {
       id: '22222222-2222-2222-2222-222222222221',
       title: 'Boiler inspection',
+      ticketNumber: 1,
       description: 'Quarterly maintenance visit',
       status: 'Scheduled',
       scheduledStartAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
@@ -146,6 +148,7 @@ async function seedDemoData() {
     where: { id: '22222222-2222-2222-2222-222222222222' },
     update: {
       title: 'AC not cooling',
+      ticketNumber: 2,
       status: 'New',
       locationId: location.id,
       createdByUserId: ownerUser.id
@@ -153,6 +156,7 @@ async function seedDemoData() {
     create: {
       id: '22222222-2222-2222-2222-222222222222',
       title: 'AC not cooling',
+      ticketNumber: 2,
       description: 'Customer reports warm air only',
       status: 'New',
       priority: 'medium',

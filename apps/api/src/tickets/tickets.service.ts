@@ -81,19 +81,24 @@ export class TicketsService {
   }
 
   async create(locationId: string, createdByUserId: string, input: CreateTicketInput) {
-    const ticket = await this.prisma.ticket.create({
-      data: {
-        locationId,
-        createdByUserId,
-        assignedToUserId: input.assignedToUserId,
-        title: input.title,
-        description: input.description,
-        scheduledStartAt: input.scheduledStartAt ? new Date(input.scheduledStartAt) : null,
-        scheduledEndAt: input.scheduledEndAt ? new Date(input.scheduledEndAt) : null,
-        priority: input.priority,
-        totalAmountCents: input.totalAmountCents,
-        currency: input.currency
-      }
+    const ticket = await this.prisma.$transaction(async (tx) => {
+      const nextTicketNumber = await this.getNextTicketNumber(locationId, tx)
+
+      return tx.ticket.create({
+        data: {
+          locationId,
+          ticketNumber: nextTicketNumber,
+          createdByUserId,
+          assignedToUserId: input.assignedToUserId,
+          title: input.title,
+          description: input.description,
+          scheduledStartAt: input.scheduledStartAt ? new Date(input.scheduledStartAt) : null,
+          scheduledEndAt: input.scheduledEndAt ? new Date(input.scheduledEndAt) : null,
+          priority: input.priority,
+          totalAmountCents: input.totalAmountCents,
+          currency: input.currency
+        }
+      })
     })
 
     return this.serialize(ticket)
@@ -167,6 +172,7 @@ export class TicketsService {
   private serialize(ticket: {
     id: string
     locationId: string
+    ticketNumber: number
     createdByUserId: string
     assignedToUserId: string | null
     title: string
@@ -182,5 +188,17 @@ export class TicketsService {
     deletedAt: Date | null
   }) {
     return serializeDates(ticket)
+  }
+
+  private async getNextTicketNumber(
+    locationId: string,
+    tx: Pick<PrismaService, 'ticket'>
+  ): Promise<number> {
+    const aggregate = await tx.ticket.aggregate({
+      where: { locationId },
+      _max: { ticketNumber: true }
+    })
+
+    return (aggregate._max.ticketNumber ?? 0) + 1
   }
 }

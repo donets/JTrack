@@ -49,7 +49,8 @@
       >
         <template #cell-title="{ row }">
           <NuxtLink :to="`/tickets/${row.id}`" class="font-medium text-ink hover:text-mint hover:underline">
-            {{ row.title }}
+            <span class="mr-1 text-slate-500">{{ formatTicketNumber(row.ticketNumber, row.id) }}</span>
+            <span>{{ row.title }}</span>
           </NuxtLink>
         </template>
 
@@ -105,7 +106,7 @@
           :title="column.label"
           :color="column.color"
           :tickets="kanbanColumns[column.status] ?? []"
-          :show-ticket-code="false"
+          :show-ticket-code="true"
           @ticket-drop="onKanbanDrop"
           @open-ticket="openTicket"
           @quick-assign="openQuickAssign"
@@ -199,12 +200,14 @@ import {
 import {
   formatDateTime,
   formatMoney,
+  formatTicketNumber,
   formatPriorityLabel,
   parseAmountToCents
 } from '~/utils/format'
 
 interface TicketRow {
   id: string
+  ticketNumber?: number
   title: string
   status: TicketStatus
   priority: string | null
@@ -743,6 +746,7 @@ const paginatedTickets = computed(() => {
 const pageRows = computed<TicketRow[]>(() =>
   paginatedTickets.value.map((ticket) => ({
     id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
     title: ticket.title,
     status: ticket.status,
     priority: ticket.priority,
@@ -757,6 +761,7 @@ const pageRows = computed<TicketRow[]>(() =>
 const boardTickets = computed<KanbanTicketCardItem[]>(() =>
   filteredByDate.value.map((ticket) => ({
     id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
     title: ticket.title,
     status: ticket.status,
     priority: ticket.priority,

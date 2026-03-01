@@ -164,6 +164,7 @@ model RolePrivilege {
 model Ticket {
   id               String             @id @default(uuid()) @db.Uuid
   locationId       String             @db.Uuid
+  ticketNumber     Int
   createdByUserId  String             @db.Uuid
   assignedToUserId String?            @db.Uuid
   title            String
@@ -185,6 +186,7 @@ model Ticket {
   paymentRecords   PaymentRecord[]
 
   @@index([locationId, updatedAt])
+  @@unique([locationId, ticketNumber])
   @@index([locationId, status])
   @@index([locationId, assignedToUserId])
   @@index([deletedAt])

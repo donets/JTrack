@@ -194,7 +194,8 @@ export class SyncService {
           select: {
             id: true,
             locationId: true,
-            updatedAt: true
+            updatedAt: true,
+            ticketNumber: true
           }
         })
     )
@@ -212,6 +213,7 @@ export class SyncService {
             title: record.title,
             description: record.description,
             status: record.status,
+            ticketNumber: record.ticketNumber,
             assignedToUserId: record.assignedToUserId,
             scheduledStartAt: record.scheduledStartAt ? new Date(record.scheduledStartAt) : null,
             scheduledEndAt: record.scheduledEndAt ? new Date(record.scheduledEndAt) : null,
@@ -223,10 +225,14 @@ export class SyncService {
           }
         })
       } else {
+        const nextTicketNumber =
+          record.ticketNumber ?? (await this.getNextTicketNumber(tx, locationId))
+
         await tx.ticket.create({
           data: {
             id: record.id,
             locationId,
+            ticketNumber: nextTicketNumber,
             createdByUserId: record.createdByUserId,
             assignedToUserId: record.assignedToUserId,
             title: record.title,
@@ -520,9 +526,22 @@ export class SyncService {
     return Array.from(new Set(ids))
   }
 
+  private async getNextTicketNumber(
+    tx: Prisma.TransactionClient,
+    locationId: string
+  ): Promise<number> {
+    const aggregate = await tx.ticket.aggregate({
+      where: { locationId },
+      _max: { ticketNumber: true }
+    })
+
+    return (aggregate._max.ticketNumber ?? 0) + 1
+  }
+
   private serializeTicket(ticket: {
     id: string
     locationId: string
+    ticketNumber: number
     createdByUserId: string
     assignedToUserId: string | null
     title: string
