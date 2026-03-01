@@ -17,7 +17,13 @@ export type TableColumn = {
   hideClass?: string
 }
 
-export type TimelineEventType = 'comment' | 'status_change' | 'payment' | 'attachment'
+export type TimelineEventType =
+  | 'comment'
+  | 'status_change'
+  | 'payment'
+  | 'attachment'
+  | 'assignment'
+  | 'created'
 
 export type TimelineItem = {
   id: string
@@ -28,6 +34,8 @@ export type TimelineItem = {
   }
   content: string
   timestamp: string
+  icon?: string
+  color?: 'mist' | 'sky' | 'mint' | 'violet' | 'flame' | 'rose'
 }
 
 export type TabItem = {

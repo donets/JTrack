@@ -328,7 +328,7 @@ pnpm typecheck
 | 1 | JTR-132 | Add ticket sequential numbering system | done (2026-03-02) |
 | 2 | JTR-133 | Add ticket status transition validation (API) | done (2026-03-02) |
 | 3 | JTR-125 | Add TicketActivity entity, API endpoints, and RxDB collection | done (2026-03-02) |
-| 4 | JTR-126 | Create useTicketActivity composable | pending |
+| 4 | JTR-126 | Create useTicketActivity composable | done (2026-03-02) |
 | 5 | JTR-134 | Add checklist data model and API | pending |
 | 6 | JTR-113 | Create ticket checklist card component | pending |
 | 7 | JTR-129 | Create attachment thumbnail grid with file metadata | pending |

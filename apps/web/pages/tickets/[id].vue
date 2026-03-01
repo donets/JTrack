@@ -279,13 +279,12 @@
 </template>
 
 <script setup lang="ts">
-import type { BreadcrumbItem, DropdownItem, TimelineItem } from '~/types/ui'
+import type { BreadcrumbItem, DropdownItem } from '~/types/ui'
 import {
   listAllowedStatusTransitions,
   type PaymentRecord,
   type Ticket,
   type TicketAttachment,
-  type TicketComment,
   type TicketStatus
 } from '@jtrack/shared'
 import {
@@ -307,9 +306,6 @@ interface LocationUser {
   name: string
 }
 
-const ALL_STATUSES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
-const STATUS_EVENT_PREFIX = '[status-change]'
-
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
@@ -325,7 +321,6 @@ const { activeRole, hasPrivilege } = useRbacGuard()
 const ticketId = route.params.id as string
 
 const ticket = ref<Ticket | null>(null)
-const comments = ref<TicketComment[]>([])
 const attachments = ref<TicketAttachment[]>([])
 const payments = ref<PaymentRecord[]>([])
 const users = ref<LocationUser[]>([])
@@ -377,7 +372,6 @@ const checklistItems = reactive([
 ])
 
 let ticketSub: { unsubscribe: () => void } | null = null
-let commentsSub: { unsubscribe: () => void } | null = null
 let attachmentsSub: { unsubscribe: () => void } | null = null
 let paymentsSub: { unsubscribe: () => void } | null = null
 
@@ -488,30 +482,17 @@ const balanceAmountLabel = computed(() => formatMoney(balanceAmountCents.value, 
 
 const completedChecklistCount = computed(() => checklistItems.filter((item) => item.done).length)
 
+const { timelineItems } = useTicketActivity({
+  ticketId: computed(() => ticketId),
+  users: computed(() => users.value)
+})
+
 const getAllowedTransitions = (current: TicketStatus) => {
   if (!activeRole.value) {
     return []
   }
 
   return listAllowedStatusTransitions(current, activeRole.value)
-}
-
-const isTicketStatus = (value: string): value is TicketStatus =>
-  ALL_STATUSES.includes(value as TicketStatus)
-
-const parseStatusEventComment = (body: string) => {
-  if (!body.startsWith(STATUS_EVENT_PREFIX)) {
-    return null
-  }
-
-  const payload = body.slice(STATUS_EVENT_PREFIX.length).trim()
-  const [fromRaw, toRaw] = payload.split('->').map((part) => part.trim())
-
-  if (!fromRaw || !toRaw || !isTicketStatus(fromRaw) || !isTicketStatus(toRaw)) {
-    return null
-  }
-
-  return { from: fromRaw, to: toRaw }
 }
 
 const allowedNextStatuses = computed(() => {
@@ -536,88 +517,13 @@ const statusDropdownItems = computed<DropdownItem[]>(() => {
   }))
 })
 
-const timelineItems = computed<TimelineItem[]>(() => {
-  const items: TimelineItem[] = []
-
-  if (ticket.value) {
-    items.push({
-      id: `${ticket.value.id}-created`,
-      type: 'status_change',
-      actor: {
-        name: createdByLabel.value
-      },
-      content: 'Ticket created',
-      timestamp: ticket.value.createdAt
-    })
-  }
-
-  for (const comment of comments.value) {
-    const statusEvent = parseStatusEventComment(comment.body)
-    if (statusEvent) {
-      items.push({
-        id: `status-${comment.id}`,
-        type: 'status_change',
-        actor: {
-          name: userNameById.value.get(comment.authorUserId) ?? `User ${comment.authorUserId.slice(0, 8)}`
-        },
-        content: `Ticket moved from ${statusToLabel(statusEvent.from)} to ${statusToLabel(statusEvent.to)}`,
-        timestamp: comment.createdAt
-      })
-      continue
-    }
-
-    items.push({
-      id: comment.id,
-      type: 'comment',
-      actor: {
-        name: userNameById.value.get(comment.authorUserId) ?? `User ${comment.authorUserId.slice(0, 8)}`
-      },
-      content: comment.body,
-      timestamp: comment.createdAt
-    })
-  }
-
-  for (const payment of payments.value) {
-    items.push({
-      id: payment.id,
-      type: 'payment',
-      actor: {
-        name: 'System'
-      },
-      content: `${providerLabel(payment.provider)} payment ${formatMoney(payment.amountCents, payment.currency)} (${payment.status})`,
-      timestamp: payment.createdAt
-    })
-  }
-
-  return items.sort((left, right) => {
-    const leftTs = new Date(left.timestamp).getTime()
-    const rightTs = new Date(right.timestamp).getTime()
-
-    if (Number.isNaN(leftTs) && Number.isNaN(rightTs)) {
-      return 0
-    }
-
-    if (Number.isNaN(leftTs)) {
-      return 1
-    }
-
-    if (Number.isNaN(rightTs)) {
-      return -1
-    }
-
-    return rightTs - leftTs
-  })
-})
-
 const bindStreams = () => {
   ticketSub?.unsubscribe()
-  commentsSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
   paymentsSub?.unsubscribe()
 
   if (!locationStore.activeLocationId) {
     ticket.value = null
-    comments.value = []
     attachments.value = []
     payments.value = []
     return
@@ -633,20 +539,6 @@ const bindStreams = () => {
     .$
     .subscribe((doc: { toJSON: () => Ticket } | null) => {
       ticket.value = doc?.toJSON() ?? null
-    })
-
-  commentsSub = db.collections.ticketComments
-    .find({
-      selector: {
-        ticketId,
-        locationId: locationStore.activeLocationId
-      }
-    })
-    .$
-    .subscribe((docs: Array<{ toJSON: () => TicketComment }>) => {
-      comments.value = docs
-        .map((doc) => doc.toJSON())
-        .filter((comment) => !comment.deletedAt)
     })
 
   attachmentsSub = db.collections.ticketAttachments
@@ -696,7 +588,6 @@ watch(() => locationStore.activeLocationId, loadUsers, { immediate: true })
 
 onUnmounted(() => {
   ticketSub?.unsubscribe()
-  commentsSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
   paymentsSub?.unsubscribe()
 })
@@ -706,8 +597,7 @@ const updateTicketStatus = async (status: TicketStatus) => {
     return
   }
 
-  const currentStatus = ticket.value.status
-  const allowedTransitions = getAllowedTransitions(currentStatus)
+  const allowedTransitions = getAllowedTransitions(ticket.value.status)
 
   if (!allowedTransitions.includes(status)) {
     toast.show({
@@ -723,11 +613,6 @@ const updateTicketStatus = async (status: TicketStatus) => {
     await repository.saveTicket({
       id: ticket.value.id,
       status
-    })
-
-    await repository.addComment({
-      ticketId: ticket.value.id,
-      body: `${STATUS_EVENT_PREFIX} ${currentStatus}->${status}`
     })
 
     await syncStore.syncNow()
@@ -1095,15 +980,4 @@ const formatBytes = (size: number) => {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`
 }
 
-const providerLabel = (provider: string) => {
-  if (provider === 'stripe') {
-    return 'Stripe'
-  }
-
-  if (provider === 'manual') {
-    return 'Manual'
-  }
-
-  return provider
-}
 </script>

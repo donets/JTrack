@@ -73,6 +73,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Global route middleware protects non-public routes and redirects unauthenticated users to `/login?redirect=<target>`.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
 - Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
+- Ticket detail timeline is composed on client from `ticketActivities` and `ticketComments` streams via `useTicketActivity`.
 - Outbox pattern:
   - local mutation first,
   - enqueue operation,

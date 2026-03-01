@@ -5,10 +5,7 @@
       :key="item.id"
       class="relative border-l border-mist-dark pb-4 pl-5 last:pb-0"
     >
-      <span
-        :class="dotClasses(item.type)"
-        class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full"
-      />
+      <span :class="dotClasses(item)" class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full" />
 
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
         <p class="font-semibold text-ink">{{ item.actor.name }}</p>
@@ -29,16 +26,28 @@ defineProps<{
   items: TimelineItem[]
 }>()
 
-const dotClasses = (type: TimelineEventType) => {
-  if (type === 'comment') {
+const dotClasses = (item: TimelineItem) => {
+  if (item.color) {
+    const explicitColorClasses: Record<NonNullable<TimelineItem['color']>, string> = {
+      mist: 'bg-slate-400',
+      sky: 'bg-sky',
+      mint: 'bg-mint',
+      violet: 'bg-violet',
+      flame: 'bg-flame',
+      rose: 'bg-rose'
+    }
+    return explicitColorClasses[item.color]
+  }
+
+  if (item.type === 'comment') {
     return 'bg-sky'
   }
 
-  if (type === 'status_change') {
+  if (item.type === 'status_change') {
     return 'bg-violet'
   }
 
-  if (type === 'payment') {
+  if (item.type === 'payment') {
     return 'bg-mint'
   }
 
@@ -56,6 +65,14 @@ const typeLabel = (type: TimelineEventType) => {
 
   if (type === 'attachment') {
     return 'Attachment'
+  }
+
+  if (type === 'assignment') {
+    return 'Assignment'
+  }
+
+  if (type === 'created') {
+    return 'Created'
   }
 
   return 'Comment'
