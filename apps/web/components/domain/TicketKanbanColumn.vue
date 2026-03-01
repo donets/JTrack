@@ -1,7 +1,6 @@
 <template>
   <section
-    class="relative flex h-full min-h-[320px] w-[280px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/60 transition-colors"
-    :class="isDropActive ? 'border-sky bg-sky-light/20 ring-2 ring-inset ring-sky/40' : ''"
+    class="flex h-full min-h-[320px] w-[280px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/60"
     @dragenter="onDragEnter"
     @dragover="onDragOver"
     @dragleave="onDragLeave"
@@ -15,17 +14,12 @@
       <span class="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">{{ count }}</span>
     </header>
 
-    <div class="relative min-h-0 flex-1 overflow-y-auto p-3">
+    <div class="min-h-0 flex-1 overflow-y-auto p-3">
       <div
-        v-if="isDropActive"
-        class="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-sky bg-sky-light/25"
+        v-if="tickets.length === 0"
+        class="flex h-full min-h-[180px] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-4 text-center text-xs text-slate-500 transition-colors"
+        :class="isDropActive ? 'border-sky bg-sky-light/25 text-sky ring-2 ring-inset ring-sky/40' : ''"
       >
-        <span class="rounded bg-white/90 px-2 py-1 text-[11px] font-semibold text-sky shadow-sm">
-          Drop ticket here
-        </span>
-      </div>
-
-      <div v-if="tickets.length === 0" class="flex h-full min-h-[180px] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-4 text-center text-xs text-slate-500">
         Drop ticket here
       </div>
 

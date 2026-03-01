@@ -22,6 +22,7 @@
   - centered helper overlay label while dragging
   - drag-depth (`dragenter`/`dragleave`) tracking to prevent highlight flicker on nested drag events
 - Added explicit default for optional `color` prop to satisfy component lint rule.
+- Updated drop-zone visuals to highlight only the empty `Drop ticket here` block (not the whole column) during drag-over.
 
 ## Files
 
