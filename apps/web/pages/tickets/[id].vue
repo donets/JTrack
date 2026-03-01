@@ -72,8 +72,22 @@
               @drop.prevent="onDropFiles"
               @dragover.prevent
             >
-              Drag & drop files here, or click to upload
+              Drag & drop files here or click to upload
             </button>
+
+            <div v-if="uploadProgressItems.length > 0" class="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3">
+              <div v-for="item in uploadProgressItems" :key="item.id" class="space-y-1">
+                <div class="flex items-center justify-between gap-2 text-xs">
+                  <p class="truncate text-ink">{{ item.name }}</p>
+                  <p
+                    :class="item.status === 'error' ? 'text-rose-600' : item.status === 'done' ? 'text-mint' : 'text-slate-500'"
+                  >
+                    {{ item.status === 'done' ? 'Done' : item.status === 'error' ? 'Failed' : `${item.progress}%` }}
+                  </p>
+                </div>
+                <JProgress :value="item.progress" :max="100" :variant="item.status === 'error' ? 'flame' : 'mint'" />
+              </div>
+            </div>
 
             <div v-if="imageAttachments.length > 0" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <article
@@ -210,7 +224,7 @@
       </div>
     </div>
 
-    <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
+    <input ref="fileInput" class="hidden" type="file" multiple @change="onWebFileSelected" />
 
     <JModal v-model="attachmentPreviewOpen" title="Attachment Preview" size="lg">
       <div class="space-y-3">
@@ -344,6 +358,13 @@ interface LocationUser {
   name: string
 }
 
+interface UploadProgressItem {
+  id: string
+  name: string
+  progress: number
+  status: 'uploading' | 'done' | 'error'
+}
+
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
@@ -370,6 +391,7 @@ const checklistSaving = ref(false)
 const deletingAttachmentId = ref<string | null>(null)
 const attachmentPreviewOpen = ref(false)
 const previewAttachment = ref<TicketAttachment | null>(null)
+const uploadProgressItems = ref<UploadProgressItem[]>([])
 const isDragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const editModalOpen = ref(false)
@@ -972,21 +994,70 @@ const openFileDialog = () => {
   fileInput.value?.click()
 }
 
+const updateUploadProgress = (id: string, patch: Partial<UploadProgressItem>) => {
+  uploadProgressItems.value = uploadProgressItems.value.map((item) =>
+    item.id === id ? { ...item, ...patch } : item
+  )
+}
+
 const uploadFile = async (file: File) => {
+  const uploadId = crypto.randomUUID()
+  uploadProgressItems.value = [
+    {
+      id: uploadId,
+      name: file.name,
+      progress: 10,
+      status: 'uploading'
+    },
+    ...uploadProgressItems.value
+  ]
+
   try {
-    uploadingAttachment.value = true
+    updateUploadProgress(uploadId, { progress: 35 })
     const payload = await adapter.fromFile(file)
+    updateUploadProgress(uploadId, { progress: 75 })
     await adapter.uploadAttachment(ticketId, payload)
-    await syncStore.syncNow()
-    toast.show({
-      type: 'success',
-      message: `Uploaded ${file.name}`
-    })
+    updateUploadProgress(uploadId, { progress: 100, status: 'done' })
+    return true
   } catch {
-    toast.show({
-      type: 'error',
-      message: `Failed to upload ${file.name}`
-    })
+    updateUploadProgress(uploadId, { progress: 100, status: 'error' })
+    return false
+  }
+}
+
+const uploadFiles = async (files: File[]) => {
+  if (files.length === 0 || uploadingAttachment.value) {
+    return
+  }
+
+  uploadingAttachment.value = true
+  let uploadedCount = 0
+
+  try {
+    for (const file of files) {
+      const success = await uploadFile(file)
+      if (success) {
+        uploadedCount += 1
+      }
+    }
+
+    if (uploadedCount > 0) {
+      await syncStore.syncNow()
+      toast.show({
+        type: 'success',
+        message:
+          uploadedCount === files.length
+            ? `Uploaded ${uploadedCount} file${uploadedCount === 1 ? '' : 's'}`
+            : `Uploaded ${uploadedCount} of ${files.length} files`
+      })
+    }
+
+    if (uploadedCount < files.length) {
+      toast.show({
+        type: 'error',
+        message: `${files.length - uploadedCount} file${files.length - uploadedCount === 1 ? '' : 's'} failed`
+      })
+    }
   } finally {
     uploadingAttachment.value = false
   }
@@ -994,13 +1065,13 @@ const uploadFile = async (file: File) => {
 
 const onWebFileSelected = async (event: Event) => {
   const input = event.target as HTMLInputElement | null
-  const file = input?.files?.[0]
+  const files = Array.from(input?.files ?? [])
 
-  if (!file) {
+  if (files.length === 0) {
     return
   }
 
-  await uploadFile(file)
+  await uploadFiles(files)
 
   if (input) {
     input.value = ''
@@ -1015,9 +1086,7 @@ const onDropFiles = async (event: DragEvent) => {
     return
   }
 
-  for (const file of files) {
-    await uploadFile(file)
-  }
+  await uploadFiles(files)
 }
 
 const capturePhoto = async () => {
