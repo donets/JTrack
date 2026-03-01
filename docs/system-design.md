@@ -82,6 +82,7 @@
 - Ticket detail activity feed merges `ticketActivities` with non-deleted `ticketComments` and sorts by `createdAt DESC`.
 - Comment timeline items expose author metadata and support owner-only soft delete actions via outbox (`ticketComments` delete op).
 - Ticket checklist state is updated through regular ticket outbox updates (no separate checklist entity/collection).
+- Tickets page exposes unified tabs (`all|board|calendar|map`) and persists active view through URL query (`view`).
 - On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 - Dispatch map view is implemented with Leaflet + OpenStreetMap tiles.

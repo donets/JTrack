@@ -334,6 +334,6 @@ pnpm typecheck
 | 7 | JTR-129 | Create attachment thumbnail grid with file metadata | done (2026-03-02) |
 | 8 | JTR-130 | Add drag-and-drop upload zone for attachments | done (2026-03-02) |
 | 9 | JTR-135 | Enhance ticket comment display and interactions | done (2026-03-02) |
-| 10 | JTR-131 | Create ticket view tabs navigation | pending |
+| 10 | JTR-131 | Create ticket view tabs navigation | done (2026-03-02) |
 | 11 | JTR-136 | Add ticket list empty and loading states | pending |
 | 12 | JTR-114 | Create ticket detail mobile view with actions | pending |

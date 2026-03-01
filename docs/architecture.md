@@ -85,6 +85,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Ticket detail attachments UI separates image thumbnails (with preview modal) and file list metadata, with per-item soft-delete actions.
 - Attachment upload zone supports drag-and-drop multi-file selection with per-file progress/status indicators and batch sync after completion.
 - Activity timeline renders author avatars and relative timestamps, and allows users to soft-delete their own comments.
+- `/tickets` view integrates `all`, `board`, `calendar`, and `map` tabs with shared filters and query-param state (`view=`).
 - Dispatch map tab uses Leaflet with OpenStreetMap tiles for interactive job visualization.
 - Until backend geo fields are introduced, map coordinates are deterministic mock points derived from `hash(ticketId + locationId)` inside a fixed viewport bounding box.
 

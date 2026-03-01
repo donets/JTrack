@@ -92,7 +92,7 @@
     </template>
 
     <div
-      v-else
+      v-else-if="activeView === 'board'"
       id="tickets-view-panel-board"
       role="tabpanel"
       aria-labelledby="tickets-tab-board"
@@ -112,6 +112,66 @@
           @quick-assign="openQuickAssign"
         />
       </div>
+    </div>
+
+    <div
+      v-else-if="activeView === 'calendar'"
+      id="tickets-view-panel-calendar"
+      role="tabpanel"
+      aria-labelledby="tickets-tab-calendar"
+      class="space-y-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-5"
+    >
+      <div
+        v-if="calendarGroups.length === 0"
+        class="rounded-md border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500"
+      >
+        No tickets scheduled for the current filters.
+      </div>
+
+      <section v-for="group in calendarGroups" :key="group.date" class="rounded-lg border border-slate-200">
+        <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2">
+          <h3 class="text-sm font-semibold text-ink">{{ group.label }}</h3>
+          <span class="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">
+            {{ group.tickets.length }}
+          </span>
+        </header>
+
+        <ul class="divide-y divide-slate-100">
+          <li v-for="ticket in group.tickets" :key="ticket.id">
+            <button
+              type="button"
+              class="block w-full px-3 py-2 text-left transition-colors hover:bg-slate-50"
+              @click="openTicket(ticket.id)"
+            >
+              <p class="truncate text-sm font-semibold text-ink">
+                <span class="mr-1 text-slate-500">{{ formatTicketNumber(ticket.ticketNumber, ticket.id) }}</span>
+                {{ ticket.title }}
+              </p>
+              <p class="mt-0.5 text-xs text-slate-500">
+                {{ statusToLabel(ticket.status) }} · {{ formatScheduled(ticket.scheduledStartAt) }} ·
+                {{ ticket.assignedToUserId ? resolveAssigneeName(ticket.assignedToUserId) : 'Unassigned' }}
+              </p>
+            </button>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <div
+      v-else
+      id="tickets-view-panel-map"
+      role="tabpanel"
+      aria-labelledby="tickets-tab-map"
+      class="space-y-4"
+    >
+      <DispatchMapView
+        :tickets="mapTickets"
+        :selected-date="mapSelectedDate"
+        :location-id="locationStore.activeLocationId ?? '00000000-0000-0000-0000-000000000000'"
+        :technician-names="technicianNameMap"
+        @open-ticket="openTicket"
+        @quick-assign="openQuickAssign"
+      />
     </div>
 
     <JModal v-model="createModalOpen" title="Create New Ticket" size="lg">
@@ -187,6 +247,7 @@ import type {
   KanbanColumnDropPayload,
   KanbanColumnItem,
   KanbanTicketCardItem,
+  DispatchMapTicket,
   QuickAssignPayload,
   QuickAssignTechnicianOption,
   TabItem
@@ -226,7 +287,7 @@ interface TeamMember {
 type SortDirection = 'asc' | 'desc'
 type SortKey = 'title' | 'status' | 'priority' | 'updatedAt'
 type DateRangeValue = '' | 'today' | 'next7d' | 'next30d'
-type TicketView = 'all' | 'board'
+type TicketView = 'all' | 'board' | 'calendar' | 'map'
 type QueryView = string | null | (string | null)[] | undefined
 
 const SORT_KEYS = new Set<SortKey>(['title', 'status', 'priority', 'updatedAt'])
@@ -234,11 +295,6 @@ const PER_PAGE_VALUES = [25, 50, 100] as const
 const STATUS_VALUES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
 const PRIORITY_VALUES = ['low', 'medium', 'high'] as const
 const DATE_RANGE_VALUES: DateRangeValue[] = ['', 'today', 'next7d', 'next30d']
-
-const viewTabs: TabItem[] = [
-  { key: 'all', label: 'All' },
-  { key: 'board', label: 'Board' }
-]
 
 const boardColumns: KanbanColumnItem[] = [
   { status: 'New', label: 'New', color: 'text-sky' },
@@ -271,7 +327,10 @@ setBreadcrumbs(breadcrumbs)
 
 const getViewFromQuery = (value: QueryView): TicketView => {
   const raw = Array.isArray(value) ? value[0] : value
-  return raw === 'board' ? 'board' : 'all'
+  if (raw === 'board' || raw === 'calendar' || raw === 'map') {
+    return raw
+  }
+  return 'all'
 }
 
 const tickets = ref<Ticket[]>([])
@@ -530,8 +589,8 @@ const applyQuery = (query: LocationQuery) => {
 const buildQuery = (): LocationQueryRaw => {
   const query: LocationQueryRaw = {}
 
-  if (activeView.value === 'board') {
-    query.view = 'board'
+  if (activeView.value !== 'all') {
+    query.view = activeView.value
   }
 
   if (statusFilter.value) {
@@ -775,6 +834,86 @@ const boardTickets = computed<KanbanTicketCardItem[]>(() =>
     updatedAt: ticket.updatedAt
   }))
 )
+
+const mapTickets = computed<DispatchMapTicket[]>(() =>
+  filteredByDate.value.map((ticket) => ({
+    id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    locationId: ticket.locationId,
+    title: ticket.title,
+    status: ticket.status,
+    assignedToUserId: ticket.assignedToUserId,
+    scheduledStartAt: ticket.scheduledStartAt
+  }))
+)
+
+const technicianNameMap = computed<Record<string, string>>(() =>
+  Object.fromEntries(Array.from(assigneeNameMap.value.entries()))
+)
+
+const formatDateKey = (iso: string) => {
+  const parsed = new Date(iso)
+  if (Number.isNaN(parsed.getTime())) {
+    return ''
+  }
+
+  const year = parsed.getUTCFullYear()
+  const month = `${parsed.getUTCMonth() + 1}`.padStart(2, '0')
+  const day = `${parsed.getUTCDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const calendarGroups = computed(() => {
+  const buckets = new Map<string, Ticket[]>()
+
+  for (const ticket of filteredByDate.value) {
+    const source = ticket.scheduledStartAt ?? ticket.updatedAt
+    const key = formatDateKey(source)
+    if (!key) {
+      continue
+    }
+
+    if (!buckets.has(key)) {
+      buckets.set(key, [])
+    }
+
+    buckets.get(key)?.push(ticket)
+  }
+
+  return Array.from(buckets.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, groupTickets]) => ({
+      date,
+      label: new Date(`${date}T00:00:00`).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      }),
+      tickets: groupTickets.sort((left, right) => {
+        const leftTs = new Date(left.scheduledStartAt ?? left.updatedAt).getTime()
+        const rightTs = new Date(right.scheduledStartAt ?? right.updatedAt).getTime()
+        if (Number.isNaN(leftTs) || Number.isNaN(rightTs) || leftTs === rightTs) {
+          return left.title.localeCompare(right.title)
+        }
+        return leftTs - rightTs
+      })
+    }))
+})
+
+const mapSelectedDate = computed(() => {
+  if (dateRangeFilter.value === 'today') {
+    return formatDateKey(new Date().toISOString())
+  }
+
+  return calendarGroups.value[0]?.date ?? formatDateKey(new Date().toISOString())
+})
+
+const viewTabs = computed<TabItem[]>(() => [
+  { key: 'all', label: 'All', count: totalTickets.value },
+  { key: 'board', label: 'Board', count: boardTickets.value.length },
+  { key: 'calendar', label: 'Calendar', count: calendarGroups.value.length },
+  { key: 'map', label: 'Map', count: mapTickets.value.length }
+])
 
 const kanbanColumns = computed<Record<string, KanbanTicketCardItem[]>>(() => {
   const grouped: Record<string, KanbanTicketCardItem[]> = Object.fromEntries(
