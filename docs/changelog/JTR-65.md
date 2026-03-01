@@ -15,6 +15,14 @@
 - Extended shared UI types in `apps/web/types/ui.ts` with `KanbanColumnItem` for board configuration.
 - Updated Epic 6 task matrix entry in `docs/plans/ui-ux-plan.md` to mark `JTR-65` as completed.
 
+## Follow-up (2026-03-01)
+
+- Improved kanban drop-zone affordance in `TicketKanbanColumn`:
+  - stronger active-state highlight (ring + background)
+  - centered helper overlay label while dragging
+  - drag-depth (`dragenter`/`dragleave`) tracking to prevent highlight flicker on nested drag events
+- Added explicit default for optional `color` prop to satisfy component lint rule.
+
 ## Files
 
 - `apps/web/components/domain/TicketKanbanColumn.vue`

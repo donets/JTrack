@@ -1,7 +1,8 @@
 <template>
   <section
-    class="flex h-full min-h-[320px] w-[280px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/60"
-    :class="isDropActive ? 'border-sky bg-sky-light/20' : ''"
+    class="relative flex h-full min-h-[320px] w-[280px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/60 transition-colors"
+    :class="isDropActive ? 'border-sky bg-sky-light/20 ring-2 ring-inset ring-sky/40' : ''"
+    @dragenter="onDragEnter"
     @dragover="onDragOver"
     @dragleave="onDragLeave"
     @drop="onDrop"
@@ -14,7 +15,16 @@
       <span class="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">{{ count }}</span>
     </header>
 
-    <div class="min-h-0 flex-1 overflow-y-auto p-3">
+    <div class="relative min-h-0 flex-1 overflow-y-auto p-3">
+      <div
+        v-if="isDropActive"
+        class="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-sky bg-sky-light/25"
+      >
+        <span class="rounded bg-white/90 px-2 py-1 text-[11px] font-semibold text-sky shadow-sm">
+          Drop ticket here
+        </span>
+      </div>
+
       <div v-if="tickets.length === 0" class="flex h-full min-h-[180px] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-4 text-center text-xs text-slate-500">
         Drop ticket here
       </div>
@@ -49,6 +59,7 @@ const props = withDefaults(
   }>(),
   {
     title: undefined,
+    color: undefined,
     showTicketCode: false
   }
 )
@@ -61,6 +72,7 @@ const emit = defineEmits<{
 }>()
 
 const isDropActive = ref(false)
+const dragDepth = ref(0)
 
 const count = computed(() => props.tickets.length)
 const title = computed(() => props.title ?? props.status)
@@ -88,6 +100,16 @@ const extractTicketId = (event: DragEvent) =>
   || event.dataTransfer?.getData('text/plain')
   || ''
 
+const onDragEnter = (event: DragEvent) => {
+  event.preventDefault()
+  dragDepth.value += 1
+  isDropActive.value = true
+
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+}
+
 const onDragOver = (event: DragEvent) => {
   event.preventDefault()
   isDropActive.value = true
@@ -98,11 +120,15 @@ const onDragOver = (event: DragEvent) => {
 }
 
 const onDragLeave = () => {
-  isDropActive.value = false
+  dragDepth.value = Math.max(0, dragDepth.value - 1)
+  if (dragDepth.value === 0) {
+    isDropActive.value = false
+  }
 }
 
 const onDrop = (event: DragEvent) => {
   event.preventDefault()
+  dragDepth.value = 0
   isDropActive.value = false
 
   const ticketId = extractTicketId(event)
