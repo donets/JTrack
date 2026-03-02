@@ -1,45 +1,7 @@
-import { preloadRouteComponents } from '#app'
-
 const DEV_OFFLINE_SW_PATH = '/dev-offline-sw.js'
-const DEV_OFFLINE_SW_VERSION = 'v4'
+const DEV_OFFLINE_SW_VERSION = 'v3'
 const DEV_OFFLINE_SW_URL = `${DEV_OFFLINE_SW_PATH}?${DEV_OFFLINE_SW_VERSION}`
 const DEV_OFFLINE_SW_CONTROL_RELOAD_KEY = 'jtrack.devOfflineSw.controlReloaded'
-const DEV_OFFLINE_PREWARM_ROUTES = ['/login', '/dashboard', '/tickets', '/locations', '/dispatch']
-const DEV_OFFLINE_PREWARM_MODULES = [
-  '/_nuxt/layouts/default.vue',
-  '/_nuxt/layouts/auth.vue',
-  '/_nuxt/pages/login.vue',
-  '/_nuxt/pages/dashboard.vue',
-  '/_nuxt/pages/tickets/index.vue'
-]
-
-const prewarmOfflineCache = async () => {
-  if (!navigator.onLine) {
-    return
-  }
-
-  await Promise.all(
-    DEV_OFFLINE_PREWARM_ROUTES.map((route) =>
-      fetch(route, {
-        method: 'GET',
-        credentials: 'same-origin',
-        cache: 'reload'
-      }).catch(() => null)
-    )
-  )
-
-  await Promise.all(
-    DEV_OFFLINE_PREWARM_MODULES.map((modulePath) =>
-      fetch(modulePath, {
-        method: 'GET',
-        credentials: 'same-origin',
-        cache: 'reload'
-      }).catch(() => null)
-    )
-  )
-
-  await Promise.all(DEV_OFFLINE_PREWARM_ROUTES.map((route) => preloadRouteComponents(route).catch(() => null)))
-}
 
 export default defineNuxtPlugin(() => {
   if (!import.meta.client || !import.meta.dev) {
@@ -97,7 +59,6 @@ export default defineNuxtPlugin(() => {
       }
 
       sessionStorage.removeItem(DEV_OFFLINE_SW_CONTROL_RELOAD_KEY)
-      await prewarmOfflineCache()
     })
     .catch((error: unknown) => {
       console.error('Failed to register dev offline service worker', error)

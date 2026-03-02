@@ -11,8 +11,7 @@
 - Updated custom dev SW cache strategy for static assets to `network-first` (with offline fallback) and bumped cache epoch to avoid stale middleware/client bundle reuse.
 - Added shell-route and asset warm-up during SW install (`/`, `/login`, `/dashboard`, `/tickets`, `/locations`, `/dispatch`) plus `ignoreSearch` cache matching to make offline hard-refresh resilient when query params vary.
 - Added one-time page reload after SW registration when controller is not yet attached, so offline navigation works without manual second refresh.
-- Added SW registration URL version suffix (`/dev-offline-sw.js?v4`) to force stale browser profiles to pick up the latest offline worker logic.
-- Added recursive Nuxt module-graph warmup in dev SW install phase for key entrypoints (`layouts/*`, `pages/login`, `pages/dashboard`, `pages/tickets/index`) so offline hard reload has required `/_nuxt/*` modules cached ahead of time.
+- Added SW registration URL version suffix (`/dev-offline-sw.js?v3`) to force stale browser profiles to pick up the latest offline worker logic.
 - Persisted and restored location memberships snapshot (`jtrack.locationMemberships`) so offline dashboard keeps location context instead of showing empty location state.
 
 ## Files

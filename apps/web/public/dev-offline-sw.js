@@ -1,14 +1,6 @@
-const CACHE_NAME = 'jtrack-dev-offline-v4'
+const CACHE_NAME = 'jtrack-dev-offline-v3'
 const APP_SHELL_URL = '/'
 const SHELL_ROUTES = ['/', '/login', '/dashboard', '/tickets', '/locations', '/dispatch']
-const MODULE_GRAPH_ENTRYPOINTS = [
-  '/_nuxt/layouts/auth.vue',
-  '/_nuxt/layouts/default.vue',
-  '/_nuxt/pages/login.vue',
-  '/_nuxt/pages/dashboard.vue',
-  '/_nuxt/pages/tickets/index.vue'
-]
-const MODULE_GRAPH_LIMIT = 400
 
 const toAbsoluteUrl = (value) => new URL(value, self.location.origin).toString()
 
@@ -61,90 +53,6 @@ const fetchAndCache = async (cache, request) => {
   }
 }
 
-const extractModuleSpecifiers = (source) => {
-  const specifiers = new Set()
-  const staticImportPattern =
-    /(?:import|export)\s+(?:[^'"`]*?\s+from\s+)?["'`]([^"'`]+)["'`]/g
-  const dynamicImportPattern = /import\(\s*["'`]([^"'`]+)["'`]\s*\)/g
-
-  let match = staticImportPattern.exec(source)
-  while (match) {
-    specifiers.add(match[1])
-    match = staticImportPattern.exec(source)
-  }
-
-  match = dynamicImportPattern.exec(source)
-  while (match) {
-    specifiers.add(match[1])
-    match = dynamicImportPattern.exec(source)
-  }
-
-  return Array.from(specifiers)
-}
-
-const normalizeModuleSpecifier = (baseUrl, specifier) => {
-  if (!specifier) {
-    return null
-  }
-
-  if (specifier.startsWith('http://') || specifier.startsWith('https://')) {
-    const url = new URL(specifier)
-    return url.origin === self.location.origin ? url.toString() : null
-  }
-
-  if (specifier.startsWith('/')) {
-    return toAbsoluteUrl(specifier)
-  }
-
-  if (specifier.startsWith('./') || specifier.startsWith('../')) {
-    return new URL(specifier, baseUrl).toString()
-  }
-
-  return null
-}
-
-const isNuxtModuleUrl = (urlValue) => {
-  const url = new URL(urlValue)
-  return url.origin === self.location.origin && url.pathname.startsWith('/_nuxt/')
-}
-
-const warmModuleGraph = async (cache, entryUrl, visited) => {
-  if (visited.size >= MODULE_GRAPH_LIMIT || visited.has(entryUrl)) {
-    return
-  }
-
-  visited.add(entryUrl)
-  const response = await fetchAndCache(cache, entryUrl)
-
-  if (!response || !response.ok) {
-    return
-  }
-
-  const contentType = response.headers.get('content-type') ?? ''
-  if (
-    !contentType.includes('javascript') &&
-    !contentType.includes('text/plain') &&
-    !contentType.includes('application/json') &&
-    !entryUrl.includes('/_nuxt/')
-  ) {
-    return
-  }
-
-  let source
-  try {
-    source = await response.clone().text()
-  } catch (_error) {
-    return
-  }
-
-  const importUrls = extractModuleSpecifiers(source)
-    .map((specifier) => normalizeModuleSpecifier(entryUrl, specifier))
-    .filter((urlValue) => Boolean(urlValue))
-    .filter((urlValue) => isNuxtModuleUrl(urlValue))
-
-  await Promise.all(importUrls.map((moduleUrl) => warmModuleGraph(cache, moduleUrl, visited)))
-}
-
 const warmShellCache = async (cache) => {
   const appShellRequest = toAbsoluteUrl(APP_SHELL_URL)
   const appShellResponse = await fetchAndCache(cache, appShellRequest)
@@ -160,13 +68,6 @@ const warmShellCache = async (cache) => {
   }
 
   await Promise.all(SHELL_ROUTES.map((route) => fetchAndCache(cache, toAbsoluteUrl(route))))
-
-  const visitedModules = new Set()
-  await Promise.all(
-    MODULE_GRAPH_ENTRYPOINTS.map((entrypoint) =>
-      warmModuleGraph(cache, toAbsoluteUrl(entrypoint), visitedModules)
-    )
-  )
 }
 
 self.addEventListener('install', (event) => {
