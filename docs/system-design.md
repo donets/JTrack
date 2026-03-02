@@ -37,6 +37,7 @@
 - Dev offline bootstrap forces one-time service-worker controller takeover and warms shell cache to improve offline hard-refresh reliability.
 - In dev offline mode, route middleware also skips auth/location redirect enforcement while offline so cached routes are not replaced by uncached login redirects.
 - Location memberships snapshot is persisted client-side and restored before online reload, allowing dashboard/location context rendering when offline.
+- Dispatch page guard restores local auth/location snapshots before privilege check so owners do not lose `dispatch.manage` access during offline reload races.
 
 ## 5. Data Model Strategy
 - Relational core with explicit foreign keys.

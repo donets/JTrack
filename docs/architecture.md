@@ -82,6 +82,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Offline fallback also handles browser-reported online state drift (`navigator.onLine=true` during hard reload): auth flow treats fetch-level transport failures as offline candidates and can recover session from cached verifier/user snapshot.
 - In `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true` mode, auth middleware suppresses route redirects while offline to keep cached SPA shell reachable even without a live token refresh.
 - Location memberships are cached in local storage and restored during offline bootstrap, so active location context can survive offline reloads.
+- Dispatch route access guard restores persisted auth snapshot and cached location context before evaluating `dispatch.manage`, preventing false permission denial after offline hard refresh.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
 - Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
 - Ticket detail timeline is composed on client from `ticketActivities` and `ticketComments` streams via `useTicketActivity`.
