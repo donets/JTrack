@@ -1,6 +1,9 @@
 import { defineNuxtConfig } from 'nuxt/config'
 
-const enableDevOffline = process.env.NUXT_PUBLIC_ENABLE_DEV_OFFLINE === 'true'
+const devOfflineToggle = process.env.NUXT_PUBLIC_ENABLE_DEV_OFFLINE
+const enableDevOffline =
+  devOfflineToggle === 'true' ||
+  (typeof devOfflineToggle === 'undefined' && process.env.NODE_ENV !== 'production')
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',

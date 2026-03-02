@@ -1,4 +1,5 @@
 const DEV_OFFLINE_SW_PATH = '/dev-offline-sw.js'
+const DEV_OFFLINE_SW_CONTROL_RELOAD_KEY = 'jtrack.devOfflineSw.controlReloaded'
 
 export default defineNuxtPlugin(() => {
   if (!import.meta.client || !import.meta.dev) {
@@ -40,7 +41,21 @@ export default defineNuxtPlugin(() => {
         )
       }
 
-      await navigator.serviceWorker.register(DEV_OFFLINE_SW_PATH, { scope: '/' })
+      await navigator.serviceWorker.register(DEV_OFFLINE_SW_PATH, {
+        scope: '/',
+        updateViaCache: 'none'
+      })
+      await navigator.serviceWorker.ready
+
+      if (!navigator.serviceWorker.controller) {
+        if (!sessionStorage.getItem(DEV_OFFLINE_SW_CONTROL_RELOAD_KEY)) {
+          sessionStorage.setItem(DEV_OFFLINE_SW_CONTROL_RELOAD_KEY, 'true')
+          location.reload()
+        }
+        return
+      }
+
+      sessionStorage.removeItem(DEV_OFFLINE_SW_CONTROL_RELOAD_KEY)
     })
     .catch((error: unknown) => {
       console.error('Failed to register dev offline service worker', error)

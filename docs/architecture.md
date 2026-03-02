@@ -71,13 +71,15 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 ### 6.1 Web App
 - Nuxt 4 (Vue 3) for UI and routing.
 - RxDB/Dexie as local reactive storage.
-- Local/dev runtime proactively unregisters service workers and clears PWA caches by default to avoid stale client bundles after schema/auth middleware updates; this reset can be disabled for offline testing via `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true`, which registers a dedicated lightweight dev service worker (`/dev-offline-sw.js`) for SPA shell + static asset caching.
+- Local/dev runtime enables dedicated offline service worker by default (unless explicitly disabled via `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=false`), registering `/dev-offline-sw.js` for SPA shell + static asset caching.
+- Dev offline service worker registration ensures controller takeover on first install and warms shell routes/assets cache to improve offline hard-refresh reliability.
 - Global route middleware protects non-public routes and redirects unauthenticated users to `/login?redirect=<target>`.
   - Route guard bootstrap (`auth.refresh` + location load) is non-blocking so app shell and page skeletons can render immediately.
   - Middleware revalidates the current route after bootstrap/load completion to apply final auth/location redirects.
 - Auth bootstrap and refresh calls are deduplicated in the Pinia store to prevent parallel `/auth/refresh` bursts (and throttle `429` cascades) on startup.
 - Persisted user snapshot is not trusted before session revalidation when online; when browser is offline, middleware allows snapshot-backed shell access to avoid redirecting to uncached auth chunks.
 - Login also supports offline credential verification: after a successful online login, client stores a salted local verifier (`jtrack.offlineLogin`) derived from email+password via WebCrypto PBKDF2 and can authenticate offline without server roundtrip.
+- Offline fallback also handles browser-reported online state drift (`navigator.onLine=true` during hard reload): auth flow treats fetch-level transport failures as offline candidates and can recover session from cached verifier/user snapshot.
 - In `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true` mode, auth middleware suppresses route redirects while offline to keep cached SPA shell reachable even without a live token refresh.
 - Location memberships are cached in local storage and restored during offline bootstrap, so active location context can survive offline reloads.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.

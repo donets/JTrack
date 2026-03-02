@@ -64,12 +64,30 @@ describe('auth store', () => {
     store.persistState()
 
     const fetchMock = vi.mocked(globalThis.$fetch)
-    fetchMock.mockRejectedValue(new Error('unauthorized'))
+    fetchMock.mockRejectedValue({
+      statusCode: 401,
+      message: 'Unauthorized'
+    })
 
     await expect(store.refreshAccessToken()).resolves.toBe(false)
     expect(store.accessToken).toBeNull()
     expect(store.user).toBeNull()
+    expect(store.offlineSession).toBe(false)
     expect(localStorage.getItem('jtrack.auth')).toBeNull()
+  })
+
+  it('refreshAccessToken keeps cached user on network failure even when navigator.onLine=true', async () => {
+    const store = useAuthStore()
+    store.user = demoUser
+    store.persistState()
+
+    const fetchMock = vi.mocked(globalThis.$fetch)
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+
+    await expect(store.refreshAccessToken()).resolves.toBe(false)
+    expect(store.accessToken).toBeNull()
+    expect(store.user).toEqual(demoUser)
+    expect(store.offlineSession).toBe(true)
   })
 
   it('fetchMe sends bearer token and updates current user', async () => {
@@ -183,6 +201,7 @@ describe('auth store', () => {
     expect(store.bootstrapped).toBe(true)
     expect(store.accessToken).toBeNull()
     expect(store.user).toEqual(demoUser)
+    expect(store.offlineSession).toBe(true)
   })
 
   it('falls back to offline login path when network login fails offline', async () => {
@@ -196,7 +215,17 @@ describe('auth store', () => {
 
     fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
     await expect(store.login('tech@jtrack.local', 'password123')).resolves.toBeUndefined()
-    expect(offlineSpy).toHaveBeenCalledWith('tech@jtrack.local', 'password123')
+    expect(offlineSpy).toHaveBeenCalledWith('tech@jtrack.local', 'password123', undefined)
+  })
+
+  it('falls back to forced offline login when network login fails but navigator.onLine=true', async () => {
+    const store = useAuthStore()
+    const fetchMock = vi.mocked(globalThis.$fetch)
+    const offlineSpy = vi.spyOn(store, 'tryOfflineLogin').mockResolvedValueOnce(true)
+
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    await expect(store.login('tech@jtrack.local', 'password123')).resolves.toBeUndefined()
+    expect(offlineSpy).toHaveBeenCalledWith('tech@jtrack.local', 'password123', { force: true })
   })
 
   it('rethrows login error when offline fallback fails', async () => {
@@ -211,7 +240,7 @@ describe('auth store', () => {
 
     fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
     await expect(store.login('tech@jtrack.local', 'wrong-password')).rejects.toThrow(TypeError)
-    expect(offlineSpy).toHaveBeenCalledWith('tech@jtrack.local', 'wrong-password')
+    expect(offlineSpy).toHaveBeenCalledWith('tech@jtrack.local', 'wrong-password', undefined)
     expect(store.user).toBeNull()
     expect(store.accessToken).toBeNull()
   })

@@ -10,9 +10,67 @@ const OFFLINE_LOGIN_SALT_BYTES = 16
 const OFFLINE_LOGIN_DERIVE_BITS = 256
 const OFFLINE_LOGIN_ITERATIONS = 120_000
 const canUseClientStorage = import.meta.client || import.meta.env.MODE === 'test'
+const NETWORK_ERROR_MARKERS = [
+  'failed to fetch',
+  'networkerror',
+  'network request failed',
+  'err_internet_disconnected',
+  'load failed',
+  'fetch failed'
+]
 
 const isClientOffline = () => typeof window !== 'undefined' && navigator.onLine === false
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
+
+const containsNetworkErrorMarker = (value: string) => {
+  const normalized = value.toLowerCase()
+  return NETWORK_ERROR_MARKERS.some((marker) => normalized.includes(marker))
+}
+
+const isLikelyNetworkError = (error: unknown) => {
+  if (isClientOffline()) {
+    return true
+  }
+
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const candidate = error as {
+    message?: unknown
+    statusCode?: unknown
+    response?: { status?: unknown }
+    data?: { message?: unknown }
+    cause?: { message?: unknown } | unknown
+  }
+
+  if (
+    typeof candidate.statusCode === 'number' ||
+    typeof candidate.response?.status === 'number'
+  ) {
+    return false
+  }
+
+  const messages: string[] = []
+
+  if (typeof candidate.message === 'string') {
+    messages.push(candidate.message)
+  }
+
+  if (typeof candidate.data?.message === 'string') {
+    messages.push(candidate.data.message)
+  }
+
+  if (
+    candidate.cause &&
+    typeof candidate.cause === 'object' &&
+    typeof (candidate.cause as { message?: unknown }).message === 'string'
+  ) {
+    messages.push((candidate.cause as { message: string }).message)
+  }
+
+  return messages.some(containsNetworkErrorMarker)
+}
 
 interface OfflineLoginSnapshot {
   email: string
@@ -121,6 +179,7 @@ const isValidOfflineSnapshot = (value: unknown): value is OfflineLoginSnapshot =
 interface AuthState {
   accessToken: string | null
   user: User | null
+  offlineSession: boolean
   bootstrapped: boolean
 }
 
@@ -128,6 +187,7 @@ export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     accessToken: null,
     user: null,
+    offlineSession: false,
     bootstrapped: false
   }),
   getters: {
@@ -149,13 +209,22 @@ export const useAuthStore = defineStore('auth', {
 
         this.accessToken = result.accessToken
         this.user = result.user
+        this.offlineSession = false
         this.persistState()
         await this.persistOfflineLoginSnapshot(email, password, result.user)
         return
       } catch (error) {
-        const offlineLoggedIn = await this.tryOfflineLogin(email, password)
-        if (offlineLoggedIn) {
-          return
+        const forceOfflineFallback = !isClientOffline() && isLikelyNetworkError(error)
+
+        if (forceOfflineFallback || isClientOffline()) {
+          const offlineLoggedIn = await this.tryOfflineLogin(
+            email,
+            password,
+            forceOfflineFallback ? { force: true } : undefined
+          )
+          if (offlineLoggedIn) {
+            return
+          }
         }
 
         throw error
@@ -212,8 +281,10 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async tryOfflineLogin(email: string, password: string) {
-      if (!canUseClientStorage || !isClientOffline() || !canUseOfflineCrypto()) {
+    async tryOfflineLogin(email: string, password: string, options?: { force?: boolean }) {
+      const force = options?.force === true
+
+      if (!canUseClientStorage || (!force && !isClientOffline()) || !canUseOfflineCrypto()) {
         return false
       }
 
@@ -229,6 +300,7 @@ export const useAuthStore = defineStore('auth', {
 
       this.accessToken = null
       this.user = snapshot.user
+      this.offlineSession = true
       this.persistState()
       return true
     },
@@ -251,14 +323,22 @@ export const useAuthStore = defineStore('auth', {
 
           this.accessToken = result.accessToken
           this.user = result.user
+          this.offlineSession = false
           this.persistState()
 
           return true
-        } catch {
+        } catch (error) {
           this.accessToken = null
-          if (!isClientOffline()) {
-            this.clearState()
+
+          if (isLikelyNetworkError(error)) {
+            const restoredUser = this.user ?? this.readPersistedUserSnapshot()
+            this.user = restoredUser
+            this.offlineSession = Boolean(restoredUser)
+            this.persistState()
+            return false
           }
+
+          this.clearState()
           return false
         }
       })().finally(() => {
@@ -286,10 +366,13 @@ export const useAuthStore = defineStore('auth', {
         })
 
         this.user = user
+        this.offlineSession = false
         this.persistState()
         return user
-      } catch {
-        if (isClientOffline()) {
+      } catch (error) {
+        if (isLikelyNetworkError(error)) {
+          this.offlineSession = Boolean(this.user)
+          this.persistState()
           return this.user
         }
         this.clearState()
@@ -312,11 +395,13 @@ export const useAuthStore = defineStore('auth', {
         const offline = isClientOffline()
 
         // Never trust a persisted user snapshot before session is revalidated.
-        if (!this.accessToken && !offline) {
+        if (!this.accessToken && !offline && !this.offlineSession) {
           this.user = null
         }
 
         if (offline) {
+          this.offlineSession = Boolean(this.user)
+          this.persistState()
           this.bootstrapped = true
           return
         }
@@ -329,6 +414,10 @@ export const useAuthStore = defineStore('auth', {
           }
         } else {
           await this.refreshAccessToken()
+        }
+
+        if (!this.accessToken && !this.offlineSession) {
+          this.user = null
         }
 
         this.bootstrapped = true
@@ -372,8 +461,9 @@ export const useAuthStore = defineStore('auth', {
       }
 
       try {
-        const parsed = JSON.parse(raw) as { user: User | null }
+        const parsed = JSON.parse(raw) as { user: User | null; offlineSession?: boolean }
         this.user = parsed.user
+        this.offlineSession = Boolean(parsed.user && parsed.offlineSession)
       } catch {
         this.clearState()
       }
@@ -387,7 +477,8 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem(
         AUTH_STORAGE_KEY,
         JSON.stringify({
-          user: this.user
+          user: this.user,
+          offlineSession: this.offlineSession
         })
       )
     },
@@ -395,10 +486,29 @@ export const useAuthStore = defineStore('auth', {
     clearState() {
       this.accessToken = null
       this.user = null
+      this.offlineSession = false
 
       if (canUseClientStorage) {
         localStorage.removeItem(AUTH_STORAGE_KEY)
         localStorage.removeItem(OFFLINE_LOGIN_STORAGE_KEY)
+      }
+    },
+
+    readPersistedUserSnapshot() {
+      if (!canUseClientStorage) {
+        return null
+      }
+
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY)
+      if (!raw) {
+        return null
+      }
+
+      try {
+        const parsed = JSON.parse(raw) as { user?: User | null }
+        return parsed.user ?? null
+      } catch {
+        return null
       }
     }
   }

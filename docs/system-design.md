@@ -32,7 +32,9 @@
 - Client route middleware runs auth/location bootstrap in background and then re-validates the current route, allowing immediate shell/skeleton render during refresh-token roundtrip.
 - Client auth store deduplicates concurrent bootstrap/refresh calls; persisted user snapshot is cleared before revalidation in online mode, while offline mode allows snapshot-backed route access to preserve cached shell availability.
 - After successful online login, client stores a salted offline login verifier (`jtrack.offlineLogin`) derived via WebCrypto PBKDF2 from normalized email + password; when browser is offline, login can be completed against this local verifier.
-- PWA service-worker caching is disabled for dev mode by default, and local runtime clears existing SW/cache registrations to prevent serving stale frontend bundles during rapid schema/auth iterations; dev offline mode can be enabled with `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true`, which installs a dedicated local dev service worker for shell/asset caching.
+- Auth fallback path classifies transport-level fetch failures (without HTTP status) as offline-like failures, so hard-reload cases where browser still reports `navigator.onLine=true` can still recover via local offline credentials.
+- PWA dev offline mode installs a dedicated local service worker by default in development (`NUXT_PUBLIC_ENABLE_DEV_OFFLINE` can explicitly disable with `false`); the worker caches shell routes/assets and is preferred over full SW/cache reset when testing offline flows.
+- Dev offline bootstrap forces one-time service-worker controller takeover and warms shell cache to improve offline hard-refresh reliability.
 - In dev offline mode, route middleware also skips auth/location redirect enforcement while offline so cached routes are not replaced by uncached login redirects.
 - Location memberships snapshot is persisted client-side and restored before online reload, allowing dashboard/location context rendering when offline.
 

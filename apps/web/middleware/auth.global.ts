@@ -6,7 +6,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const locationStore = useLocationStore()
   const isClientOffline = () => import.meta.client && navigator.onLine === false
   const isDevOfflineMode = () => runtimeConfig.public.enableDevOffline && isClientOffline()
-  const hasOfflineSession = () => isClientOffline() && Boolean(authStore.user)
+  const hasOfflineSession = () =>
+    Boolean(authStore.user) && (authStore.offlineSession || isClientOffline())
   const hasRouteAccessSession = () => authStore.isAuthenticated || hasOfflineSession()
   const resolveLoginRedirectTarget = (query: Record<string, unknown>) => {
     const redirectParam = query.redirect
