@@ -102,6 +102,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - `/tickets` view integrates `all`, `board`, `calendar`, and `map` tabs with shared filters and query-param state (`view=`).
 - Tickets list `all` tab includes explicit loading, empty, filtered-empty, and recoverable error states.
 - Tickets route renders a page-level skeleton while auth/location context or initial local subscription state is still resolving.
+- Dispatch route renders a page-level skeleton while permission/context hydration completes, then reveals board/timeline/map tabs.
 - App shell startup is non-blocking: sync bootstrap runs in background so layout/sidebar/topbar render immediately on route load.
 - Dashboard route renders a dedicated skeleton state while auth/location role context is resolving.
 - Mobile ticket detail includes compact back-header, quick action buttons (start/navigate/call), and collapsible details/description/comments sections.

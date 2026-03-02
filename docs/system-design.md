@@ -31,6 +31,7 @@
 - Internal admins (`isAdmin = true`) bypass membership and privilege constraints, and request context receives synthetic `locationRole=Owner` for downstream consistency.
 - Client route middleware runs auth/location bootstrap in background and then re-validates the current route, allowing immediate shell/skeleton render during refresh-token roundtrip.
 - Client auth store deduplicates concurrent bootstrap/refresh calls; persisted user snapshot is cleared before revalidation in online mode, while offline mode allows snapshot-backed route access to preserve cached shell availability.
+- Dispatch page permission guard runs asynchronously and uses a dedicated skeleton state while local auth/location context is hydrating.
 - After successful online login, client stores a salted offline login verifier (`jtrack.offlineLogin`) derived via WebCrypto PBKDF2 from normalized email + password; when browser is offline, login can be completed against this local verifier.
 - Auth fallback path classifies transport-level fetch failures (without HTTP status) as offline-like failures, so hard-reload cases where browser still reports `navigator.onLine=true` can still recover via local offline credentials.
 - PWA dev offline mode installs a dedicated local service worker by default in development (`NUXT_PUBLIC_ENABLE_DEV_OFFLINE` can explicitly disable with `false`); the worker caches shell routes/assets and is preferred over full SW/cache reset when testing offline flows.

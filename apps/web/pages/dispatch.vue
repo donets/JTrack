@@ -6,153 +6,157 @@
       :breadcrumbs="breadcrumbs"
     />
 
-    <div class="rounded-xl border border-slate-200 bg-white px-3 sm:px-5">
-      <JTabs
-        v-model="activeTab"
-        :tabs="tabItems"
-        id-prefix="dispatch-tab"
-        panel-id-prefix="dispatch-panel"
-      />
-    </div>
+    <DispatchSkeleton v-if="showDispatchSkeleton" />
 
-    <div
-      v-if="activeTab === 'board'"
-      id="dispatch-panel-board"
-      role="tabpanel"
-      aria-labelledby="dispatch-tab-board"
-      class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]"
-    >
-      <DispatchTimeGrid
-        :date="selectedDate"
-        @update:date="selectedDate = $event"
-      >
-        <template #default="{ date, labelWidth, hourWidth }">
-          <DispatchGanttRow
-            v-for="technician in technicians"
-            :key="technician.id"
-            :technician="technician"
-            :jobs="technician.jobs"
-            :date="date"
-            :label-width-px="labelWidth"
-            :hour-width-px="hourWidth"
-            @ticket-drop="onTicketDrop"
-            @open-ticket="onOpenTicket"
-          />
-
-          <div
-            v-if="technicians.length === 0"
-            class="px-4 py-8 text-center text-sm text-slate-500"
-          >
-            No active technicians found for this location.
-          </div>
-        </template>
-      </DispatchTimeGrid>
-
-      <DispatchUnassignedSidebar
-        :tickets="unassignedTickets"
-        @open-ticket="openTicket"
-        @quick-assign="openQuickAssign"
-      />
-    </div>
-
-    <div
-      v-else-if="activeTab === 'timeline'"
-      id="dispatch-panel-timeline"
-      role="tabpanel"
-      aria-labelledby="dispatch-tab-timeline"
-      class="rounded-xl border border-slate-200 bg-white"
-    >
-      <header class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-        <h2 class="text-sm font-semibold text-ink">Weekly Timeline</h2>
-        <p class="text-xs text-slate-500">{{ weekRangeLabel }}</p>
-      </header>
-
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[880px] divide-y divide-slate-200 text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Technician
-              </th>
-              <th
-                v-for="day in weekDates"
-                :key="day"
-                class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
-              >
-                {{ formatWeekDay(day) }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="technician in weeklySchedules" :key="technician.id">
-              <td class="px-4 py-3">
-                <div class="inline-flex items-center gap-2">
-                  <JAvatar :name="technician.name" size="sm" />
-                  <span class="text-sm font-semibold text-ink">{{ technician.name }}</span>
-                </div>
-              </td>
-
-              <td
-                v-for="day in weekDates"
-                :key="`${technician.id}-${day}`"
-                class="min-w-[140px] px-3 py-3 align-top"
-              >
-                <div class="space-y-1">
-                  <button
-                    v-for="job in technician.jobsByDay[day]"
-                    :key="job.id"
-                    type="button"
-                    class="block w-full truncate rounded-md bg-slate-100 px-2 py-1 text-left text-xs font-semibold text-slate-700 hover:bg-slate-200"
-                    @click="openTicket(job.id)"
-                  >
-                    {{ job.title }}
-                  </button>
-
-                  <span
-                    v-if="technician.jobsByDay[day].length === 0"
-                    class="text-xs text-slate-400"
-                  >
-                    —
-                  </span>
-                </div>
-              </td>
-            </tr>
-
-            <tr v-if="weeklySchedules.length === 0">
-              <td class="px-4 py-8 text-center text-sm text-slate-500" :colspan="weekDates.length + 1">
-                No technician schedules available.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <template v-else-if="dispatchAccessGranted">
+      <div class="rounded-xl border border-slate-200 bg-white px-3 sm:px-5">
+        <JTabs
+          v-model="activeTab"
+          :tabs="tabItems"
+          id-prefix="dispatch-tab"
+          panel-id-prefix="dispatch-panel"
+        />
       </div>
-    </div>
 
-    <div
-      v-else
-      id="dispatch-panel-map"
-      role="tabpanel"
-      aria-labelledby="dispatch-tab-map"
-      class="space-y-4"
-    >
-      <DispatchMapView
-        :tickets="mapTickets"
-        :selected-date="selectedDate"
-        :location-id="locationStore.activeLocationId ?? '00000000-0000-0000-0000-000000000000'"
-        :technician-names="technicianNameMap"
-        @open-ticket="openTicket"
-        @quick-assign="openQuickAssign"
+      <div
+        v-if="activeTab === 'board'"
+        id="dispatch-panel-board"
+        role="tabpanel"
+        aria-labelledby="dispatch-tab-board"
+        class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]"
+      >
+        <DispatchTimeGrid
+          :date="selectedDate"
+          @update:date="selectedDate = $event"
+        >
+          <template #default="{ date, labelWidth, hourWidth }">
+            <DispatchGanttRow
+              v-for="technician in technicians"
+              :key="technician.id"
+              :technician="technician"
+              :jobs="technician.jobs"
+              :date="date"
+              :label-width-px="labelWidth"
+              :hour-width-px="hourWidth"
+              @ticket-drop="onTicketDrop"
+              @open-ticket="onOpenTicket"
+            />
+
+            <div
+              v-if="technicians.length === 0"
+              class="px-4 py-8 text-center text-sm text-slate-500"
+            >
+              No active technicians found for this location.
+            </div>
+          </template>
+        </DispatchTimeGrid>
+
+        <DispatchUnassignedSidebar
+          :tickets="unassignedTickets"
+          @open-ticket="openTicket"
+          @quick-assign="openQuickAssign"
+        />
+      </div>
+
+      <div
+        v-else-if="activeTab === 'timeline'"
+        id="dispatch-panel-timeline"
+        role="tabpanel"
+        aria-labelledby="dispatch-tab-timeline"
+        class="rounded-xl border border-slate-200 bg-white"
+      >
+        <header class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h2 class="text-sm font-semibold text-ink">Weekly Timeline</h2>
+          <p class="text-xs text-slate-500">{{ weekRangeLabel }}</p>
+        </header>
+
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[880px] divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Technician
+                </th>
+                <th
+                  v-for="day in weekDates"
+                  :key="day"
+                  class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+                >
+                  {{ formatWeekDay(day) }}
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="technician in weeklySchedules" :key="technician.id">
+                <td class="px-4 py-3">
+                  <div class="inline-flex items-center gap-2">
+                    <JAvatar :name="technician.name" size="sm" />
+                    <span class="text-sm font-semibold text-ink">{{ technician.name }}</span>
+                  </div>
+                </td>
+
+                <td
+                  v-for="day in weekDates"
+                  :key="`${technician.id}-${day}`"
+                  class="min-w-[140px] px-3 py-3 align-top"
+                >
+                  <div class="space-y-1">
+                    <button
+                      v-for="job in technician.jobsByDay[day]"
+                      :key="job.id"
+                      type="button"
+                      class="block w-full truncate rounded-md bg-slate-100 px-2 py-1 text-left text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                      @click="openTicket(job.id)"
+                    >
+                      {{ job.title }}
+                    </button>
+
+                    <span
+                      v-if="technician.jobsByDay[day].length === 0"
+                      class="text-xs text-slate-400"
+                    >
+                      —
+                    </span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr v-if="weeklySchedules.length === 0">
+                <td class="px-4 py-8 text-center text-sm text-slate-500" :colspan="weekDates.length + 1">
+                  No technician schedules available.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div
+        v-else
+        id="dispatch-panel-map"
+        role="tabpanel"
+        aria-labelledby="dispatch-tab-map"
+        class="space-y-4"
+      >
+        <DispatchMapView
+          :tickets="mapTickets"
+          :selected-date="selectedDate"
+          :location-id="locationStore.activeLocationId ?? '00000000-0000-0000-0000-000000000000'"
+          :technician-names="technicianNameMap"
+          @open-ticket="openTicket"
+          @quick-assign="openQuickAssign"
+        />
+      </div>
+
+      <TicketQuickAssignModal
+        :model-value="quickAssignOpen"
+        :ticket-id="quickAssignTicketId"
+        :technicians="technicianOptions"
+        :submitting="quickAssignSaving"
+        @update:model-value="quickAssignOpen = $event"
+        @submit="submitQuickAssign"
       />
-    </div>
-
-    <TicketQuickAssignModal
-      :model-value="quickAssignOpen"
-      :ticket-id="quickAssignTicketId"
-      :technicians="technicianOptions"
-      :submitting="quickAssignSaving"
-      @update:model-value="quickAssignOpen = $event"
-      @submit="submitQuickAssign"
-    />
+    </template>
   </section>
 </template>
 
@@ -168,6 +172,7 @@ import type {
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const { show } = useToast()
 const { setBreadcrumbs } = useBreadcrumbs()
@@ -212,6 +217,8 @@ const selectedDate = ref(parseDate(route.query.date))
 const quickAssignOpen = ref(false)
 const quickAssignTicketId = ref('')
 const quickAssignSaving = ref(false)
+const dispatchAccessGranted = ref(false)
+const dispatchAccessResolved = ref(false)
 
 const {
   tickets,
@@ -224,7 +231,42 @@ const {
   assignTicket
 } = useDispatchBoard(selectedDate)
 
-await enforceDispatchAccess()
+const hasRouteAccessSession = computed(
+  () => authStore.isAuthenticated || authStore.offlineSession || Boolean(authStore.user)
+)
+
+const showDispatchSkeleton = computed(() => {
+  if (!dispatchAccessResolved.value) {
+    return true
+  }
+
+  if (!dispatchAccessGranted.value) {
+    return false
+  }
+
+  if (!authStore.bootstrapped) {
+    return true
+  }
+
+  if (hasRouteAccessSession.value && !locationStore.loaded) {
+    return true
+  }
+
+  return false
+})
+
+const resolveDispatchAccess = async () => {
+  dispatchAccessGranted.value = false
+  dispatchAccessResolved.value = false
+
+  try {
+    dispatchAccessGranted.value = await enforceDispatchAccess()
+  } finally {
+    dispatchAccessResolved.value = true
+  }
+}
+
+void resolveDispatchAccess()
 
 watch(
   () => route.query.tab,
