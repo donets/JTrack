@@ -215,4 +215,26 @@ describe('auth store', () => {
     expect(store.user).toBeNull()
     expect(store.accessToken).toBeNull()
   })
+
+  it('clearState removes offline login snapshot', () => {
+    const store = useAuthStore()
+    localStorage.setItem(
+      'jtrack.offlineLogin',
+      JSON.stringify({
+        email: 'tech@jtrack.local',
+        salt: 'salt',
+        verifier: 'verifier',
+        user: demoUser,
+        updatedAt: '2026-03-02T00:00:00.000Z'
+      })
+    )
+
+    store.user = demoUser
+    store.accessToken = 'access-1'
+    store.clearState()
+
+    expect(store.user).toBeNull()
+    expect(store.accessToken).toBeNull()
+    expect(localStorage.getItem('jtrack.offlineLogin')).toBeNull()
+  })
 })

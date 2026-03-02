@@ -1,6 +1,5 @@
 import { createRxDatabase, type RxDatabase } from 'rxdb'
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
-import { removeRxDatabase } from 'rxdb/plugins/core'
 
 const ticketSchema = {
   title: 'tickets',
@@ -197,6 +196,7 @@ let rxdbInstance: RxDatabase | null = null
 const DATABASE_SCHEMA_EPOCH = 2
 const DATABASE_NAME = `jtrack_crm_v${DATABASE_SCHEMA_EPOCH}`
 const RECOVERY_DATABASE_NAME = `${DATABASE_NAME}_recovery`
+const RECOVERY_NOTICE_STORAGE_KEY = 'jtrack.rxdb.recoveryNotice'
 const rxStorage = getRxStorageDexie()
 
 const isSchemaMismatchError = (error: unknown) => {
@@ -242,11 +242,25 @@ async function createDatabase(name: string) {
   return database
 }
 
-async function safeRemoveDatabase(name: string) {
+const notifyRecoveryFallback = (reason: string) => {
+  console.warn(
+    `[rxdb] schema mismatch recovery activated (${reason}). Existing local DB is preserved to avoid silent outbox data loss.`
+  )
+
+  if (!import.meta.client) {
+    return
+  }
+
   try {
-    await removeRxDatabase(name, rxStorage)
-  } catch (error) {
-    console.warn(`[rxdb] failed to remove database "${name}"`, error)
+    localStorage.setItem(
+      RECOVERY_NOTICE_STORAGE_KEY,
+      JSON.stringify({
+        reason,
+        at: new Date().toISOString()
+      })
+    )
+  } catch {
+    // ignore storage quota/security failures
   }
 }
 
@@ -258,29 +272,21 @@ async function createDatabaseWithRecovery() {
       throw error
     }
 
-    // When local schema drifts from persisted IndexedDB state, reset and rehydrate from sync.
-    await safeRemoveDatabase(DATABASE_NAME)
+    notifyRecoveryFallback('primary-db6')
 
     try {
-      return await createDatabase(DATABASE_NAME)
+      return await createDatabase(RECOVERY_DATABASE_NAME)
     } catch (retryError) {
       if (!isSchemaMismatchError(retryError)) {
         throw retryError
       }
 
-      // Fallback for stubborn IndexedDB state (e.g. blocked delete/open handles in another tab).
-      await safeRemoveDatabase(RECOVERY_DATABASE_NAME)
-      try {
-        return await createDatabase(RECOVERY_DATABASE_NAME)
-      } catch (recoveryError) {
-        if (!isSchemaMismatchError(recoveryError)) {
-          throw recoveryError
-        }
+      notifyRecoveryFallback('recovery-db6')
 
-        // Last-resort fallback: unique DB name guarantees startup instead of app-level crash.
-        const emergencyName = `${RECOVERY_DATABASE_NAME}_${Date.now()}`
-        return createDatabase(emergencyName)
-      }
+      // Last-resort fallback: unique DB name guarantees startup instead of app-level crash.
+      const emergencyName = `${RECOVERY_DATABASE_NAME}_${Date.now()}`
+      notifyRecoveryFallback(`emergency-${emergencyName}`)
+      return createDatabase(emergencyName)
     }
   }
 }

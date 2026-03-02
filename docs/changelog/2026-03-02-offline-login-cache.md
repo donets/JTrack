@@ -5,6 +5,7 @@
   - after successful online login, client stores `jtrack.offlineLogin` snapshot with normalized email, random salt, PBKDF2-derived verifier, and user snapshot;
   - when browser is offline and `/auth/login` is unreachable, login verifies credentials against local verifier and restores user session snapshot.
 - Fixed auth restore key usage to consistently read/write `jtrack.auth` through shared constant.
+- Hardened logout/session cleanup: `clearState()` now also removes `jtrack.offlineLogin`.
 - Login page now restores cached active location and location memberships immediately after sign-in, and only runs online location preload when access token exists.
 - Added auth-store tests for:
   - successful offline login from cached credentials,

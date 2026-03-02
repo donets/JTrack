@@ -42,7 +42,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - `locations`: tenant container lifecycle.
 - `users`: membership and operator management (including per-location role/status updates through `PATCH /users/:id` with `x-location-id` context).
 - `tickets`, `comments`, `attachments`, `payments`, `ticketActivities`: core domain CRUD and timeline events.
-  - Ticket status transitions are validated server-side against shared role-based transition rules.
+  - Ticket status transitions are validated server-side against shared role-based transition rules and are accepted only via `PATCH /tickets/{id}/status`.
 - `sync`: delta pull/push and conflict handling.
 - `health`: readiness/liveness probe endpoint with DB connectivity check.
 - `prisma`: DB access abstraction and lifecycle.
@@ -84,9 +84,9 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
 - Ticket detail timeline is composed on client from `ticketActivities` and `ticketComments` streams via `useTicketActivity`.
 - Ticket detail checklist toggles are persisted through ticket patch updates (offline-first) and synchronized via outbox.
-- If RxDB startup hits schema mismatch (`DB6`), client resets local IndexedDB and recreates collections to recover startup, then rehydrates via sync.
+- If RxDB startup hits schema mismatch (`DB6`), client keeps existing IndexedDB untouched and starts on recovery DB names to avoid silent local outbox data loss, then rehydrates via sync.
 - RxDB primary DB name is schema-epoch versioned (`jtrack_crm_v2`) to avoid reopening incompatible legacy schema state.
-- If RxDB `DB6` persists after reset (blocked stale handles), client falls back to recovery DB names (`jtrack_crm_v2_recovery`, then unique emergency suffix) to unblock startup and rehydrate via sync.
+- If RxDB `DB6` persists on recovery DB, client falls back to unique emergency DB suffix to unblock startup and rehydrate via sync.
 - Outbox pattern:
   - local mutation first,
   - enqueue operation,
@@ -95,7 +95,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Offline attachments are staged in RxDB (`pendingAttachmentUploads`) and converted to regular attachment outbox records after deferred upload when connectivity returns; base64 file payload is stored only in staging collection (attachment placeholder keeps pending metadata without duplicating file bytes).
 - Ticket detail attachments UI separates image thumbnails (with preview modal) and file list metadata, with per-item soft-delete actions.
 - Attachment upload zone supports drag-and-drop multi-file selection with per-file progress/status indicators and batch sync after completion.
-- Activity timeline renders author avatars and relative timestamps, and allows users to soft-delete their own comments.
+- Activity timeline renders author avatars and relative timestamps, supports edit/delete for own comments, and comment composer supports keyboard submit + voice input button.
 - `/tickets` view integrates `all`, `board`, `calendar`, and `map` tabs with shared filters and query-param state (`view=`).
 - Tickets list `all` tab includes explicit loading, empty, filtered-empty, and recoverable error states.
 - Tickets route renders a page-level skeleton while auth/location context or initial local subscription state is still resolving.
@@ -130,6 +130,7 @@ sequenceDiagram
 - `GET /tickets/:id/activity` returns ticket timeline records ordered by `createdAt DESC`.
 - `POST /sync/pull` uses cursor pagination with per-entity offsets and a fixed `snapshotAt` timestamp to keep multipage pulls consistent.
 - `POST /sync/push` preloads existing records by batched `findMany(where: { id: { in: [...] } })` per entity to avoid N+1 lookups inside mutation loops.
+- `POST /sync/push` ignores client-provided `ticketActivities` mutations; activity timeline remains server-authored audit trail.
 
 ## 8. Security Architecture
 - Access:
@@ -138,7 +139,7 @@ sequenceDiagram
   - invite onboarding uses signed short-lived invite token (`/auth/invite/complete`) and atomically claims membership (`invited` -> `active`) in the same transaction as initial password set.
   - refresh cookie `sameSite` is controlled by `COOKIE_SAME_SITE` (`lax` default; `none` for cross-site web/api domains).
   - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`); `SameSite=None` forces `secure=true`.
-  - auth brute-force mitigation is enforced via throttling on `/auth/login` and `/auth/refresh`.
+  - auth brute-force mitigation is enforced via throttling on `/auth/login` and `/auth/refresh` in production-like environments.
 - Authorization:
   - location scoping for tenant separation.
   - privilege-based endpoint checks.

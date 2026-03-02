@@ -9,6 +9,7 @@ const OFFLINE_LOGIN_STORAGE_KEY = 'jtrack.offlineLogin'
 const OFFLINE_LOGIN_SALT_BYTES = 16
 const OFFLINE_LOGIN_DERIVE_BITS = 256
 const OFFLINE_LOGIN_ITERATIONS = 120_000
+const canUseClientStorage = import.meta.client || import.meta.env.MODE === 'test'
 
 const isClientOffline = () => typeof window !== 'undefined' && navigator.onLine === false
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
@@ -162,7 +163,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async persistOfflineLoginSnapshot(email: string, password: string, user: User) {
-      if (!import.meta.client || !canUseOfflineCrypto()) {
+      if (!canUseClientStorage || !canUseOfflineCrypto()) {
         return
       }
 
@@ -188,7 +189,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     readOfflineLoginSnapshot() {
-      if (!import.meta.client) {
+      if (!canUseClientStorage) {
         return null
       }
 
@@ -212,7 +213,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async tryOfflineLogin(email: string, password: string) {
-      if (!import.meta.client || !isClientOffline() || !canUseOfflineCrypto()) {
+      if (!canUseClientStorage || !isClientOffline() || !canUseOfflineCrypto()) {
         return false
       }
 
@@ -360,7 +361,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     restoreState() {
-      if (!import.meta.client) {
+      if (!canUseClientStorage) {
         return
       }
 
@@ -379,7 +380,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     persistState() {
-      if (!import.meta.client) {
+      if (!canUseClientStorage) {
         return
       }
 
@@ -395,8 +396,9 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = null
       this.user = null
 
-      if (import.meta.client) {
+      if (canUseClientStorage) {
         localStorage.removeItem(AUTH_STORAGE_KEY)
+        localStorage.removeItem(OFFLINE_LOGIN_STORAGE_KEY)
       }
     }
   }

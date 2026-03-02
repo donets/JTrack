@@ -13,7 +13,7 @@
 - Multi-location tenancy: each domain record belongs to a `locationId`.
 - RBAC: role/privilege model with guards on each protected endpoint.
 - Core entities: tickets, ticket activities, comments, attachments, payment records.
-- Ticket status updates are role-constrained and validated by shared transition policy.
+- Ticket status updates are role-constrained and validated by shared transition policy through dedicated `/tickets/{id}/status` endpoint.
 - Offline sync: pull/push protocol over deterministic change-sets.
 
 ## 3. Runtime Components
@@ -69,6 +69,7 @@
 - Input: `{ locationId, lastPulledAt, changes, clientId }`.
 - Server applies each entity batch inside one DB transaction.
 - Existing rows for each entity batch are preloaded with `findMany(id in [...])` to avoid N+1 per-record lookups.
+- Client-provided `ticketActivities` mutations are ignored on push; activity records are server-authored only.
 - Client keeps pull baseline at prior `lastPulledAt` to avoid skipping concurrent remote writes and suppresses push-echo payloads locally by comparing pushed IDs with pulled records updated at or before push `newTimestamp`.
   - `updatedAt === newTimestamp` is treated as same-cycle echo and filtered out.
   - Delete echo suppression is ID-based (pull deleted payload contains IDs only, without per-record timestamps).
@@ -86,15 +87,15 @@
 - Ticket detail attachment card renders image thumbnails and file metadata rows separately, with soft-delete actions enqueued through outbox.
 - Drag-and-drop upload card accepts multiple files per action and displays per-file progress/status rows before final sync flush.
 - Ticket detail activity feed merges `ticketActivities` with non-deleted `ticketComments` and sorts by `createdAt DESC`.
-- Comment timeline items expose author metadata and support owner-only soft delete actions via outbox (`ticketComments` delete op).
+- Comment timeline items expose author metadata and support owner-only edit/delete actions via outbox (`ticketComments` update/delete ops).
 - Ticket checklist state is updated through regular ticket outbox updates (no separate checklist entity/collection).
 - Tickets page exposes unified tabs (`all|board|calendar|map`) and persists active view through URL query (`view`).
 - Tickets `all` panel handles RxDB subscription lifecycle with dedicated loading skeleton, empty states, and retryable error state.
 - Tickets route also uses a page-level skeleton during auth/location bootstrap and first local list hydration.
 - Ticket detail mobile mode exposes dedicated action row (`Start Job`, `Navigate`, `Call Customer`) and accordion-style sections.
-- On RxDB schema mismatch during startup (`DB6`), local IndexedDB is reset and collections are recreated to prevent initialization crash.
+- On RxDB schema mismatch during startup (`DB6`), client avoids destructive IndexedDB reset and starts on recovery DB name to preserve previous local data for manual recovery.
 - Primary client RxDB name is schema-epoch versioned (`jtrack_crm_v2`) to avoid legacy schema collisions.
-- If reset does not clear `DB6` (e.g. blocked IndexedDB handles), startup falls back to `jtrack_crm_v2_recovery` and then an emergency unique suffix to avoid app-init crash, followed by sync rehydration.
+- If recovery DB still hits `DB6` (e.g. blocked IndexedDB handles), startup falls back to an emergency unique suffix to avoid app-init crash, followed by sync rehydration.
 - Sync plugin initialization is intentionally non-blocking so layout shell can render before bootstrap/sync network calls complete.
 - Dashboard page uses a skeleton loading view while auth bootstrap and location context are still resolving.
 - Offline login can restore user identity without network, but location-dependent dashboard widgets still require previously cached location memberships.
@@ -129,7 +130,7 @@
   - refresh token cookie is `httpOnly`, path-scoped to `/auth`.
   - refresh token cookie `sameSite` attribute is controlled by `COOKIE_SAME_SITE` (default `lax`; use `none` for cross-site frontend/backend).
   - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`); `SameSite=None` forces `secure=true`.
-  - auth endpoints `/auth/login` and `/auth/refresh` are protected by request throttling in `production`; non-production environments skip throttling for local/dev workflows.
+  - auth endpoints `/auth/login` and `/auth/refresh` are protected by request throttling by default; dev/test can opt out with `NODE_ENV` or `AUTH_THROTTLE_DISABLED=true`.
 - Performance:
   - location/update-time indexes for sync and listing patterns.
   - bounded payloads via `GET /tickets` offset pagination and `POST /sync/pull` cursor pagination.
