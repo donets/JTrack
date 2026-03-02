@@ -82,6 +82,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Offline fallback also handles browser-reported online state drift (`navigator.onLine=true` during hard reload): auth flow treats fetch-level transport failures as offline candidates and can recover session from cached verifier/user snapshot.
 - In `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true` mode, auth middleware suppresses route redirects while offline to keep cached SPA shell reachable even without a live token refresh.
 - Location memberships are cached in local storage and restored during offline bootstrap, so active location context can survive offline reloads.
+- Dispatch route access guard restores persisted auth snapshot and cached location context before evaluating `dispatch.manage`, preventing false permission denial after offline hard refresh.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
 - Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
 - Ticket detail timeline is composed on client from `ticketActivities` and `ticketComments` streams via `useTicketActivity`.
@@ -101,6 +102,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - `/tickets` view integrates `all`, `board`, `calendar`, and `map` tabs with shared filters and query-param state (`view=`).
 - Tickets list `all` tab includes explicit loading, empty, filtered-empty, and recoverable error states.
 - Tickets route renders a page-level skeleton while auth/location context or initial local subscription state is still resolving.
+- Dispatch route renders a page-level skeleton while permission/context hydration completes, then reveals board/timeline/map tabs.
 - App shell startup is non-blocking: sync bootstrap runs in background so layout/sidebar/topbar render immediately on route load.
 - Dashboard route renders a dedicated skeleton state while auth/location role context is resolving.
 - Mobile ticket detail includes compact back-header, quick action buttons (start/navigate/call), and collapsible details/description/comments sections.

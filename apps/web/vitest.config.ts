@@ -8,15 +8,15 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    include: ['stores/**/*.spec.ts'],
+    include: ['stores/**/*.spec.ts', 'composables/**/*.spec.ts'],
     setupFiles: ['./vitest.setup.ts'],
     restoreMocks: true,
     unstubGlobals: true,
     coverage: {
       provider: 'v8',
       reporter: ['text'],
-      include: ['stores/**/*.ts'],
-      exclude: ['stores/**/*.spec.ts']
+      include: ['stores/**/*.ts', 'composables/**/*.ts'],
+      exclude: ['stores/**/*.spec.ts', 'composables/**/*.spec.ts']
     }
   }
 })
