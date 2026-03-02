@@ -194,20 +194,36 @@ const pendingAttachmentUploadSchema = {
 
 let rxdbPromise: Promise<RxDatabase> | null = null
 let rxdbInstance: RxDatabase | null = null
-const DATABASE_NAME = 'jtrack_crm'
+const DATABASE_SCHEMA_EPOCH = 2
+const DATABASE_NAME = `jtrack_crm_v${DATABASE_SCHEMA_EPOCH}`
+const RECOVERY_DATABASE_NAME = `${DATABASE_NAME}_recovery`
 const rxStorage = getRxStorageDexie()
 
-const isSchemaMismatchError = (error: unknown) =>
-  Boolean(
-    error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      (error as { code?: string }).code === 'DB6'
-  )
+const isSchemaMismatchError = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
 
-async function createDatabase() {
+  const code = 'code' in error ? (error as { code?: string }).code : undefined
+  if (code === 'DB6') {
+    return true
+  }
+
+  const message = 'message' in error ? (error as { message?: string }).message : undefined
+  if (typeof message === 'string' && message.includes('DB6')) {
+    return true
+  }
+
+  try {
+    return JSON.stringify(error).includes('DB6')
+  } catch {
+    return false
+  }
+}
+
+async function createDatabase(name: string) {
   const database = await createRxDatabase({
-    name: DATABASE_NAME,
+    name,
     storage: rxStorage,
     closeDuplicates: true
   })
@@ -226,26 +242,61 @@ async function createDatabase() {
   return database
 }
 
+async function safeRemoveDatabase(name: string) {
+  try {
+    await removeRxDatabase(name, rxStorage)
+  } catch (error) {
+    console.warn(`[rxdb] failed to remove database "${name}"`, error)
+  }
+}
+
 async function createDatabaseWithRecovery() {
   try {
-    return await createDatabase()
+    return await createDatabase(DATABASE_NAME)
   } catch (error) {
     if (!isSchemaMismatchError(error)) {
       throw error
     }
 
     // When local schema drifts from persisted IndexedDB state, reset and rehydrate from sync.
-    await removeRxDatabase(DATABASE_NAME, rxStorage)
-    return createDatabase()
+    await safeRemoveDatabase(DATABASE_NAME)
+
+    try {
+      return await createDatabase(DATABASE_NAME)
+    } catch (retryError) {
+      if (!isSchemaMismatchError(retryError)) {
+        throw retryError
+      }
+
+      // Fallback for stubborn IndexedDB state (e.g. blocked delete/open handles in another tab).
+      await safeRemoveDatabase(RECOVERY_DATABASE_NAME)
+      try {
+        return await createDatabase(RECOVERY_DATABASE_NAME)
+      } catch (recoveryError) {
+        if (!isSchemaMismatchError(recoveryError)) {
+          throw recoveryError
+        }
+
+        // Last-resort fallback: unique DB name guarantees startup instead of app-level crash.
+        const emergencyName = `${RECOVERY_DATABASE_NAME}_${Date.now()}`
+        return createDatabase(emergencyName)
+      }
+    }
   }
 }
 
 async function getOrCreateDatabase() {
   if (!rxdbPromise) {
-    rxdbPromise = createDatabaseWithRecovery().then((database) => {
-      rxdbInstance = database
-      return database
-    })
+    rxdbPromise = createDatabaseWithRecovery()
+      .then((database) => {
+        rxdbInstance = database
+        return database
+      })
+      .catch((error) => {
+        rxdbPromise = null
+        rxdbInstance = null
+        throw error
+      })
   }
 
   const database = await rxdbPromise
