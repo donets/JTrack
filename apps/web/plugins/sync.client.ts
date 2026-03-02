@@ -1,20 +1,31 @@
 let syncInterval: ReturnType<typeof setInterval> | null = null
 
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin(() => {
   const authStore = useAuthStore()
   const locationStore = useLocationStore()
   const syncStore = useSyncStore()
 
-  await authStore.bootstrap()
+  const runInitialSync = async () => {
+    await authStore.bootstrap()
 
-  if (authStore.isAuthenticated) {
-    locationStore.restoreActiveLocation()
-    await locationStore.loadLocations()
+    if (authStore.isAuthenticated) {
+      locationStore.restoreActiveLocation()
+
+      try {
+        await locationStore.loadLocations()
+      } catch (error) {
+        console.warn('[sync] failed to load locations during plugin bootstrap', error)
+        return
+      }
+    }
+
+    if (authStore.isAuthenticated && locationStore.activeLocationId) {
+      await syncStore.syncNow()
+    }
   }
 
-  if (authStore.isAuthenticated && locationStore.activeLocationId) {
-    await syncStore.syncNow()
-  }
+  // Keep plugin startup non-blocking so layout shell renders immediately.
+  void runInitialSync()
 
   if (!syncInterval) {
     syncInterval = setInterval(() => {

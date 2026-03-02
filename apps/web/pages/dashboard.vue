@@ -10,7 +10,8 @@
       </template>
     </JPageHeader>
 
-    <OwnerManagerDashboard v-if="hasLocationContext && (activeRole === 'Owner' || activeRole === 'Manager')" />
+    <DashboardSkeleton v-if="showDashboardSkeleton" />
+    <OwnerManagerDashboard v-else-if="hasLocationContext && (activeRole === 'Owner' || activeRole === 'Manager')" />
     <TechnicianDashboard v-else-if="hasLocationContext && activeRole === 'Technician'" />
 
     <JEmptyState
@@ -26,6 +27,7 @@
 import { computed, watchEffect } from 'vue'
 import type { BreadcrumbItem } from '~/types/ui'
 
+const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const { activeRole } = useRbacGuard()
 const { setBreadcrumbs } = useBreadcrumbs()
@@ -40,6 +42,18 @@ const pageDescription = computed(() =>
 )
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [{ label: pageTitle.value, to: '/dashboard' }])
+
+const showDashboardSkeleton = computed(() => {
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+
+  if (!authStore.bootstrapped || !locationStore.loaded) {
+    return true
+  }
+
+  return hasLocationContext.value && !activeRole.value
+})
 
 watchEffect(() => {
   setBreadcrumbs(breadcrumbs.value)

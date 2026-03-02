@@ -24,13 +24,16 @@
       </div>
 
       <div class="px-3 pb-3 text-xs text-slate-500 sm:px-5">{{ totalTickets }} tickets</div>
+    </section>
 
-      <div class="border-t border-slate-100 px-3 sm:px-5">
+    <section class="rounded-xl border border-slate-200 bg-white px-3 sm:px-5">
+      <div class="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
         <JTabs
           v-model="activeView"
           :tabs="viewTabs"
           id-prefix="tickets-tab"
           panel-id-prefix="tickets-view-panel"
+          class="min-w-max sm:min-w-full [&_button]:shrink-0 [&_button]:whitespace-nowrap"
         />
       </div>
     </section>

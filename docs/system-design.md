@@ -86,6 +86,8 @@
 - Tickets `all` panel handles RxDB subscription lifecycle with dedicated loading skeleton, empty states, and retryable error state.
 - Ticket detail mobile mode exposes dedicated action row (`Start Job`, `Navigate`, `Call Customer`) and accordion-style sections.
 - On RxDB schema mismatch during startup (`DB6`), local IndexedDB is reset and collections are recreated to prevent initialization crash.
+- Sync plugin initialization is intentionally non-blocking so layout shell can render before bootstrap/sync network calls complete.
+- Dashboard page uses a skeleton loading view while auth bootstrap and location context are still resolving.
 - On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 - Dispatch map view is implemented with Leaflet + OpenStreetMap tiles.
