@@ -245,7 +245,7 @@ Sliding window counter (Redis or in-memory with TTL for MVP).
 ```
 
 - Return `429 Too Many Requests` with `Retry-After` header.
-- In local/dev profiles (`NODE_ENV != production`) API throttling can be skipped to avoid blocking iterative testing.
+- In local dev/test (`NODE_ENV=development|test`) or with `AUTH_THROTTLE_DISABLED=true`, API throttling can be skipped to avoid blocking iterative testing.
 - Login: after 5 failed attempts for a specific email, progressive delay (1s, 2s, 4s, 8s...).
 - Never lock accounts permanently — account lockout is a DoS vector.
 - Log all rate-limit hits with IP + endpoint for monitoring.

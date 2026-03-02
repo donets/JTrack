@@ -7,6 +7,12 @@ const LOCATION_ID = 'loc-1'
 const OTHER_LOCATION_ID = 'loc-2'
 const USER_ID = 'user-1'
 const TICKET_ID = 'ticket-1'
+const createTicketNumberConflict = () => ({
+  code: 'P2002',
+  meta: {
+    target: ['locationId', 'ticketNumber']
+  }
+})
 
 const createEmptyChanges = (): SyncChanges => ({
   tickets: { created: [], updated: [], deleted: [] },
@@ -428,6 +434,140 @@ describe('SyncService', () => {
         status: 'Succeeded'
       })
     })
+  })
+
+  it('push ignores client-provided ticketActivities payload', async () => {
+    const tx = {
+      ticket: {
+        findMany: vi.fn(async () => []),
+        aggregate: vi.fn(async () => ({ _max: { ticketNumber: 10 } })),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      ticketActivity: {
+        findMany: vi.fn(async () => []),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      ticketComment: {
+        findMany: vi.fn(async () => []),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      ticketAttachment: {
+        findMany: vi.fn(async () => []),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      paymentRecord: {
+        findMany: vi.fn(async () => []),
+        create: vi.fn(),
+        update: vi.fn()
+      }
+    }
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (client: typeof tx) => Promise<void>) => callback(tx)
+    )
+
+    const changes = createEmptyChanges()
+    changes.ticketActivities.created.push({
+      id: 'activity-client-created',
+      ticketId: TICKET_ID,
+      locationId: LOCATION_ID,
+      userId: USER_ID,
+      type: 'comment',
+      metadata: { body: 'spoofed' },
+      createdAt: '2026-02-24T08:00:00.000Z',
+      updatedAt: '2026-02-24T08:00:00.000Z'
+    })
+
+    await service.push(
+      {
+        locationId: LOCATION_ID,
+        lastPulledAt: Date.now(),
+        changes,
+        clientId: 'client-1'
+      },
+      LOCATION_ID
+    )
+
+    expect(tx.ticketActivity.create).not.toHaveBeenCalled()
+    expect(tx.ticketActivity.update).not.toHaveBeenCalled()
+  })
+
+  it('push retries created ticket when ticket number conflicts', async () => {
+    const tx = {
+      ticket: {
+        findMany: vi.fn(async () => []),
+        aggregate: vi
+          .fn()
+          .mockResolvedValueOnce({ _max: { ticketNumber: 99 } })
+          .mockResolvedValueOnce({ _max: { ticketNumber: 100 } }),
+        create: vi
+          .fn()
+          .mockRejectedValueOnce(createTicketNumberConflict())
+          .mockResolvedValueOnce(undefined),
+        update: vi.fn()
+      },
+      ticketActivity: {
+        findMany: vi.fn(async () => []),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      ticketComment: {
+        findMany: vi.fn(async () => []),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      ticketAttachment: {
+        findMany: vi.fn(async () => []),
+        create: vi.fn(),
+        update: vi.fn()
+      },
+      paymentRecord: {
+        findMany: vi.fn(async () => []),
+        create: vi.fn(),
+        update: vi.fn()
+      }
+    }
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (client: typeof tx) => Promise<void>) => callback(tx)
+    )
+
+    const changes = createEmptyChanges()
+    changes.tickets.created.push({
+      id: 'ticket-created',
+      locationId: LOCATION_ID,
+      createdByUserId: USER_ID,
+      assignedToUserId: null,
+      title: 'Created from client',
+      description: null,
+      status: 'New',
+      scheduledStartAt: null,
+      scheduledEndAt: null,
+      priority: null,
+      totalAmountCents: null,
+      currency: 'EUR',
+      createdAt: '2026-02-24T07:58:00.000Z',
+      updatedAt: '2026-02-24T07:58:00.000Z',
+      deletedAt: null,
+      ticketNumber: null,
+      checklist: []
+    })
+
+    await service.push(
+      {
+        locationId: LOCATION_ID,
+        lastPulledAt: Date.now(),
+        changes,
+        clientId: 'client-1'
+      },
+      LOCATION_ID
+    )
+
+    expect(tx.ticket.create).toHaveBeenCalledTimes(2)
   })
 
   it('push skips stale client updates when server record is newer', async () => {

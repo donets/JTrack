@@ -252,11 +252,7 @@ export const createTicketSchema = z.object({
   currency: z.string().default('EUR')
 })
 
-export const updateTicketSchema = createTicketSchema
-  .partial()
-  .extend({
-    status: ticketStatusSchema.optional()
-  })
+export const updateTicketSchema = createTicketSchema.partial()
 
 export const ticketStatusUpdateInputSchema = z.object({
   status: ticketStatusSchema
@@ -284,6 +280,10 @@ export const ticketListResponseSchema = z.object({
 
 export const createCommentSchema = z.object({
   ticketId: idSchema,
+  body: z.string().min(1)
+})
+
+export const updateCommentSchema = z.object({
   body: z.string().min(1)
 })
 
@@ -350,6 +350,7 @@ export type UpdateTicketStatusInput = z.infer<typeof ticketStatusUpdateInputSche
 export type TicketListQuery = z.infer<typeof ticketListQuerySchema>
 export type TicketListResponse = z.infer<typeof ticketListResponseSchema>
 export type CreateCommentInput = z.infer<typeof createCommentSchema>
+export type UpdateCommentInput = z.infer<typeof updateCommentSchema>
 export type CreateAttachmentMetadataInput = z.infer<typeof createAttachmentMetadataSchema>
 export type PresignInput = z.infer<typeof presignInputSchema>
 export type UploadInput = z.infer<typeof uploadInputSchema>

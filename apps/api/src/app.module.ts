@@ -18,7 +18,10 @@ import { PaymentsModule } from './payments/payments.module'
 import { SyncModule } from './sync/sync.module'
 import { HealthModule } from './health/health.module'
 
-const skipThrottling = process.env.NODE_ENV !== 'production'
+const skipThrottling =
+  process.env.NODE_ENV === 'development' ||
+  process.env.NODE_ENV === 'test' ||
+  process.env.AUTH_THROTTLE_DISABLED === 'true'
 
 @Module({
   imports: [

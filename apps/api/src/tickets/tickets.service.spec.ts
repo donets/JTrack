@@ -2,6 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TicketsService } from './tickets.service'
 
 const LOCATION_ID = 'loc-1'
+const createTicketNumberConflict = () => ({
+  code: 'P2002',
+  meta: {
+    target: ['locationId', 'ticketNumber']
+  }
+})
 
 const createTicketRecord = (id: string) => ({
   id,
@@ -146,5 +152,66 @@ describe('TicketsService', () => {
       id: 'ticket-1',
       locationId: LOCATION_ID
     })
+  })
+
+  it('update ignores status field from generic ticket patch payload', async () => {
+    prisma.ticket.findFirst.mockResolvedValue({
+      id: 'ticket-1',
+      status: 'New',
+      assignedToUserId: null
+    })
+    prisma.ticket.updateMany.mockResolvedValue({ count: 1 })
+    vi.spyOn(service, 'getById').mockResolvedValue({
+      id: 'ticket-1',
+      status: 'New'
+    } as never)
+
+    await service.update(LOCATION_ID, 'user-1', 'ticket-1', {
+      title: 'Updated title',
+      status: 'Done'
+    } as never)
+
+    const updatePayload = prisma.ticket.updateMany.mock.calls[0]?.[0]
+    expect(updatePayload?.data).not.toHaveProperty('status')
+    expect(prisma.ticketActivity.create).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: 'status_change'
+        })
+      })
+    )
+  })
+
+  it('create retries when ticket number conflicts under concurrent writes', async () => {
+    const createdTicket = {
+      ...createTicketRecord('ticket-created'),
+      ticketNumber: 101
+    }
+
+    const tx = {
+      ticket: {
+        aggregate: vi
+          .fn()
+          .mockResolvedValueOnce({ _max: { ticketNumber: 100 } })
+          .mockResolvedValueOnce({ _max: { ticketNumber: 100 } }),
+        create: vi
+          .fn()
+          .mockRejectedValueOnce(createTicketNumberConflict())
+          .mockResolvedValueOnce(createdTicket)
+      }
+    }
+
+    prisma.$transaction.mockImplementation(
+      async (callback: (client: typeof tx) => Promise<typeof createdTicket>) => callback(tx)
+    )
+
+    const result = await service.create(LOCATION_ID, 'user-1', {
+      title: 'Concurrent ticket',
+      currency: 'EUR'
+    })
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2)
+    expect(tx.ticket.create).toHaveBeenCalledTimes(2)
+    expect(result.ticketNumber).toBe(101)
   })
 })

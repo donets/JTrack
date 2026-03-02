@@ -1,7 +1,10 @@
-# 2026-03-02 — Disable Throttling in Dev/Non-Prod
+# 2026-03-02 — Throttling Bypass Scope (Dev/Test Only)
 
 ## What changed
-- Updated API throttler config to skip request throttling when `NODE_ENV` is not `production`.
+- Updated API throttler config to skip request throttling only when:
+  - `NODE_ENV=development`,
+  - `NODE_ENV=test`,
+  - or `AUTH_THROTTLE_DISABLED=true`.
 - Kept `429` message format as `Too Many Requests` for production paths where throttling is active.
 - Updated local compose API environment to `NODE_ENV=development` so local Docker runs actually bypass throttling.
 

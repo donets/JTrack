@@ -18,6 +18,8 @@ import {
 import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
 
+const MAX_TICKET_NUMBER_ATTEMPTS = 5
+
 @Injectable()
 export class TicketsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -115,40 +117,50 @@ export class TicketsService {
   }
 
   async create(locationId: string, createdByUserId: string, input: CreateTicketInput) {
-    const ticket = await this.prisma.$transaction(async (tx) => {
-      const nextTicketNumber = await this.getNextTicketNumber(locationId, tx)
+    for (let attempt = 1; attempt <= MAX_TICKET_NUMBER_ATTEMPTS; attempt += 1) {
+      try {
+        const ticket = await this.prisma.$transaction(async (tx) => {
+          const nextTicketNumber = await this.getNextTicketNumber(locationId, tx)
 
-      return tx.ticket.create({
-        data: {
+          return tx.ticket.create({
+            data: {
+              locationId,
+              ticketNumber: nextTicketNumber,
+              createdByUserId,
+              assignedToUserId: input.assignedToUserId,
+              title: input.title,
+              description: input.description,
+              checklist: input.checklist
+                ? (input.checklist as unknown as Prisma.InputJsonValue)
+                : undefined,
+              scheduledStartAt: input.scheduledStartAt ? new Date(input.scheduledStartAt) : null,
+              scheduledEndAt: input.scheduledEndAt ? new Date(input.scheduledEndAt) : null,
+              priority: input.priority,
+              totalAmountCents: input.totalAmountCents,
+              currency: input.currency
+            }
+          })
+        })
+
+        await this.createTicketActivity({
+          ticketId: ticket.id,
           locationId,
-          ticketNumber: nextTicketNumber,
-          createdByUserId,
-          assignedToUserId: input.assignedToUserId,
-          title: input.title,
-          description: input.description,
-          checklist: input.checklist
-            ? (input.checklist as unknown as Prisma.InputJsonValue)
-            : undefined,
-          scheduledStartAt: input.scheduledStartAt ? new Date(input.scheduledStartAt) : null,
-          scheduledEndAt: input.scheduledEndAt ? new Date(input.scheduledEndAt) : null,
-          priority: input.priority,
-          totalAmountCents: input.totalAmountCents,
-          currency: input.currency
+          userId: createdByUserId,
+          type: 'created',
+          metadata: {
+            status: ticket.status
+          }
+        })
+
+        return this.serialize(ticket)
+      } catch (error) {
+        if (!this.isTicketNumberRetryableError(error) || attempt >= MAX_TICKET_NUMBER_ATTEMPTS) {
+          throw error
         }
-      })
-    })
-
-    await this.createTicketActivity({
-      ticketId: ticket.id,
-      locationId,
-      userId: createdByUserId,
-      type: 'created',
-      metadata: {
-        status: ticket.status
       }
-    })
+    }
 
-    return this.serialize(ticket)
+    throw new UnprocessableEntityException('Unable to allocate ticket number')
   }
 
   async update(
@@ -188,7 +200,6 @@ export class TicketsService {
           input.checklist === undefined
             ? undefined
             : (input.checklist as unknown as Prisma.InputJsonValue),
-        status: input.status,
         scheduledStartAt: input.scheduledStartAt ? new Date(input.scheduledStartAt) : undefined,
         scheduledEndAt: input.scheduledEndAt ? new Date(input.scheduledEndAt) : undefined,
         priority: input.priority,
@@ -213,19 +224,6 @@ export class TicketsService {
         metadata: {
           fromAssignedToUserId: existing.assignedToUserId ?? null,
           toAssignedToUserId: input.assignedToUserId ?? null
-        }
-      })
-    }
-
-    if (input.status && input.status !== existing.status) {
-      await this.createTicketActivity({
-        ticketId,
-        locationId,
-        userId: updatedByUserId,
-        type: 'status_change',
-        metadata: {
-          from: existing.status,
-          to: input.status
         }
       })
     }
@@ -413,5 +411,33 @@ export class TicketsService {
     }
 
     return normalized
+  }
+
+  private isTicketNumberRetryableError(error: unknown) {
+    if (!error || typeof error !== 'object') {
+      return false
+    }
+
+    const code = 'code' in error ? (error as { code?: string }).code : undefined
+    if (code === 'P2034') {
+      return true
+    }
+
+    if (code !== 'P2002') {
+      return false
+    }
+
+    const meta = 'meta' in error ? (error as { meta?: { target?: string[] | string } }).meta : undefined
+    const target = meta?.target
+
+    if (Array.isArray(target)) {
+      return target.includes('locationId') && target.includes('ticketNumber')
+    }
+
+    if (typeof target === 'string') {
+      return target.includes('locationId') && target.includes('ticketNumber')
+    }
+
+    return true
   }
 }

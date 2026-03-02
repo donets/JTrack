@@ -1,5 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common'
-import { createCommentSchema, type CreateCommentInput } from '@jtrack/shared'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import {
+  createCommentSchema,
+  type CreateCommentInput,
+  updateCommentSchema,
+  type UpdateCommentInput
+} from '@jtrack/shared'
 import { CurrentLocation } from '@/common/current-location.decorator'
 import { CurrentUser } from '@/common/current-user.decorator'
 import type { JwtUser } from '@/common/types'
@@ -25,6 +30,17 @@ export class CommentsController {
     @Body(new ZodValidationPipe(createCommentSchema)) body: CreateCommentInput
   ) {
     return this.commentsService.create(locationId, user.sub, body)
+  }
+
+  @Patch(':id')
+  @RequirePrivileges(['comments.write'])
+  async update(
+    @CurrentLocation() locationId: string,
+    @CurrentUser() user: JwtUser,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateCommentSchema)) body: UpdateCommentInput
+  ) {
+    return this.commentsService.update(locationId, id, user.sub, body)
   }
 
   @Delete(':id')

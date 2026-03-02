@@ -642,12 +642,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TicketDetails'
-        '422':
-          description: Invalid status transition for current role/workflow
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Ticket not found
           content:
@@ -764,6 +758,37 @@ paths:
                 $ref: '#/components/schemas/TicketComment'
 
   /comments/{id}:
+    patch:
+      tags: [Comments]
+      summary: Update own comment body
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommentInput'
+      responses:
+        '200':
+          description: Updated comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketComment'
+        '403':
+          description: Not allowed to edit another user comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     delete:
       tags: [Comments]
       summary: Soft-delete comment
@@ -1000,7 +1025,7 @@ paths:
     post:
       tags: [Sync]
       summary: Push client changes
-      description: Body `locationId` must match `x-location-id`.
+      description: Body `locationId` must match `x-location-id`; `changes.ticketActivities` payload is ignored by server.
       parameters:
         - $ref: '#/components/parameters/XLocationId'
       requestBody:
@@ -1674,10 +1699,6 @@ components:
     UpdateTicketInput:
       allOf:
         - $ref: '#/components/schemas/CreateTicketInput'
-        - type: object
-          properties:
-            status:
-              $ref: '#/components/schemas/TicketStatus'
 
     UpdateTicketStatusInput:
       type: object
@@ -1695,6 +1716,14 @@ components:
           type: string
           minLength: 1
       required: [ticketId, body]
+
+    UpdateCommentInput:
+      type: object
+      properties:
+        body:
+          type: string
+          minLength: 1
+      required: [body]
 
     PresignInput:
       type: object

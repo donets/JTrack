@@ -291,9 +291,7 @@ export interface CreateTicketInput {
   currency?: string
 }
 
-export interface UpdateTicketInput extends Partial<CreateTicketInput> {
-  status?: TicketStatus
-}
+export interface UpdateTicketInput extends Partial<CreateTicketInput> {}
 
 export interface UpdateTicketStatusInput {
   status: TicketStatus
@@ -320,6 +318,10 @@ export interface TicketListResponse {
 
 export interface CreateCommentInput {
   ticketId: UUID
+  body: string
+}
+
+export interface UpdateCommentInput {
   body: string
 }
 
