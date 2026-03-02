@@ -7,6 +7,7 @@ import {
   statusToLabel,
   type BadgeVariant
 } from '~/utils/ticket-status'
+import { formatTicketNumber } from '~/utils/format'
 
 interface LocationUser {
   id: string
@@ -125,6 +126,9 @@ const formatPriority = (priority: string | null) => {
 
   return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase()
 }
+
+const formatTicketLabel = (ticket: { id: string; title: string; ticketNumber?: number }) =>
+  `${formatTicketNumber(ticket.ticketNumber, ticket.id)} ${ticket.title}`
 
 const formatRelativeTime = (value: string, nowMs: number) => {
   const timestamp = toTimestamp(value)
@@ -413,7 +417,7 @@ export const useDashboardStats = () => {
       .slice(0, 6)
       .map<DashboardUnassignedTicket>((ticket) => ({
         id: ticket.id,
-        title: ticket.title,
+        title: formatTicketLabel(ticket),
         priorityLabel: formatPriority(ticket.priority),
         priorityVariant: priorityToBadgeVariant(ticket.priority),
         createdAt: ticket.createdAt,
@@ -486,7 +490,7 @@ export const useDashboardStats = () => {
 
     const ticketTitleById = new Map<string, string>()
     for (const ticket of activeTickets.value) {
-      ticketTitleById.set(ticket.id, ticket.title)
+      ticketTitleById.set(ticket.id, formatTicketLabel(ticket))
     }
 
     const activityItems: TimelineItem[] = []
@@ -498,7 +502,7 @@ export const useDashboardStats = () => {
         actor: {
           name: resolveUserName(ticket.createdByUserId)
         },
-        content: `${ticket.title} created`,
+        content: `${formatTicketLabel(ticket)} created`,
         timestamp: ticket.createdAt
       })
 
@@ -509,7 +513,7 @@ export const useDashboardStats = () => {
           actor: {
             name: 'System'
           },
-          content: `${ticket.title} moved to ${statusToLabel(ticket.status)}`,
+          content: `${formatTicketLabel(ticket)} moved to ${statusToLabel(ticket.status)}`,
           timestamp: ticket.updatedAt
         })
       }
@@ -587,7 +591,7 @@ export const useDashboardStats = () => {
       })
       .map<DashboardScheduleTicket>((ticket) => ({
         id: ticket.id,
-        title: ticket.title,
+        title: formatTicketLabel(ticket),
         status: ticket.status,
         statusLabel: statusToLabel(ticket.status),
         statusVariant: statusToBadgeVariant(ticket.status),

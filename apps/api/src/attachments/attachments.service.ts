@@ -60,6 +60,21 @@ export class AttachmentsService {
       }
     })
 
+    await this.prisma.ticketActivity.create({
+      data: {
+        ticketId: input.ticketId,
+        locationId,
+        userId: uploadedByUserId,
+        type: 'attachment',
+        metadata: {
+          attachmentId: attachment.id,
+          kind: attachment.kind,
+          mimeType: attachment.mimeType,
+          size: attachment.size
+        }
+      }
+    })
+
     return serializeDates(attachment)
   }
 

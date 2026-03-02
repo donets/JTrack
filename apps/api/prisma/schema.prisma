@@ -29,6 +29,15 @@ enum TicketStatus {
   Canceled
 }
 
+enum TicketActivityType {
+  status_change
+  assignment
+  comment
+  attachment
+  payment
+  created
+}
+
 enum AttachmentKind {
   Photo
   File
@@ -71,6 +80,7 @@ model User {
   assignedTickets   Ticket[]           @relation("AssignedTickets")
   comments          TicketComment[]    @relation("CommentAuthor")
   attachments       TicketAttachment[] @relation("AttachmentUploader")
+  ticketActivities  TicketActivity[]   @relation("TicketActivityActor")
 
   @@index([createdAt])
 }
@@ -118,6 +128,7 @@ model Location {
   ticketComments  TicketComment[]
   attachments     TicketAttachment[]
   paymentRecords  PaymentRecord[]
+  ticketActivities TicketActivity[]
 
   @@index([name])
 }
@@ -164,10 +175,12 @@ model RolePrivilege {
 model Ticket {
   id               String             @id @default(uuid()) @db.Uuid
   locationId       String             @db.Uuid
+  ticketNumber     Int
   createdByUserId  String             @db.Uuid
   assignedToUserId String?            @db.Uuid
   title            String
   description      String?
+  checklist        Json               @default("[]")
   status           TicketStatus       @default(New)
   scheduledStartAt DateTime?
   scheduledEndAt   DateTime?
@@ -183,11 +196,30 @@ model Ticket {
   comments         TicketComment[]
   attachments      TicketAttachment[]
   paymentRecords   PaymentRecord[]
+  activities       TicketActivity[]
 
   @@index([locationId, updatedAt])
+  @@unique([locationId, ticketNumber])
   @@index([locationId, status])
   @@index([locationId, assignedToUserId])
   @@index([deletedAt])
+}
+
+model TicketActivity {
+  id         String           @id @default(uuid()) @db.Uuid
+  ticketId   String           @db.Uuid
+  locationId String           @db.Uuid
+  userId     String?          @db.Uuid
+  type       TicketActivityType
+  metadata   Json
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  ticket     Ticket           @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  location   Location         @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  user       User?            @relation("TicketActivityActor", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([locationId, updatedAt])
+  @@index([ticketId, createdAt])
 }
 
 model TicketComment {

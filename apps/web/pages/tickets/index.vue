@@ -24,74 +24,111 @@
       </div>
 
       <div class="px-3 pb-3 text-xs text-slate-500 sm:px-5">{{ totalTickets }} tickets</div>
+    </section>
 
-      <div class="border-t border-slate-100 px-3 sm:px-5">
+    <section class="rounded-xl border border-slate-200 bg-white px-3 sm:px-5">
+      <div class="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
         <JTabs
           v-model="activeView"
           :tabs="viewTabs"
           id-prefix="tickets-tab"
           panel-id-prefix="tickets-view-panel"
+          class="min-w-max sm:min-w-full [&_button]:shrink-0 [&_button]:whitespace-nowrap"
         />
       </div>
     </section>
 
-    <template v-if="activeView === 'all'">
-      <JTable
-        :columns="columns"
-        :rows="pageRows"
-        :sortable="true"
-        :row-clickable="true"
-        :sort-key="sortKey"
-        :sort-direction="sortDirection"
-        :empty-text="emptyText"
-        @sort-change="onSortChange"
-        @row-click="onTableRowClick"
-      >
-        <template #cell-title="{ row }">
-          <NuxtLink :to="`/tickets/${row.id}`" class="font-medium text-ink hover:text-mint hover:underline">
-            {{ row.title }}
-          </NuxtLink>
-        </template>
+    <TicketsSkeleton v-if="showTicketsSkeleton" />
 
-        <template #cell-status="{ row }">
-          <JBadge :variant="statusToBadgeVariant(row.status)">{{ statusToLabel(row.status) }}</JBadge>
-        </template>
+    <template v-else-if="activeView === 'all'">
+      <div v-if="ticketsLoading" class="space-y-2 rounded-xl border border-slate-200 bg-white p-3 sm:p-5">
+        <div v-for="rowIndex in 6" :key="`tickets-loading-${rowIndex}`" class="grid grid-cols-7 gap-3">
+          <JSkeleton v-for="columnIndex in 7" :key="`tickets-loading-${rowIndex}-${columnIndex}`" height="18px" />
+        </div>
+      </div>
 
-        <template #cell-priority="{ row }">
-          <JBadge :variant="priorityToBadgeVariant(row.priority)">{{ formatPriorityLabel(row.priority) }}</JBadge>
-        </template>
-
-        <template #cell-assignedToUserId="{ row }">
-          <div v-if="row.assignedToUserId" class="inline-flex items-center gap-2">
-            <JAvatar :name="resolveAssigneeName(row.assignedToUserId)" size="sm" />
-            <span>{{ resolveAssigneeName(row.assignedToUserId) }}</span>
-          </div>
-          <span v-else class="text-slate-400">—</span>
-        </template>
-
-        <template #cell-scheduledStartAt="{ value }">
-          <span>{{ formatScheduled(value) }}</span>
-        </template>
-
-        <template #cell-totalAmountCents="{ row }">
-          <span>{{ formatMoney(row.totalAmountCents, row.currency) }}</span>
-        </template>
-
-        <template #cell-updatedAt="{ value }">
-          <span class="text-xs text-slate-600">{{ formatDateTime(value) }}</span>
-        </template>
-      </JTable>
-
-      <JPagination
-        :total="totalTickets"
-        :per-page="perPage"
-        :current-page="page"
-        @update:current-page="onPageChange"
+      <JEmptyState
+        v-else-if="ticketsLoadError"
+        icon="⚠️"
+        title="Could not load tickets"
+        description="The local ticket store could not be read. Retry to restore the list."
+        :action="{ label: 'Retry', onClick: retryTicketsLoad }"
       />
+
+      <JEmptyState
+        v-else-if="totalTickets === 0 && !hasActiveFilters"
+        icon="🧾"
+        title="No tickets yet"
+        description="Create your first ticket to get started."
+        :action="{ label: '+ New Ticket', onClick: openCreateModal }"
+      />
+
+      <JEmptyState
+        v-else-if="totalTickets === 0"
+        icon="🔎"
+        title="No tickets match your filters"
+        description="Try adjusting your filters or search terms."
+        :action="{ label: 'Clear filters', onClick: clearFilters }"
+      />
+
+      <template v-else>
+        <JTable
+          :columns="columns"
+          :rows="pageRows"
+          :sortable="true"
+          :row-clickable="true"
+          :sort-key="sortKey"
+          :sort-direction="sortDirection"
+          @sort-change="onSortChange"
+          @row-click="onTableRowClick"
+        >
+          <template #cell-title="{ row }">
+            <NuxtLink :to="`/tickets/${row.id}`" class="font-medium text-ink hover:text-mint hover:underline">
+              <span class="mr-1 text-slate-500">{{ formatTicketNumber(row.ticketNumber, row.id) }}</span>
+              <span>{{ row.title }}</span>
+            </NuxtLink>
+          </template>
+
+          <template #cell-status="{ row }">
+            <JBadge :variant="statusToBadgeVariant(row.status)">{{ statusToLabel(row.status) }}</JBadge>
+          </template>
+
+          <template #cell-priority="{ row }">
+            <JBadge :variant="priorityToBadgeVariant(row.priority)">{{ formatPriorityLabel(row.priority) }}</JBadge>
+          </template>
+
+          <template #cell-assignedToUserId="{ row }">
+            <div v-if="row.assignedToUserId" class="inline-flex items-center gap-2">
+              <JAvatar :name="resolveAssigneeName(row.assignedToUserId)" size="sm" />
+              <span>{{ resolveAssigneeName(row.assignedToUserId) }}</span>
+            </div>
+            <span v-else class="text-slate-400">—</span>
+          </template>
+
+          <template #cell-scheduledStartAt="{ value }">
+            <span>{{ formatScheduled(value) }}</span>
+          </template>
+
+          <template #cell-totalAmountCents="{ row }">
+            <span>{{ formatMoney(row.totalAmountCents, row.currency) }}</span>
+          </template>
+
+          <template #cell-updatedAt="{ value }">
+            <span class="text-xs text-slate-600">{{ formatDateTime(value) }}</span>
+          </template>
+        </JTable>
+
+        <JPagination
+          :total="totalTickets"
+          :per-page="perPage"
+          :current-page="page"
+          @update:current-page="onPageChange"
+        />
+      </template>
     </template>
 
     <div
-      v-else
+      v-else-if="activeView === 'board'"
       id="tickets-view-panel-board"
       role="tabpanel"
       aria-labelledby="tickets-tab-board"
@@ -105,12 +142,72 @@
           :title="column.label"
           :color="column.color"
           :tickets="kanbanColumns[column.status] ?? []"
-          :show-ticket-code="false"
+          :show-ticket-code="true"
           @ticket-drop="onKanbanDrop"
           @open-ticket="openTicket"
           @quick-assign="openQuickAssign"
         />
       </div>
+    </div>
+
+    <div
+      v-else-if="activeView === 'calendar'"
+      id="tickets-view-panel-calendar"
+      role="tabpanel"
+      aria-labelledby="tickets-tab-calendar"
+      class="space-y-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-5"
+    >
+      <div
+        v-if="calendarGroups.length === 0"
+        class="rounded-md border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500"
+      >
+        No tickets scheduled for the current filters.
+      </div>
+
+      <section v-for="group in calendarGroups" :key="group.date" class="rounded-lg border border-slate-200">
+        <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2">
+          <h3 class="text-sm font-semibold text-ink">{{ group.label }}</h3>
+          <span class="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">
+            {{ group.tickets.length }}
+          </span>
+        </header>
+
+        <ul class="divide-y divide-slate-100">
+          <li v-for="ticket in group.tickets" :key="ticket.id">
+            <button
+              type="button"
+              class="block w-full px-3 py-2 text-left transition-colors hover:bg-slate-50"
+              @click="openTicket(ticket.id)"
+            >
+              <p class="truncate text-sm font-semibold text-ink">
+                <span class="mr-1 text-slate-500">{{ formatTicketNumber(ticket.ticketNumber, ticket.id) }}</span>
+                {{ ticket.title }}
+              </p>
+              <p class="mt-0.5 text-xs text-slate-500">
+                {{ statusToLabel(ticket.status) }} · {{ formatScheduled(ticket.scheduledStartAt) }} ·
+                {{ ticket.assignedToUserId ? resolveAssigneeName(ticket.assignedToUserId) : 'Unassigned' }}
+              </p>
+            </button>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <div
+      v-else
+      id="tickets-view-panel-map"
+      role="tabpanel"
+      aria-labelledby="tickets-tab-map"
+      class="space-y-4"
+    >
+      <DispatchMapView
+        :tickets="mapTickets"
+        :selected-date="mapSelectedDate"
+        :location-id="locationStore.activeLocationId ?? '00000000-0000-0000-0000-000000000000'"
+        :technician-names="technicianNameMap"
+        @open-ticket="openTicket"
+        @quick-assign="openQuickAssign"
+      />
     </div>
 
     <JModal v-model="createModalOpen" title="Create New Ticket" size="lg">
@@ -186,6 +283,7 @@ import type {
   KanbanColumnDropPayload,
   KanbanColumnItem,
   KanbanTicketCardItem,
+  DispatchMapTicket,
   QuickAssignPayload,
   QuickAssignTechnicianOption,
   TabItem
@@ -199,12 +297,14 @@ import {
 import {
   formatDateTime,
   formatMoney,
+  formatTicketNumber,
   formatPriorityLabel,
   parseAmountToCents
 } from '~/utils/format'
 
 interface TicketRow {
   id: string
+  ticketNumber?: number
   title: string
   status: TicketStatus
   priority: string | null
@@ -223,7 +323,7 @@ interface TeamMember {
 type SortDirection = 'asc' | 'desc'
 type SortKey = 'title' | 'status' | 'priority' | 'updatedAt'
 type DateRangeValue = '' | 'today' | 'next7d' | 'next30d'
-type TicketView = 'all' | 'board'
+type TicketView = 'all' | 'board' | 'calendar' | 'map'
 type QueryView = string | null | (string | null)[] | undefined
 
 const SORT_KEYS = new Set<SortKey>(['title', 'status', 'priority', 'updatedAt'])
@@ -231,11 +331,6 @@ const PER_PAGE_VALUES = [25, 50, 100] as const
 const STATUS_VALUES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
 const PRIORITY_VALUES = ['low', 'medium', 'high'] as const
 const DATE_RANGE_VALUES: DateRangeValue[] = ['', 'today', 'next7d', 'next30d']
-
-const viewTabs: TabItem[] = [
-  { key: 'all', label: 'All' },
-  { key: 'board', label: 'Board' }
-]
 
 const boardColumns: KanbanColumnItem[] = [
   { status: 'New', label: 'New', color: 'text-sky' },
@@ -268,7 +363,10 @@ setBreadcrumbs(breadcrumbs)
 
 const getViewFromQuery = (value: QueryView): TicketView => {
   const raw = Array.isArray(value) ? value[0] : value
-  return raw === 'board' ? 'board' : 'all'
+  if (raw === 'board' || raw === 'calendar' || raw === 'map') {
+    return raw
+  }
+  return 'all'
 }
 
 const tickets = ref<Ticket[]>([])
@@ -283,6 +381,8 @@ const page = ref(1)
 const sortKey = ref<SortKey>('updatedAt')
 const sortDirection = ref<SortDirection>('desc')
 const loadingUsers = ref(false)
+const ticketsLoading = ref(true)
+const ticketsLoadError = ref<string | null>(null)
 const isApplyingRouteQuery = ref(false)
 const activeView = ref<TicketView>(getViewFromQuery(route.query.view))
 
@@ -312,6 +412,18 @@ const createErrors = reactive({
 })
 
 let ticketSubscription: { unsubscribe: () => void } | null = null
+
+const showTicketsSkeleton = computed(() => {
+  if (!authStore.bootstrapped || !locationStore.loaded) {
+    return true
+  }
+
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+
+  return ticketsLoading.value && tickets.value.length === 0 && !ticketsLoadError.value
+})
 
 const columns: TableColumn[] = [
   { key: 'title', label: 'Title', sortable: true },
@@ -527,8 +639,8 @@ const applyQuery = (query: LocationQuery) => {
 const buildQuery = (): LocationQueryRaw => {
   const query: LocationQueryRaw = {}
 
-  if (activeView.value === 'board') {
-    query.view = 'board'
+  if (activeView.value !== 'all') {
+    query.view = activeView.value
   }
 
   if (statusFilter.value) {
@@ -604,20 +716,51 @@ const ticketSelector = computed<Record<string, unknown> | null>(() => {
 
 const subscribeToTickets = () => {
   ticketSubscription?.unsubscribe()
+  ticketsLoadError.value = null
+  ticketsLoading.value = true
 
   if (!ticketSelector.value) {
     tickets.value = []
+    ticketsLoading.value = false
     return
   }
 
-  ticketSubscription = db.collections.tickets
-    .find({
-      selector: ticketSelector.value
-    })
-    .$
-    .subscribe((docs: Array<{ toJSON: () => Ticket }>) => {
-      tickets.value = docs.map((doc) => doc.toJSON()).filter((ticket) => !ticket.deletedAt)
-    })
+  try {
+    ticketSubscription = db.collections.tickets
+      .find({
+        selector: ticketSelector.value
+      })
+      .$
+      .subscribe(
+        (docs: Array<{ toJSON: () => Ticket }>) => {
+          tickets.value = docs.map((doc) => doc.toJSON()).filter((ticket) => !ticket.deletedAt)
+          ticketsLoading.value = false
+          ticketsLoadError.value = null
+        },
+        () => {
+          tickets.value = []
+          ticketsLoading.value = false
+          ticketsLoadError.value = 'rxdb-subscription-failed'
+        }
+      )
+  } catch {
+    tickets.value = []
+    ticketsLoading.value = false
+    ticketsLoadError.value = 'rxdb-query-failed'
+  }
+}
+
+const retryTicketsLoad = () => {
+  subscribeToTickets()
+}
+
+const clearFilters = () => {
+  statusFilter.value = ''
+  priorityFilter.value = ''
+  assigneeFilter.value = ''
+  dateRangeFilter.value = ''
+  searchQuery.value = ''
+  page.value = 1
 }
 
 const loadTeamMembers = async () => {
@@ -651,6 +794,15 @@ const filteredBySearch = computed(() => {
     return haystack.includes(needle)
   })
 })
+
+const hasActiveFilters = computed(
+  () =>
+    Boolean(statusFilter.value) ||
+    Boolean(priorityFilter.value) ||
+    Boolean(assigneeFilter.value) ||
+    Boolean(dateRangeFilter.value) ||
+    Boolean(searchQuery.value.trim())
+)
 
 const filteredByDate = computed(() => {
   if (!dateRangeFilter.value) {
@@ -743,6 +895,7 @@ const paginatedTickets = computed(() => {
 const pageRows = computed<TicketRow[]>(() =>
   paginatedTickets.value.map((ticket) => ({
     id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
     title: ticket.title,
     status: ticket.status,
     priority: ticket.priority,
@@ -757,6 +910,7 @@ const pageRows = computed<TicketRow[]>(() =>
 const boardTickets = computed<KanbanTicketCardItem[]>(() =>
   filteredByDate.value.map((ticket) => ({
     id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
     title: ticket.title,
     status: ticket.status,
     priority: ticket.priority,
@@ -771,6 +925,86 @@ const boardTickets = computed<KanbanTicketCardItem[]>(() =>
   }))
 )
 
+const mapTickets = computed<DispatchMapTicket[]>(() =>
+  filteredByDate.value.map((ticket) => ({
+    id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    locationId: ticket.locationId,
+    title: ticket.title,
+    status: ticket.status,
+    assignedToUserId: ticket.assignedToUserId,
+    scheduledStartAt: ticket.scheduledStartAt
+  }))
+)
+
+const technicianNameMap = computed<Record<string, string>>(() =>
+  Object.fromEntries(Array.from(assigneeNameMap.value.entries()))
+)
+
+const formatDateKey = (iso: string) => {
+  const parsed = new Date(iso)
+  if (Number.isNaN(parsed.getTime())) {
+    return ''
+  }
+
+  const year = parsed.getUTCFullYear()
+  const month = `${parsed.getUTCMonth() + 1}`.padStart(2, '0')
+  const day = `${parsed.getUTCDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const calendarGroups = computed(() => {
+  const buckets = new Map<string, Ticket[]>()
+
+  for (const ticket of filteredByDate.value) {
+    const source = ticket.scheduledStartAt ?? ticket.updatedAt
+    const key = formatDateKey(source)
+    if (!key) {
+      continue
+    }
+
+    if (!buckets.has(key)) {
+      buckets.set(key, [])
+    }
+
+    buckets.get(key)?.push(ticket)
+  }
+
+  return Array.from(buckets.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, groupTickets]) => ({
+      date,
+      label: new Date(`${date}T00:00:00`).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      }),
+      tickets: groupTickets.sort((left, right) => {
+        const leftTs = new Date(left.scheduledStartAt ?? left.updatedAt).getTime()
+        const rightTs = new Date(right.scheduledStartAt ?? right.updatedAt).getTime()
+        if (Number.isNaN(leftTs) || Number.isNaN(rightTs) || leftTs === rightTs) {
+          return left.title.localeCompare(right.title)
+        }
+        return leftTs - rightTs
+      })
+    }))
+})
+
+const mapSelectedDate = computed(() => {
+  if (dateRangeFilter.value === 'today') {
+    return formatDateKey(new Date().toISOString())
+  }
+
+  return calendarGroups.value[0]?.date ?? formatDateKey(new Date().toISOString())
+})
+
+const viewTabs = computed<TabItem[]>(() => [
+  { key: 'all', label: 'All', count: totalTickets.value },
+  { key: 'board', label: 'Board', count: boardTickets.value.length },
+  { key: 'calendar', label: 'Calendar', count: calendarGroups.value.length },
+  { key: 'map', label: 'Map', count: mapTickets.value.length }
+])
+
 const kanbanColumns = computed<Record<string, KanbanTicketCardItem[]>>(() => {
   const grouped: Record<string, KanbanTicketCardItem[]> = Object.fromEntries(
     boardColumns.map((column) => [column.status, [] as KanbanTicketCardItem[]])
@@ -783,18 +1017,6 @@ const kanbanColumns = computed<Record<string, KanbanTicketCardItem[]>>(() => {
   }
 
   return grouped
-})
-
-const emptyText = computed(() => {
-  if (loadingUsers.value) {
-    return 'Loading tickets...'
-  }
-
-  if (tickets.value.length === 0) {
-    return 'No tickets in local store'
-  }
-
-  return 'No tickets match current filters'
 })
 
 watch(

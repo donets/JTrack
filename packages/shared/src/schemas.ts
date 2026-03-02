@@ -45,13 +45,30 @@ export const ticketStatusSchema = z.enum([
   'Canceled'
 ])
 
+export const ticketActivityTypeSchema = z.enum([
+  'status_change',
+  'assignment',
+  'comment',
+  'attachment',
+  'payment',
+  'created'
+])
+
+export const ticketChecklistItemSchema = z.object({
+  id: idSchema,
+  label: z.string().min(1),
+  checked: z.boolean()
+})
+
 export const ticketSchema = z.object({
   id: idSchema,
   locationId: idSchema,
+  ticketNumber: z.number().int().positive().optional(),
   createdByUserId: idSchema,
   assignedToUserId: idSchema.nullable(),
   title: z.string().min(1),
   description: z.string().nullable(),
+  checklist: z.array(ticketChecklistItemSchema).default([]),
   status: ticketStatusSchema,
   scheduledStartAt: timestampSchema.nullable(),
   scheduledEndAt: timestampSchema.nullable(),
@@ -72,6 +89,17 @@ export const ticketCommentSchema = z.object({
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
   deletedAt: timestampSchema.nullable()
+})
+
+export const ticketActivitySchema = z.object({
+  id: idSchema,
+  ticketId: idSchema,
+  locationId: idSchema,
+  userId: idSchema.nullable(),
+  type: ticketActivityTypeSchema,
+  metadata: z.record(z.unknown()),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema
 })
 
 export const attachmentKindSchema = z.enum(['Photo', 'File'])
@@ -215,6 +243,7 @@ export const updateLocationSchema = z.object({
 export const createTicketSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
+  checklist: z.array(ticketChecklistItemSchema).optional(),
   assignedToUserId: idSchema.optional(),
   scheduledStartAt: timestampSchema.optional(),
   scheduledEndAt: timestampSchema.optional(),
@@ -223,11 +252,7 @@ export const createTicketSchema = z.object({
   currency: z.string().default('EUR')
 })
 
-export const updateTicketSchema = createTicketSchema
-  .partial()
-  .extend({
-    status: ticketStatusSchema.optional()
-  })
+export const updateTicketSchema = createTicketSchema.partial()
 
 export const ticketStatusUpdateInputSchema = z.object({
   status: ticketStatusSchema
@@ -255,6 +280,10 @@ export const ticketListResponseSchema = z.object({
 
 export const createCommentSchema = z.object({
   ticketId: idSchema,
+  body: z.string().min(1)
+})
+
+export const updateCommentSchema = z.object({
   body: z.string().min(1)
 })
 
@@ -295,8 +324,11 @@ export type Location = z.infer<typeof locationSchema>
 export type UserLocation = z.infer<typeof userLocationSchema>
 export type UserLocationStatus = z.infer<typeof userLocationStatusSchema>
 export type TicketStatus = z.infer<typeof ticketStatusSchema>
+export type TicketActivityType = z.infer<typeof ticketActivityTypeSchema>
+export type TicketChecklistItem = z.infer<typeof ticketChecklistItemSchema>
 export type Ticket = z.infer<typeof ticketSchema>
 export type TicketComment = z.infer<typeof ticketCommentSchema>
+export type TicketActivity = z.infer<typeof ticketActivitySchema>
 export type AttachmentKind = z.infer<typeof attachmentKindSchema>
 export type TicketAttachment = z.infer<typeof ticketAttachmentSchema>
 export type PaymentProvider = z.infer<typeof paymentProviderSchema>
@@ -318,6 +350,7 @@ export type UpdateTicketStatusInput = z.infer<typeof ticketStatusUpdateInputSche
 export type TicketListQuery = z.infer<typeof ticketListQuerySchema>
 export type TicketListResponse = z.infer<typeof ticketListResponseSchema>
 export type CreateCommentInput = z.infer<typeof createCommentSchema>
+export type UpdateCommentInput = z.infer<typeof updateCommentSchema>
 export type CreateAttachmentMetadataInput = z.infer<typeof createAttachmentMetadataSchema>
 export type PresignInput = z.infer<typeof presignInputSchema>
 export type UploadInput = z.infer<typeof uploadInputSchema>

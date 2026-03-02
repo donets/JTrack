@@ -8,6 +8,7 @@ import type {
   QuickAssignPayload,
   QuickAssignTechnicianOption
 } from '~/types/ui'
+import { formatTicketNumber } from '~/utils/format'
 
 type TeamMemberLike = {
   id: string
@@ -46,6 +47,7 @@ export const useDispatchBoard = (selectedDate: Ref<string>) => {
       .sort((left, right) => (left.updatedAt < right.updatedAt ? 1 : -1))
       .map((ticket) => ({
         id: ticket.id,
+        ticketNumber: ticket.ticketNumber,
         title: ticket.title,
         status: ticket.status,
         priority: ticket.priority,
@@ -239,11 +241,12 @@ export const useDispatchBoard = (selectedDate: Ref<string>) => {
 function toScheduledJob(ticket: Ticket): DispatchScheduledJob {
   return {
     id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
     title: ticket.title,
     status: ticket.status,
     priority: ticket.priority,
     assignedToUserId: ticket.assignedToUserId,
-    ticketCode: `#${ticket.id.slice(0, 8).toUpperCase()}`,
+    ticketCode: formatTicketNumber(ticket.ticketNumber, ticket.id),
     scheduledStartAt: ticket.scheduledStartAt,
     scheduledEndAt: ticket.scheduledEndAt
   }

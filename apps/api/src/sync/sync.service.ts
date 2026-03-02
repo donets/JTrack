@@ -6,6 +6,8 @@ import {
   type SyncPullResponse,
   type SyncPushRequest,
   type SyncPushResponse,
+  type TicketActivity,
+  type TicketChecklistItem,
   type Ticket,
   type TicketAttachment,
   type TicketComment,
@@ -13,6 +15,8 @@ import {
 } from '@jtrack/shared'
 import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
+
+const MAX_TICKET_NUMBER_ATTEMPTS = 5
 
 @Injectable()
 export class SyncService {
@@ -30,12 +34,13 @@ export class SyncService {
     const snapshotDate = new Date(snapshotAt)
     const offsets = {
       tickets: body.cursor?.ticketsOffset ?? 0,
+      ticketActivities: body.cursor?.ticketActivitiesOffset ?? 0,
       ticketComments: body.cursor?.ticketCommentsOffset ?? 0,
       ticketAttachments: body.cursor?.ticketAttachmentsOffset ?? 0,
       paymentRecords: body.cursor?.paymentRecordsOffset ?? 0
     }
 
-    const [ticketRows, ticketCommentRows, ticketAttachmentRows, paymentRecordRows] =
+    const [ticketRows, ticketActivityRows, ticketCommentRows, ticketAttachmentRows, paymentRecordRows] =
       await Promise.all([
         this.prisma.ticket.findMany({
           where: {
@@ -47,6 +52,15 @@ export class SyncService {
           },
           orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
           skip: offsets.tickets,
+          take: limit + 1
+        }),
+        this.prisma.ticketActivity.findMany({
+          where: {
+            locationId: body.locationId,
+            updatedAt: { gt: since, lte: snapshotDate }
+          },
+          orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+          skip: offsets.ticketActivities,
           take: limit + 1
         }),
         this.prisma.ticketComment.findMany({
@@ -85,16 +99,19 @@ export class SyncService {
       ])
 
     const tickets = ticketRows.slice(0, limit)
+    const ticketActivities = ticketActivityRows.slice(0, limit)
     const ticketComments = ticketCommentRows.slice(0, limit)
     const ticketAttachments = ticketAttachmentRows.slice(0, limit)
     const paymentRecords = paymentRecordRows.slice(0, limit)
     const ticketsHasMore = ticketRows.length > limit
+    const ticketActivitiesHasMore = ticketActivityRows.length > limit
     const ticketCommentsHasMore = ticketCommentRows.length > limit
     const ticketAttachmentsHasMore = ticketAttachmentRows.length > limit
     const paymentRecordsHasMore = paymentRecordRows.length > limit
 
     const changes: SyncChanges = {
       tickets: { created: [], updated: [], deleted: [] },
+      ticketActivities: { created: [], updated: [], deleted: [] },
       ticketComments: { created: [], updated: [], deleted: [] },
       ticketAttachments: { created: [], updated: [], deleted: [] },
       paymentRecords: { created: [], updated: [], deleted: [] }
@@ -107,6 +124,14 @@ export class SyncService {
         changes.tickets.created.push(this.serializeTicket(ticket))
       } else {
         changes.tickets.updated.push(this.serializeTicket(ticket))
+      }
+    }
+
+    for (const activity of ticketActivities) {
+      if (activity.createdAt.getTime() > lastPulledAt) {
+        changes.ticketActivities.created.push(this.serializeActivity(activity))
+      } else {
+        changes.ticketActivities.updated.push(this.serializeActivity(activity))
       }
     }
 
@@ -139,7 +164,11 @@ export class SyncService {
     }
 
     const hasMore =
-      ticketsHasMore || ticketCommentsHasMore || ticketAttachmentsHasMore || paymentRecordsHasMore
+      ticketsHasMore ||
+      ticketActivitiesHasMore ||
+      ticketCommentsHasMore ||
+      ticketAttachmentsHasMore ||
+      paymentRecordsHasMore
 
     return {
       changes,
@@ -149,6 +178,7 @@ export class SyncService {
         ? {
             snapshotAt,
             ticketsOffset: offsets.tickets + tickets.length,
+            ticketActivitiesOffset: offsets.ticketActivities + ticketActivities.length,
             ticketCommentsOffset: offsets.ticketComments + ticketComments.length,
             ticketAttachmentsOffset: offsets.ticketAttachments + ticketAttachments.length,
             paymentRecordsOffset: offsets.paymentRecords + paymentRecords.length
@@ -162,19 +192,42 @@ export class SyncService {
       throw new ForbiddenException('Body locationId must match x-location-id')
     }
 
+    const changes = this.sanitizeIncomingChanges(body.changes)
     const lastPulledAt = new Date(body.lastPulledAt ?? 0)
     const now = new Date()
 
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      await this.applyTicketChanges(tx, body.locationId, body.changes, lastPulledAt, now)
-      await this.applyCommentChanges(tx, body.locationId, body.changes, lastPulledAt, now)
-      await this.applyAttachmentChanges(tx, body.locationId, body.changes, lastPulledAt, now)
-      await this.applyPaymentChanges(tx, body.locationId, body.changes, lastPulledAt, now)
+      await this.applyTicketChanges(tx, body.locationId, changes, lastPulledAt, now)
+      await this.applyCommentChanges(tx, body.locationId, changes, lastPulledAt, now)
+      await this.applyAttachmentChanges(tx, body.locationId, changes, lastPulledAt, now)
+      await this.applyPaymentChanges(tx, body.locationId, changes, lastPulledAt, now)
     })
 
     return {
       ok: true,
       newTimestamp: now.getTime()
+    }
+  }
+
+  private sanitizeIncomingChanges(changes: SyncChanges): SyncChanges {
+    const hasClientActivities =
+      changes.ticketActivities.created.length > 0 ||
+      changes.ticketActivities.updated.length > 0 ||
+      changes.ticketActivities.deleted.length > 0
+
+    if (!hasClientActivities) {
+      return changes
+    }
+
+    // TicketActivity is server-authoritative audit trail and must not be accepted from client push.
+    console.warn('[sync] ignoring client-provided ticketActivities payload in push request')
+    return {
+      ...changes,
+      ticketActivities: {
+        created: [],
+        updated: [],
+        deleted: []
+      }
     }
   }
 
@@ -194,7 +247,8 @@ export class SyncService {
           select: {
             id: true,
             locationId: true,
-            updatedAt: true
+            updatedAt: true,
+            ticketNumber: true
           }
         })
     )
@@ -213,6 +267,7 @@ export class SyncService {
             description: record.description,
             status: record.status,
             assignedToUserId: record.assignedToUserId,
+            checklist: (record.checklist ?? []) as unknown as Prisma.InputJsonValue,
             scheduledStartAt: record.scheduledStartAt ? new Date(record.scheduledStartAt) : null,
             scheduledEndAt: record.scheduledEndAt ? new Date(record.scheduledEndAt) : null,
             priority: record.priority,
@@ -223,24 +278,7 @@ export class SyncService {
           }
         })
       } else {
-        await tx.ticket.create({
-          data: {
-            id: record.id,
-            locationId,
-            createdByUserId: record.createdByUserId,
-            assignedToUserId: record.assignedToUserId,
-            title: record.title,
-            description: record.description,
-            status: record.status,
-            scheduledStartAt: record.scheduledStartAt ? new Date(record.scheduledStartAt) : null,
-            scheduledEndAt: record.scheduledEndAt ? new Date(record.scheduledEndAt) : null,
-            priority: record.priority,
-            totalAmountCents: record.totalAmountCents,
-            currency: record.currency,
-            createdAt: new Date(record.createdAt),
-            updatedAt: now
-          }
-        })
+        await this.createTicketWithRetry(tx, locationId, record, now)
       }
     }
 
@@ -502,6 +540,50 @@ export class SyncService {
     }
   }
 
+  private async createTicketWithRetry(
+    tx: Prisma.TransactionClient,
+    locationId: string,
+    record: SyncChanges['tickets']['created'][number] | SyncChanges['tickets']['updated'][number],
+    now: Date
+  ) {
+    let requestedTicketNumber = record.ticketNumber ?? null
+
+    for (let attempt = 1; attempt <= MAX_TICKET_NUMBER_ATTEMPTS; attempt += 1) {
+      const ticketNumber = requestedTicketNumber ?? (await this.getNextTicketNumber(tx, locationId))
+
+      try {
+        await tx.ticket.create({
+          data: {
+            id: record.id,
+            locationId,
+            ticketNumber,
+            createdByUserId: record.createdByUserId,
+            assignedToUserId: record.assignedToUserId,
+            title: record.title,
+            description: record.description,
+            checklist: (record.checklist ?? []) as unknown as Prisma.InputJsonValue,
+            status: record.status,
+            scheduledStartAt: record.scheduledStartAt ? new Date(record.scheduledStartAt) : null,
+            scheduledEndAt: record.scheduledEndAt ? new Date(record.scheduledEndAt) : null,
+            priority: record.priority,
+            totalAmountCents: record.totalAmountCents,
+            currency: record.currency,
+            createdAt: new Date(record.createdAt),
+            updatedAt: now
+          }
+        })
+        return
+      } catch (error) {
+        if (!this.isTicketNumberRetryableError(error) || attempt >= MAX_TICKET_NUMBER_ATTEMPTS) {
+          throw error
+        }
+
+        // If provided number conflicts, switch to server-allocated number on next retry.
+        requestedTicketNumber = null
+      }
+    }
+  }
+
   private async loadExistingById<T extends { id: string; locationId: string; updatedAt: Date }>(
     ids: string[],
     loader: (ids: string[]) => Promise<T[]>
@@ -520,13 +602,55 @@ export class SyncService {
     return Array.from(new Set(ids))
   }
 
+  private async getNextTicketNumber(
+    tx: Prisma.TransactionClient,
+    locationId: string
+  ): Promise<number> {
+    const aggregate = await tx.ticket.aggregate({
+      where: { locationId },
+      _max: { ticketNumber: true }
+    })
+
+    return (aggregate._max.ticketNumber ?? 0) + 1
+  }
+
+  private isTicketNumberRetryableError(error: unknown) {
+    if (!error || typeof error !== 'object') {
+      return false
+    }
+
+    const code = 'code' in error ? (error as { code?: string }).code : undefined
+    if (code === 'P2034') {
+      return true
+    }
+
+    if (code !== 'P2002') {
+      return false
+    }
+
+    const meta = 'meta' in error ? (error as { meta?: { target?: string[] | string } }).meta : undefined
+    const target = meta?.target
+
+    if (Array.isArray(target)) {
+      return target.includes('locationId') && target.includes('ticketNumber')
+    }
+
+    if (typeof target === 'string') {
+      return target.includes('locationId') && target.includes('ticketNumber')
+    }
+
+    return true
+  }
+
   private serializeTicket(ticket: {
     id: string
     locationId: string
+    ticketNumber: number
     createdByUserId: string
     assignedToUserId: string | null
     title: string
     description: string | null
+    checklist: unknown
     status: string
     scheduledStartAt: Date | null
     scheduledEndAt: Date | null
@@ -541,7 +665,8 @@ export class SyncService {
 
     return {
       ...serialized,
-      status: ticket.status as Ticket['status']
+      status: ticket.status as Ticket['status'],
+      checklist: this.normalizeChecklist(ticket.checklist)
     }
   }
 
@@ -556,6 +681,28 @@ export class SyncService {
     deletedAt: Date | null
   }): TicketComment {
     return serializeDates(comment) as TicketComment
+  }
+
+  private serializeActivity(activity: {
+    id: string
+    ticketId: string
+    locationId: string
+    userId: string | null
+    type: string
+    metadata: Prisma.JsonValue
+    createdAt: Date
+    updatedAt: Date
+  }): TicketActivity {
+    const serialized = serializeDates(activity)
+
+    return {
+      ...serialized,
+      type: activity.type as TicketActivity['type'],
+      metadata:
+        activity.metadata && typeof activity.metadata === 'object' && !Array.isArray(activity.metadata)
+          ? (activity.metadata as TicketActivity['metadata'])
+          : {}
+    }
   }
 
   private serializeAttachment(attachment: {
@@ -600,5 +747,33 @@ export class SyncService {
       provider: payment.provider as PaymentRecord['provider'],
       status: payment.status as PaymentRecord['status']
     }
+  }
+
+  private normalizeChecklist(raw: unknown): TicketChecklistItem[] {
+    if (!Array.isArray(raw)) {
+      return []
+    }
+
+    const normalized: TicketChecklistItem[] = []
+    for (const item of raw) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        continue
+      }
+
+      const record = item as Record<string, unknown>
+      if (
+        typeof record.id === 'string' &&
+        typeof record.label === 'string' &&
+        typeof record.checked === 'boolean'
+      ) {
+        normalized.push({
+          id: record.id,
+          label: record.label,
+          checked: record.checked
+        })
+      }
+    }
+
+    return normalized
   }
 }

@@ -19,6 +19,14 @@ export type TicketStatus =
   | 'Paid'
   | 'Canceled'
 
+export type TicketActivityType =
+  | 'status_change'
+  | 'assignment'
+  | 'comment'
+  | 'attachment'
+  | 'payment'
+  | 'created'
+
 export type AuthTokenType = 'EmailVerification' | 'PasswordReset' | 'InviteAccept'
 
 export type AttachmentKind = 'Photo' | 'File'
@@ -64,10 +72,12 @@ export interface LocationWithMembership extends Location {
 export interface Ticket {
   id: UUID
   locationId: UUID
+  ticketNumber: number
   createdByUserId: UUID
   assignedToUserId: UUID | null
   title: string
   description: string | null
+  checklist: TicketChecklistItem[]
   status: TicketStatus
   scheduledStartAt: IsoDateTime | null
   scheduledEndAt: IsoDateTime | null
@@ -79,6 +89,12 @@ export interface Ticket {
   deletedAt: IsoDateTime | null
 }
 
+export interface TicketChecklistItem {
+  id: string
+  label: string
+  checked: boolean
+}
+
 export interface TicketComment {
   id: UUID
   ticketId: UUID
@@ -88,6 +104,17 @@ export interface TicketComment {
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
   deletedAt: IsoDateTime | null
+}
+
+export interface TicketActivity {
+  id: UUID
+  ticketId: UUID
+  locationId: UUID
+  userId: UUID | null
+  type: TicketActivityType
+  metadata: Record<string, unknown>
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
 }
 
 export interface TicketAttachment {
@@ -255,6 +282,7 @@ export interface UpdateLocationInput {
 export interface CreateTicketInput {
   title: string
   description?: string
+  checklist?: TicketChecklistItem[]
   assignedToUserId?: UUID
   scheduledStartAt?: IsoDateTime
   scheduledEndAt?: IsoDateTime
@@ -263,9 +291,7 @@ export interface CreateTicketInput {
   currency?: string
 }
 
-export interface UpdateTicketInput extends Partial<CreateTicketInput> {
-  status?: TicketStatus
-}
+export interface UpdateTicketInput extends Partial<CreateTicketInput> {}
 
 export interface UpdateTicketStatusInput {
   status: TicketStatus
@@ -292,6 +318,10 @@ export interface TicketListResponse {
 
 export interface CreateCommentInput {
   ticketId: UUID
+  body: string
+}
+
+export interface UpdateCommentInput {
   body: string
 }
 
@@ -346,6 +376,7 @@ export interface SyncEntityChanges<T> {
 
 export interface SyncChanges {
   tickets: SyncEntityChanges<Ticket>
+  ticketActivities: SyncEntityChanges<TicketActivity>
   ticketComments: SyncEntityChanges<TicketComment>
   ticketAttachments: SyncEntityChanges<TicketAttachment>
   paymentRecords: SyncEntityChanges<PaymentRecord>
@@ -361,6 +392,7 @@ export interface SyncPullRequest {
 export interface SyncPullCursor {
   snapshotAt: UnixMs
   ticketsOffset: number
+  ticketActivitiesOffset: number
   ticketCommentsOffset: number
   ticketAttachmentsOffset: number
   paymentRecordsOffset: number

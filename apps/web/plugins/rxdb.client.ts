@@ -9,10 +9,24 @@ const ticketSchema = {
   properties: {
     id: { type: 'string', maxLength: 64 },
     locationId: { type: 'string' },
+    ticketNumber: { type: ['number', 'null'] },
     createdByUserId: { type: 'string' },
     assignedToUserId: { type: ['string', 'null'] },
     title: { type: 'string' },
     description: { type: ['string', 'null'] },
+    checklist: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          checked: { type: 'boolean' }
+        },
+        required: ['id', 'label', 'checked'],
+        additionalProperties: false
+      }
+    },
     status: { type: 'string' },
     scheduledStartAt: { type: ['string', 'null'] },
     scheduledEndAt: { type: ['string', 'null'] },
@@ -42,6 +56,24 @@ const ticketCommentSchema = {
     deletedAt: { type: ['string', 'null'] }
   },
   required: ['id', 'ticketId', 'locationId', 'authorUserId', 'body', 'createdAt', 'updatedAt']
+}
+
+const ticketActivitySchema = {
+  title: 'ticketActivities',
+  version: 0,
+  primaryKey: 'id',
+  type: 'object',
+  properties: {
+    id: { type: 'string', maxLength: 64 },
+    ticketId: { type: 'string' },
+    locationId: { type: 'string' },
+    userId: { type: ['string', 'null'] },
+    type: { type: 'string' },
+    metadata: { type: 'object', additionalProperties: true },
+    createdAt: { type: 'string' },
+    updatedAt: { type: 'string' }
+  },
+  required: ['id', 'ticketId', 'locationId', 'type', 'metadata', 'createdAt', 'updatedAt']
 }
 
 const ticketAttachmentSchema = {
@@ -161,16 +193,44 @@ const pendingAttachmentUploadSchema = {
 
 let rxdbPromise: Promise<RxDatabase> | null = null
 let rxdbInstance: RxDatabase | null = null
+const DATABASE_SCHEMA_EPOCH = 2
+const DATABASE_NAME = `jtrack_crm_v${DATABASE_SCHEMA_EPOCH}`
+const RECOVERY_DATABASE_NAME = `${DATABASE_NAME}_recovery`
+const RECOVERY_NOTICE_STORAGE_KEY = 'jtrack.rxdb.recoveryNotice'
+const rxStorage = getRxStorageDexie()
 
-async function createDatabase() {
+const isSchemaMismatchError = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const code = 'code' in error ? (error as { code?: string }).code : undefined
+  if (code === 'DB6') {
+    return true
+  }
+
+  const message = 'message' in error ? (error as { message?: string }).message : undefined
+  if (typeof message === 'string' && message.includes('DB6')) {
+    return true
+  }
+
+  try {
+    return JSON.stringify(error).includes('DB6')
+  } catch {
+    return false
+  }
+}
+
+async function createDatabase(name: string) {
   const database = await createRxDatabase({
-    name: 'jtrack_crm',
-    storage: getRxStorageDexie(),
+    name,
+    storage: rxStorage,
     closeDuplicates: true
   })
 
   await database.addCollections({
     tickets: { schema: ticketSchema },
+    ticketActivities: { schema: ticketActivitySchema },
     ticketComments: { schema: ticketCommentSchema },
     ticketAttachments: { schema: ticketAttachmentSchema },
     paymentRecords: { schema: paymentRecordSchema },
@@ -182,12 +242,67 @@ async function createDatabase() {
   return database
 }
 
+const notifyRecoveryFallback = (reason: string) => {
+  console.warn(
+    `[rxdb] schema mismatch recovery activated (${reason}). Existing local DB is preserved to avoid silent outbox data loss.`
+  )
+
+  if (!import.meta.client) {
+    return
+  }
+
+  try {
+    localStorage.setItem(
+      RECOVERY_NOTICE_STORAGE_KEY,
+      JSON.stringify({
+        reason,
+        at: new Date().toISOString()
+      })
+    )
+  } catch {
+    // ignore storage quota/security failures
+  }
+}
+
+async function createDatabaseWithRecovery() {
+  try {
+    return await createDatabase(DATABASE_NAME)
+  } catch (error) {
+    if (!isSchemaMismatchError(error)) {
+      throw error
+    }
+
+    notifyRecoveryFallback('primary-db6')
+
+    try {
+      return await createDatabase(RECOVERY_DATABASE_NAME)
+    } catch (retryError) {
+      if (!isSchemaMismatchError(retryError)) {
+        throw retryError
+      }
+
+      notifyRecoveryFallback('recovery-db6')
+
+      // Last-resort fallback: unique DB name guarantees startup instead of app-level crash.
+      const emergencyName = `${RECOVERY_DATABASE_NAME}_${Date.now()}`
+      notifyRecoveryFallback(`emergency-${emergencyName}`)
+      return createDatabase(emergencyName)
+    }
+  }
+}
+
 async function getOrCreateDatabase() {
   if (!rxdbPromise) {
-    rxdbPromise = createDatabase().then((database) => {
-      rxdbInstance = database
-      return database
-    })
+    rxdbPromise = createDatabaseWithRecovery()
+      .then((database) => {
+        rxdbInstance = database
+        return database
+      })
+      .catch((error) => {
+        rxdbPromise = null
+        rxdbInstance = null
+        throw error
+      })
   }
 
   const database = await rxdbPromise

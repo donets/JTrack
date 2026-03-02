@@ -17,17 +17,27 @@ export type TableColumn = {
   hideClass?: string
 }
 
-export type TimelineEventType = 'comment' | 'status_change' | 'payment' | 'attachment'
+export type TimelineEventType =
+  | 'comment'
+  | 'status_change'
+  | 'payment'
+  | 'attachment'
+  | 'assignment'
+  | 'created'
 
 export type TimelineItem = {
   id: string
   type: TimelineEventType
   actor: {
+    id?: string | null
     name: string
     avatarUrl?: string
   }
   content: string
   timestamp: string
+  commentId?: string
+  icon?: string
+  color?: 'mist' | 'sky' | 'mint' | 'violet' | 'flame' | 'rose'
 }
 
 export type TabItem = {
@@ -45,6 +55,7 @@ export type BadgeVariant = 'mint' | 'flame' | 'sky' | 'rose' | 'violet' | 'mist'
 
 export type KanbanTicketCardItem = {
   id: string
+  ticketNumber?: number
   title: string
   status: TicketStatus
   priority: string | null
@@ -83,6 +94,7 @@ export type QuickAssignTechnicianOption = {
 
 export type DispatchScheduledJob = {
   id: string
+  ticketNumber?: number
   title: string
   status: TicketStatus
   priority: string | null
@@ -126,6 +138,7 @@ export type DispatchGanttRowOpenPayload = {
 
 export type DispatchMapTicket = {
   id: string
+  ticketNumber?: number
   locationId: string
   title: string
   status: TicketStatus

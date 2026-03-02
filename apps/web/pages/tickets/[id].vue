@@ -1,7 +1,8 @@
 <template>
   <section v-if="ticket" class="space-y-4">
     <JPageHeader
-      :title="ticket.title"
+      class="hidden md:block"
+      :title="ticketTitle"
       :breadcrumbs="breadcrumbs"
     >
       <template #status>
@@ -16,32 +17,122 @@
       </template>
     </JPageHeader>
 
+    <section class="rounded-lg border border-slate-200 bg-white p-3 md:hidden">
+      <button type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-700" @click="goBackToTickets">
+        ← Back to tickets
+      </button>
+      <div class="mt-2 flex items-start justify-between gap-3">
+        <h1 class="text-lg font-bold text-ink">{{ ticketTitle }}</h1>
+        <JBadge :variant="statusToBadgeVariant(ticket.status)">{{ statusToLabel(ticket.status) }}</JBadge>
+      </div>
+    </section>
+
     <div class="grid grid-cols-3 gap-2 md:hidden">
       <JButton size="sm" :disabled="!canStartJob || updatingStatus" @click="updateTicketStatus('InProgress')">
         Start Job
       </JButton>
-      <JButton size="sm" variant="secondary">Navigate</JButton>
-      <JButton size="sm" variant="secondary">Call</JButton>
+      <JButton size="sm" variant="secondary" :disabled="!navigationUrl" @click="openNavigation">Navigate</JButton>
+      <JButton size="sm" variant="secondary" :disabled="!customerPhone" @click="callCustomer">Call Customer</JButton>
     </div>
 
-    <div class="flex flex-col gap-6 md:flex-row">
-      <div class="min-w-0 flex-[3] space-y-6">
-        <JCard title="Description">
+    <section class="space-y-2 md:hidden">
+      <article class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-ink"
+          @click="toggleMobileSection('details')"
+        >
+          <span>Details</span>
+          <span class="text-slate-500">{{ mobileSections.details ? '−' : '+' }}</span>
+        </button>
+        <div v-if="mobileSections.details" class="border-t border-slate-200 p-4">
+          <dl class="space-y-3 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Status</dt>
+              <dd>
+                <div class="flex items-center gap-2">
+                  <JBadge :variant="statusToBadgeVariant(ticket.status)">{{ statusToLabel(ticket.status) }}</JBadge>
+                  <JDropdown v-if="statusDropdownItems.length > 0" :items="statusDropdownItems" align="right">
+                    <template #trigger>
+                      <JButton size="sm" variant="ghost" :disabled="updatingStatus">Change</JButton>
+                    </template>
+                  </JDropdown>
+                </div>
+              </dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Priority</dt>
+              <dd>
+                <JBadge :variant="priorityToBadgeVariant(ticket.priority)">{{ formatPriorityLabel(ticket.priority) }}</JBadge>
+              </dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Assigned</dt>
+              <dd class="text-right text-ink">{{ assignedLabel }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Created by</dt>
+              <dd class="text-right text-ink">{{ createdByLabel }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Created</dt>
+              <dd class="text-right text-ink">{{ formatDateTime(ticket.createdAt) }}</dd>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-500">Scheduled</dt>
+              <dd class="text-right text-ink">{{ scheduledRangeLabel }}</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-ink"
+          @click="toggleMobileSection('description')"
+        >
+          <span>Description</span>
+          <span class="text-slate-500">{{ mobileSections.description ? '−' : '+' }}</span>
+        </button>
+        <div v-if="mobileSections.description" class="border-t border-slate-200 p-4">
           <p class="text-sm text-ink-light">
             {{ ticket.description || 'No description provided.' }}
           </p>
-        </JCard>
+        </div>
+      </article>
 
-        <JCard title="Activity">
-          <JTimeline :items="timelineItems" />
-        </JCard>
+      <article class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-ink"
+          @click="toggleMobileSection('comments')"
+        >
+          <span>Comments</span>
+          <span class="text-slate-500">{{ mobileSections.comments ? '−' : '+' }}</span>
+        </button>
+        <div v-if="mobileSections.comments" class="space-y-4 border-t border-slate-200 p-4">
+          <JTimeline
+            :items="timelineItems"
+            :deletable-comment-ids="deletableCommentIds"
+            :editable-comment-ids="editableCommentIds"
+            :deleting-comment-id="deletingCommentId"
+            :editing-comment-id="editingCommentId"
+            @edit-comment="openCommentEditModal"
+            @delete-comment="deleteComment"
+          />
 
-        <JCard>
           <form class="space-y-3" @submit.prevent="addComment">
             <JTextarea
               v-model="commentBody"
               placeholder="Write a comment..."
               :rows="3"
+              @keydown="onCommentEditorKeydown"
             />
 
             <div class="flex flex-wrap items-center justify-end gap-2">
@@ -50,6 +141,57 @@
               </JButton>
               <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="capturePhoto">
                 Photo
+              </JButton>
+              <JButton size="sm" variant="secondary" @click="toggleVoiceComment">
+                {{ voiceCommentActive ? 'Stop Mic' : 'Mic' }}
+              </JButton>
+              <JButton size="sm" type="submit" :disabled="!commentBody.trim()" :loading="submittingComment">
+                Send
+              </JButton>
+            </div>
+          </form>
+        </div>
+      </article>
+    </section>
+
+    <div class="flex flex-col gap-6 md:flex-row">
+      <div class="min-w-0 flex-[3] space-y-6">
+        <JCard class="hidden md:block" title="Description">
+          <p class="text-sm text-ink-light">
+            {{ ticket.description || 'No description provided.' }}
+          </p>
+        </JCard>
+
+        <JCard class="hidden md:block" title="Activity">
+          <JTimeline
+            :items="timelineItems"
+            :deletable-comment-ids="deletableCommentIds"
+            :editable-comment-ids="editableCommentIds"
+            :deleting-comment-id="deletingCommentId"
+            :editing-comment-id="editingCommentId"
+            @edit-comment="openCommentEditModal"
+            @delete-comment="deleteComment"
+          />
+        </JCard>
+
+        <JCard class="hidden md:block">
+          <form class="space-y-3" @submit.prevent="addComment">
+            <JTextarea
+              v-model="commentBody"
+              placeholder="Write a comment..."
+              :rows="3"
+              @keydown="onCommentEditorKeydown"
+            />
+
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="openFileDialog">
+                Attach
+              </JButton>
+              <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="capturePhoto">
+                Photo
+              </JButton>
+              <JButton size="sm" variant="secondary" @click="toggleVoiceComment">
+                {{ voiceCommentActive ? 'Stop Mic' : 'Mic' }}
               </JButton>
               <JButton size="sm" type="submit" :disabled="!commentBody.trim()" :loading="submittingComment">
                 Send
@@ -72,41 +214,89 @@
               @drop.prevent="onDropFiles"
               @dragover.prevent
             >
-              Drag & drop files here, or click to upload
+              Drag & drop files here or click to upload
             </button>
 
-            <div v-if="attachments.length > 0" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div v-if="uploadProgressItems.length > 0" class="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3">
+              <div v-for="item in uploadProgressItems" :key="item.id" class="space-y-1">
+                <div class="flex items-center justify-between gap-2 text-xs">
+                  <p class="truncate text-ink">{{ item.name }}</p>
+                  <p
+                    :class="item.status === 'error' ? 'text-rose-600' : item.status === 'done' ? 'text-mint' : 'text-slate-500'"
+                  >
+                    {{ item.status === 'done' ? 'Done' : item.status === 'error' ? 'Failed' : `${item.progress}%` }}
+                  </p>
+                </div>
+                <JProgress :value="item.progress" :max="100" :variant="item.status === 'error' ? 'flame' : 'mint'" />
+              </div>
+            </div>
+
+            <div v-if="imageAttachments.length > 0" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <article
-                v-for="attachment in attachments"
+                v-for="attachment in imageAttachments"
                 :key="attachment.id"
-                class="overflow-hidden rounded-md border border-slate-200 bg-white"
+                class="relative overflow-hidden rounded-md border border-slate-200 bg-white"
               >
-                <div v-if="isImageAttachment(attachment)" class="aspect-video bg-slate-100">
+                <button
+                  type="button"
+                  class="aspect-video w-full bg-slate-100"
+                  @click="openAttachmentPreview(attachment)"
+                >
                   <img
                     :src="attachmentUrl(attachment.url)"
-                    :alt="attachment.storageKey"
+                    :alt="attachmentDisplayName(attachment)"
                     class="h-full w-full object-cover"
                   />
-                </div>
-                <div v-else class="flex aspect-video items-center justify-center bg-slate-50 text-3xl text-slate-300">
-                  📎
+                </button>
+                <div class="space-y-1 p-3 text-xs">
+                  <p class="truncate font-semibold text-ink">{{ attachmentDisplayName(attachment) }}</p>
+                  <p class="text-slate-500">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
+                  <p v-if="isPendingAttachment(attachment)" class="text-amber-700">Pending upload</p>
                 </div>
 
-                <div class="space-y-1 p-3 text-xs">
-                  <p class="truncate font-semibold text-ink">{{ attachment.storageKey }}</p>
-                  <p class="text-slate-500">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
-                  <p v-if="attachment.storageKey.startsWith('pending/')" class="text-amber-700">Pending upload</p>
-                </div>
+                <button
+                  type="button"
+                  class="absolute right-2 top-2 rounded bg-white/90 px-2 py-1 text-xs text-rose-600 shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="deletingAttachmentId === attachment.id || uploadingAttachment"
+                  @click="deleteAttachment(attachment)"
+                >
+                  Delete
+                </button>
               </article>
             </div>
 
-            <p v-else class="text-sm text-slate-500">No attachments yet.</p>
+            <ul v-if="fileAttachments.length > 0" class="space-y-2">
+              <li
+                v-for="attachment in fileAttachments"
+                :key="attachment.id"
+                class="flex items-start justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-ink">
+                    {{ fileIcon(attachment.mimeType) }} {{ attachmentDisplayName(attachment) }}
+                  </p>
+                  <p class="text-xs text-slate-500">{{ attachment.mimeType }} · {{ formatBytes(attachment.size) }}</p>
+                  <p v-if="isPendingAttachment(attachment)" class="text-xs text-amber-700">Pending upload</p>
+                </div>
+
+                <button
+                  type="button"
+                  class="shrink-0 rounded px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="deletingAttachmentId === attachment.id || uploadingAttachment"
+                  @click="deleteAttachment(attachment)"
+                >
+                  Delete
+                </button>
+              </li>
+            </ul>
+
+            <p v-if="attachments.length === 0" class="text-sm text-slate-500">No attachments yet.</p>
           </div>
         </JCard>
       </div>
 
       <div class="w-full space-y-4 md:max-w-[300px] lg:max-w-[320px]">
-        <JCard title="Details">
+        <JCard class="hidden md:block" title="Details">
           <dl class="space-y-3 text-sm">
             <div class="flex items-center justify-between gap-3">
               <dt class="text-slate-500">Status</dt>
@@ -172,23 +362,26 @@
           </JButton>
         </JCard>
 
-        <JCard title="Checklist">
-          <p class="mb-2 text-xs text-slate-500">{{ completedChecklistCount }}/{{ checklistItems.length }}</p>
-          <JProgress :value="completedChecklistCount" :max="checklistItems.length" variant="mint" />
-
-          <ul class="mt-3 space-y-2">
-            <li v-for="item in checklistItems" :key="item.id">
-              <JCheckbox
-                v-model="item.done"
-                :label="item.label"
-              />
-            </li>
-          </ul>
-        </JCard>
+        <TicketChecklistCard :items="checklistItems" :disabled="checklistSaving" @toggle="onChecklistToggle" />
       </div>
     </div>
 
-    <input ref="fileInput" class="hidden" type="file" @change="onWebFileSelected" />
+    <input ref="fileInput" class="hidden" type="file" multiple @change="onWebFileSelected" />
+
+    <JModal v-model="attachmentPreviewOpen" title="Attachment Preview" size="lg">
+      <div class="space-y-3">
+        <img
+          v-if="previewAttachment"
+          :src="attachmentUrl(previewAttachment.url)"
+          :alt="attachmentDisplayName(previewAttachment)"
+          class="max-h-[65vh] w-full rounded-md border border-slate-200 object-contain"
+        />
+        <div v-if="previewAttachment" class="text-xs text-slate-500">
+          {{ attachmentDisplayName(previewAttachment) }} · {{ previewAttachment.mimeType }} ·
+          {{ formatBytes(previewAttachment.size) }}
+        </div>
+      </div>
+    </JModal>
 
     <JModal v-model="editModalOpen" title="Edit Ticket" size="lg">
       <form id="edit-ticket-form" class="space-y-4" @submit.prevent="submitEditTicket">
@@ -271,6 +464,31 @@
         <JButton type="submit" form="record-payment-form" :loading="paymentSubmitting">Record Payment</JButton>
       </template>
     </JModal>
+
+    <JModal v-model="commentEditModalOpen" title="Edit Comment" size="md">
+      <form id="edit-comment-form" class="space-y-4" @submit.prevent="submitCommentEdit">
+        <JTextarea
+          v-model="editingCommentBody"
+          label="Comment"
+          :rows="4"
+          @keydown="onEditCommentKeydown"
+        />
+      </form>
+
+      <template #footer>
+        <JButton variant="secondary" :disabled="editingCommentId !== null" @click="closeCommentEditModal">
+          Cancel
+        </JButton>
+        <JButton
+          type="submit"
+          form="edit-comment-form"
+          :loading="editingCommentId !== null"
+          :disabled="!editingCommentBody.trim() || editingCommentBody.trim() === editingCommentInitialBody"
+        >
+          Save
+        </JButton>
+      </template>
+    </JModal>
   </section>
 
   <section v-else class="rounded-xl border border-slate-200 bg-white p-8 text-center text-base text-slate-500">
@@ -279,8 +497,15 @@
 </template>
 
 <script setup lang="ts">
-import type { BreadcrumbItem, DropdownItem, TimelineItem } from '~/types/ui'
-import type { PaymentRecord, Ticket, TicketAttachment, TicketComment, TicketStatus } from '@jtrack/shared'
+import type { BreadcrumbItem, DropdownItem } from '~/types/ui'
+import {
+  listAllowedStatusTransitions,
+  type PaymentRecord,
+  type Ticket,
+  type TicketAttachment,
+  type TicketChecklistItem,
+  type TicketStatus
+} from '@jtrack/shared'
 import {
   priorityToBadgeVariant,
   statusToBadgeVariant,
@@ -290,6 +515,7 @@ import {
   formatAmountInput,
   formatDateTime,
   formatMoney,
+  formatTicketNumber,
   formatPriorityLabel,
   parseAmountToCents
 } from '~/utils/format'
@@ -299,28 +525,38 @@ interface LocationUser {
   name: string
 }
 
-const ALL_STATUSES: TicketStatus[] = ['New', 'Scheduled', 'InProgress', 'Done', 'Invoiced', 'Paid', 'Canceled']
-const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-  New: ['Scheduled', 'InProgress', 'Canceled'],
-  Scheduled: ['InProgress', 'Canceled'],
-  InProgress: ['Done', 'Canceled'],
-  Done: ['Invoiced', 'Canceled'],
-  Invoiced: ['Paid', 'Canceled'],
-  Paid: [],
-  Canceled: []
+interface UploadProgressItem {
+  id: string
+  name: string
+  progress: number
+  status: 'uploading' | 'done' | 'error'
 }
 
-const TECHNICIAN_TRANSITIONS: Partial<Record<TicketStatus, TicketStatus[]>> = {
-  New: ['InProgress'],
-  Scheduled: ['InProgress'],
-  InProgress: ['Done']
+interface CommentSpeechRecognitionResultEvent {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>
 }
 
-const STATUS_EVENT_PREFIX = '[status-change]'
+interface CommentSpeechRecognitionErrorEvent {
+  error?: string
+}
+
+interface CommentSpeechRecognition {
+  lang: string
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((event: CommentSpeechRecognitionResultEvent) => void) | null
+  onerror: ((event: CommentSpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+}
+
+type CommentSpeechRecognitionCtor = new () => CommentSpeechRecognition
 
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
+const authStore = useAuthStore()
 const locationStore = useLocationStore()
 const repository = useOfflineRepository()
 const syncStore = useSyncStore()
@@ -333,7 +569,6 @@ const { activeRole, hasPrivilege } = useRbacGuard()
 const ticketId = route.params.id as string
 
 const ticket = ref<Ticket | null>(null)
-const comments = ref<TicketComment[]>([])
 const attachments = ref<TicketAttachment[]>([])
 const payments = ref<PaymentRecord[]>([])
 const users = ref<LocationUser[]>([])
@@ -341,8 +576,25 @@ const commentBody = ref('')
 const submittingComment = ref(false)
 const uploadingAttachment = ref(false)
 const updatingStatus = ref(false)
+const checklistSaving = ref(false)
+const deletingCommentId = ref<string | null>(null)
+const editingCommentId = ref<string | null>(null)
+const deletingAttachmentId = ref<string | null>(null)
+const attachmentPreviewOpen = ref(false)
+const previewAttachment = ref<TicketAttachment | null>(null)
+const uploadProgressItems = ref<UploadProgressItem[]>([])
 const isDragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const voiceCommentActive = ref(false)
+const commentEditModalOpen = ref(false)
+const commentEditTargetId = ref<string | null>(null)
+const editingCommentBody = ref('')
+const editingCommentInitialBody = ref('')
+const mobileSections = reactive({
+  details: false,
+  description: true,
+  comments: true
+})
 const editModalOpen = ref(false)
 const editSubmitting = ref(false)
 const paymentModalOpen = ref(false)
@@ -377,17 +629,19 @@ const paymentErrors = reactive({
   amount: ''
 })
 
-const checklistItems = reactive([
-  { id: 'inspect', label: 'Inspect unit', done: false },
-  { id: 'refrigerant', label: 'Check refrigerant levels', done: false },
-  { id: 'thermostat', label: 'Test thermostat', done: false },
-  { id: 'signoff', label: 'Customer sign-off', done: false }
-])
+const DEFAULT_CHECKLIST_ITEMS: TicketChecklistItem[] = [
+  { id: 'inspect', label: 'Inspect unit', checked: false },
+  { id: 'refrigerant', label: 'Check refrigerant levels', checked: false },
+  { id: 'thermostat', label: 'Test thermostat', checked: false },
+  { id: 'signoff', label: 'Customer sign-off', checked: false }
+]
+
+const checklistItems = ref<TicketChecklistItem[]>([])
 
 let ticketSub: { unsubscribe: () => void } | null = null
-let commentsSub: { unsubscribe: () => void } | null = null
 let attachmentsSub: { unsubscribe: () => void } | null = null
 let paymentsSub: { unsubscribe: () => void } | null = null
+let commentSpeechRecognition: CommentSpeechRecognition | null = null
 
 const breadcrumbs = ref<BreadcrumbItem[]>([
   { label: 'Dashboard', to: '/dashboard' },
@@ -417,6 +671,14 @@ const userNameById = computed(() => {
   }
 
   return map
+})
+
+const ticketTitle = computed(() => {
+  if (!ticket.value) {
+    return 'Ticket'
+  }
+
+  return `${formatTicketNumber(ticket.value.ticketNumber, ticket.value.id)} ${ticket.value.title}`
 })
 
 const prioritySelectOptions = [
@@ -485,44 +747,42 @@ const balanceAmountCents = computed(() => {
 const totalAmountLabel = computed(() => formatMoney(ticket.value?.totalAmountCents ?? null, ticket.value?.currency ?? 'EUR'))
 const paidAmountLabel = computed(() => formatMoney(paidAmountCents.value, ticket.value?.currency ?? 'EUR'))
 const balanceAmountLabel = computed(() => formatMoney(balanceAmountCents.value, ticket.value?.currency ?? 'EUR'))
+const imageAttachments = computed(() => attachments.value.filter((attachment) => isImageAttachment(attachment)))
+const fileAttachments = computed(() => attachments.value.filter((attachment) => !isImageAttachment(attachment)))
 
-const completedChecklistCount = computed(() => checklistItems.filter((item) => item.done).length)
+const { timelineItems } = useTicketActivity({
+  ticketId: computed(() => ticketId),
+  users: computed(() => users.value)
+})
+
+const deletableCommentIds = computed(() => {
+  const currentUserId = authStore.user?.id
+  if (!currentUserId) {
+    return []
+  }
+
+  return timelineItems.value
+    .filter((item) => item.type === 'comment' && item.commentId && item.actor.id === currentUserId)
+    .map((item) => item.commentId as string)
+})
+
+const editableCommentIds = computed(() => {
+  const currentUserId = authStore.user?.id
+  if (!currentUserId) {
+    return []
+  }
+
+  return timelineItems.value
+    .filter((item) => item.type === 'comment' && item.commentId && item.actor.id === currentUserId)
+    .map((item) => item.commentId as string)
+})
 
 const getAllowedTransitions = (current: TicketStatus) => {
-  const validForStatus = VALID_TRANSITIONS[current] ?? []
-
-  if (activeRole.value === 'Owner') {
-    return validForStatus
+  if (!activeRole.value) {
+    return []
   }
 
-  if (activeRole.value === 'Manager') {
-    return validForStatus.filter((status) => status !== 'Paid')
-  }
-
-  if (activeRole.value === 'Technician') {
-    const technicianTransitions = TECHNICIAN_TRANSITIONS[current] ?? []
-    return technicianTransitions.filter((status) => validForStatus.includes(status))
-  }
-
-  return []
-}
-
-const isTicketStatus = (value: string): value is TicketStatus =>
-  ALL_STATUSES.includes(value as TicketStatus)
-
-const parseStatusEventComment = (body: string) => {
-  if (!body.startsWith(STATUS_EVENT_PREFIX)) {
-    return null
-  }
-
-  const payload = body.slice(STATUS_EVENT_PREFIX.length).trim()
-  const [fromRaw, toRaw] = payload.split('->').map((part) => part.trim())
-
-  if (!fromRaw || !toRaw || !isTicketStatus(fromRaw) || !isTicketStatus(toRaw)) {
-    return null
-  }
-
-  return { from: fromRaw, to: toRaw }
+  return listAllowedStatusTransitions(current, activeRole.value)
 }
 
 const allowedNextStatuses = computed(() => {
@@ -535,6 +795,23 @@ const allowedNextStatuses = computed(() => {
 
 const canStartJob = computed(() => allowedNextStatuses.value.includes('InProgress'))
 const canCancel = computed(() => allowedNextStatuses.value.includes('Canceled'))
+const navigationUrl = computed(() => {
+  const address = locationStore.activeLocation?.address?.trim()
+  if (!address) {
+    return ''
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+})
+const customerPhone = computed(() => {
+  const description = ticket.value?.description ?? ''
+  const match = description.match(/(\+?\d[\d\s\-()]{6,}\d)/)
+  if (!match?.[1]) {
+    return ''
+  }
+
+  return match[1].replace(/[^\d+]/g, '')
+})
 
 const statusDropdownItems = computed<DropdownItem[]>(() => {
   if (!ticket.value) {
@@ -547,88 +824,13 @@ const statusDropdownItems = computed<DropdownItem[]>(() => {
   }))
 })
 
-const timelineItems = computed<TimelineItem[]>(() => {
-  const items: TimelineItem[] = []
-
-  if (ticket.value) {
-    items.push({
-      id: `${ticket.value.id}-created`,
-      type: 'status_change',
-      actor: {
-        name: createdByLabel.value
-      },
-      content: 'Ticket created',
-      timestamp: ticket.value.createdAt
-    })
-  }
-
-  for (const comment of comments.value) {
-    const statusEvent = parseStatusEventComment(comment.body)
-    if (statusEvent) {
-      items.push({
-        id: `status-${comment.id}`,
-        type: 'status_change',
-        actor: {
-          name: userNameById.value.get(comment.authorUserId) ?? `User ${comment.authorUserId.slice(0, 8)}`
-        },
-        content: `Ticket moved from ${statusToLabel(statusEvent.from)} to ${statusToLabel(statusEvent.to)}`,
-        timestamp: comment.createdAt
-      })
-      continue
-    }
-
-    items.push({
-      id: comment.id,
-      type: 'comment',
-      actor: {
-        name: userNameById.value.get(comment.authorUserId) ?? `User ${comment.authorUserId.slice(0, 8)}`
-      },
-      content: comment.body,
-      timestamp: comment.createdAt
-    })
-  }
-
-  for (const payment of payments.value) {
-    items.push({
-      id: payment.id,
-      type: 'payment',
-      actor: {
-        name: 'System'
-      },
-      content: `${providerLabel(payment.provider)} payment ${formatMoney(payment.amountCents, payment.currency)} (${payment.status})`,
-      timestamp: payment.createdAt
-    })
-  }
-
-  return items.sort((left, right) => {
-    const leftTs = new Date(left.timestamp).getTime()
-    const rightTs = new Date(right.timestamp).getTime()
-
-    if (Number.isNaN(leftTs) && Number.isNaN(rightTs)) {
-      return 0
-    }
-
-    if (Number.isNaN(leftTs)) {
-      return 1
-    }
-
-    if (Number.isNaN(rightTs)) {
-      return -1
-    }
-
-    return rightTs - leftTs
-  })
-})
-
 const bindStreams = () => {
   ticketSub?.unsubscribe()
-  commentsSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
   paymentsSub?.unsubscribe()
 
   if (!locationStore.activeLocationId) {
     ticket.value = null
-    comments.value = []
     attachments.value = []
     payments.value = []
     return
@@ -644,20 +846,6 @@ const bindStreams = () => {
     .$
     .subscribe((doc: { toJSON: () => Ticket } | null) => {
       ticket.value = doc?.toJSON() ?? null
-    })
-
-  commentsSub = db.collections.ticketComments
-    .find({
-      selector: {
-        ticketId,
-        locationId: locationStore.activeLocationId
-      }
-    })
-    .$
-    .subscribe((docs: Array<{ toJSON: () => TicketComment }>) => {
-      comments.value = docs
-        .map((doc) => doc.toJSON())
-        .filter((comment) => !comment.deletedAt)
     })
 
   attachmentsSub = db.collections.ticketAttachments
@@ -704,21 +892,62 @@ const loadUsers = async () => {
 
 watch(() => locationStore.activeLocationId, bindStreams, { immediate: true })
 watch(() => locationStore.activeLocationId, loadUsers, { immediate: true })
+watch(
+  () => ticket.value?.checklist,
+  (value) => {
+    const source = value && value.length > 0 ? value : DEFAULT_CHECKLIST_ITEMS
+    checklistItems.value = source.map((item) => ({
+      id: item.id,
+      label: item.label,
+      checked: item.checked
+    }))
+  },
+  { immediate: true, deep: true }
+)
 
 onUnmounted(() => {
   ticketSub?.unsubscribe()
-  commentsSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
   paymentsSub?.unsubscribe()
+  if (commentSpeechRecognition) {
+    commentSpeechRecognition.stop()
+    commentSpeechRecognition = null
+  }
 })
+
+const onChecklistToggle = async ({ id, checked }: { id: string; checked: boolean }) => {
+  if (!ticket.value || checklistSaving.value) {
+    return
+  }
+
+  const previous = checklistItems.value
+  const next = checklistItems.value.map((item) => (item.id === id ? { ...item, checked } : item))
+  checklistItems.value = next
+  checklistSaving.value = true
+
+  try {
+    await repository.saveTicket({
+      id: ticket.value.id,
+      checklist: next
+    })
+    await syncStore.syncNow()
+  } catch {
+    checklistItems.value = previous
+    toast.show({
+      type: 'error',
+      message: 'Failed to update checklist'
+    })
+  } finally {
+    checklistSaving.value = false
+  }
+}
 
 const updateTicketStatus = async (status: TicketStatus) => {
   if (!ticket.value || ticket.value.status === status || updatingStatus.value) {
     return
   }
 
-  const currentStatus = ticket.value.status
-  const allowedTransitions = getAllowedTransitions(currentStatus)
+  const allowedTransitions = getAllowedTransitions(ticket.value.status)
 
   if (!allowedTransitions.includes(status)) {
     toast.show({
@@ -736,11 +965,6 @@ const updateTicketStatus = async (status: TicketStatus) => {
       status
     })
 
-    await repository.addComment({
-      ticketId: ticket.value.id,
-      body: `${STATUS_EVENT_PREFIX} ${currentStatus}->${status}`
-    })
-
     await syncStore.syncNow()
 
     toast.show({
@@ -755,6 +979,38 @@ const updateTicketStatus = async (status: TicketStatus) => {
   } finally {
     updatingStatus.value = false
   }
+}
+
+const toggleMobileSection = (section: keyof typeof mobileSections) => {
+  mobileSections[section] = !mobileSections[section]
+}
+
+const goBackToTickets = async () => {
+  await navigateTo('/tickets')
+}
+
+const openNavigation = () => {
+  if (!navigationUrl.value) {
+    toast.show({
+      type: 'warning',
+      message: 'Customer address is not available'
+    })
+    return
+  }
+
+  window.open(navigationUrl.value, '_blank', 'noopener')
+}
+
+const callCustomer = () => {
+  if (!customerPhone.value) {
+    toast.show({
+      type: 'warning',
+      message: 'Customer phone was not found in ticket description'
+    })
+    return
+  }
+
+  window.location.href = `tel:${customerPhone.value}`
 }
 
 const cancelTicket = async () => {
@@ -982,6 +1238,90 @@ const submitPayment = async () => {
   }
 }
 
+const onCommentEditorKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    void addComment()
+  }
+}
+
+const onEditCommentKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault()
+    void submitCommentEdit()
+  }
+}
+
+const resolveSpeechRecognitionCtor = (): CommentSpeechRecognitionCtor | null => {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const candidate = (window as Window & { SpeechRecognition?: CommentSpeechRecognitionCtor })
+    .SpeechRecognition
+  const webkitCandidate = (window as Window & { webkitSpeechRecognition?: CommentSpeechRecognitionCtor })
+    .webkitSpeechRecognition
+
+  return candidate ?? webkitCandidate ?? null
+}
+
+const stopVoiceComment = () => {
+  if (commentSpeechRecognition) {
+    commentSpeechRecognition.stop()
+    commentSpeechRecognition = null
+  }
+  voiceCommentActive.value = false
+}
+
+const startVoiceComment = () => {
+  const RecognitionCtor = resolveSpeechRecognitionCtor()
+  if (!RecognitionCtor) {
+    toast.show({
+      type: 'warning',
+      message: 'Voice input is not supported in this browser'
+    })
+    return
+  }
+
+  const recognition = new RecognitionCtor()
+  recognition.lang = 'en-US'
+  recognition.interimResults = false
+  recognition.maxAlternatives = 1
+  recognition.onresult = (event: CommentSpeechRecognitionResultEvent) => {
+    const transcript = event.results?.[0]?.[0]?.transcript?.trim()
+    if (!transcript) {
+      return
+    }
+
+    commentBody.value = `${commentBody.value.trim()} ${transcript}`.trim()
+  }
+  recognition.onerror = () => {
+    voiceCommentActive.value = false
+    commentSpeechRecognition = null
+    toast.show({
+      type: 'error',
+      message: 'Voice input failed'
+    })
+  }
+  recognition.onend = () => {
+    voiceCommentActive.value = false
+    commentSpeechRecognition = null
+  }
+
+  commentSpeechRecognition = recognition
+  voiceCommentActive.value = true
+  recognition.start()
+}
+
+const toggleVoiceComment = () => {
+  if (voiceCommentActive.value) {
+    stopVoiceComment()
+    return
+  }
+
+  startVoiceComment()
+}
+
 const addComment = async () => {
   if (!commentBody.value.trim() || submittingComment.value) {
     return
@@ -1011,25 +1351,164 @@ const addComment = async () => {
   }
 }
 
-const openFileDialog = () => {
-  fileInput.value?.click()
+const openCommentEditModal = async (commentId: string) => {
+  if (editingCommentId.value || !editableCommentIds.value.includes(commentId)) {
+    return
+  }
+
+  const commentDoc = await db.collections.ticketComments.findOne(commentId).exec()
+  if (!commentDoc) {
+    toast.show({
+      type: 'error',
+      message: 'Comment not found'
+    })
+    return
+  }
+
+  const comment = commentDoc.toJSON()
+  commentEditTargetId.value = comment.id
+  editingCommentBody.value = comment.body
+  editingCommentInitialBody.value = comment.body.trim()
+  commentEditModalOpen.value = true
 }
 
-const uploadFile = async (file: File) => {
+const closeCommentEditModal = () => {
+  commentEditModalOpen.value = false
+  commentEditTargetId.value = null
+  editingCommentBody.value = ''
+  editingCommentInitialBody.value = ''
+}
+
+const submitCommentEdit = async () => {
+  if (!commentEditTargetId.value || editingCommentId.value) {
+    return
+  }
+
+  const nextBody = editingCommentBody.value.trim()
+  if (!nextBody || nextBody === editingCommentInitialBody.value) {
+    closeCommentEditModal()
+    return
+  }
+
+  editingCommentId.value = commentEditTargetId.value
+
   try {
-    uploadingAttachment.value = true
-    const payload = await adapter.fromFile(file)
-    await adapter.uploadAttachment(ticketId, payload)
+    await repository.updateComment(commentEditTargetId.value, nextBody)
     await syncStore.syncNow()
+    closeCommentEditModal()
     toast.show({
       type: 'success',
-      message: `Uploaded ${file.name}`
+      message: 'Comment updated'
     })
   } catch {
     toast.show({
       type: 'error',
-      message: `Failed to upload ${file.name}`
+      message: 'Failed to update comment'
     })
+  } finally {
+    editingCommentId.value = null
+  }
+}
+
+const deleteComment = async (commentId: string) => {
+  if (deletingCommentId.value) {
+    return
+  }
+
+  if (typeof window !== 'undefined') {
+    const confirmed = window.confirm('Delete this comment?')
+    if (!confirmed) {
+      return
+    }
+  }
+
+  deletingCommentId.value = commentId
+
+  try {
+    await repository.deleteComment(commentId)
+    await syncStore.syncNow()
+    toast.show({
+      type: 'success',
+      message: 'Comment deleted'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to delete comment'
+    })
+  } finally {
+    deletingCommentId.value = null
+  }
+}
+
+const openFileDialog = () => {
+  fileInput.value?.click()
+}
+
+const updateUploadProgress = (id: string, patch: Partial<UploadProgressItem>) => {
+  uploadProgressItems.value = uploadProgressItems.value.map((item) =>
+    item.id === id ? { ...item, ...patch } : item
+  )
+}
+
+const uploadFile = async (file: File) => {
+  const uploadId = crypto.randomUUID()
+  uploadProgressItems.value = [
+    {
+      id: uploadId,
+      name: file.name,
+      progress: 10,
+      status: 'uploading'
+    },
+    ...uploadProgressItems.value
+  ]
+
+  try {
+    updateUploadProgress(uploadId, { progress: 35 })
+    const payload = await adapter.fromFile(file)
+    updateUploadProgress(uploadId, { progress: 75 })
+    await adapter.uploadAttachment(ticketId, payload)
+    updateUploadProgress(uploadId, { progress: 100, status: 'done' })
+    return true
+  } catch {
+    updateUploadProgress(uploadId, { progress: 100, status: 'error' })
+    return false
+  }
+}
+
+const uploadFiles = async (files: File[]) => {
+  if (files.length === 0 || uploadingAttachment.value) {
+    return
+  }
+
+  uploadingAttachment.value = true
+  let uploadedCount = 0
+
+  try {
+    for (const file of files) {
+      const success = await uploadFile(file)
+      if (success) {
+        uploadedCount += 1
+      }
+    }
+
+    if (uploadedCount > 0) {
+      await syncStore.syncNow()
+      toast.show({
+        type: 'success',
+        message:
+          uploadedCount === files.length
+            ? `Uploaded ${uploadedCount} file${uploadedCount === 1 ? '' : 's'}`
+            : `Uploaded ${uploadedCount} of ${files.length} files`
+      })
+    }
+
+    if (uploadedCount < files.length) {
+      toast.show({
+        type: 'error',
+        message: `${files.length - uploadedCount} file${files.length - uploadedCount === 1 ? '' : 's'} failed`
+      })
+    }
   } finally {
     uploadingAttachment.value = false
   }
@@ -1037,13 +1516,13 @@ const uploadFile = async (file: File) => {
 
 const onWebFileSelected = async (event: Event) => {
   const input = event.target as HTMLInputElement | null
-  const file = input?.files?.[0]
+  const files = Array.from(input?.files ?? [])
 
-  if (!file) {
+  if (files.length === 0) {
     return
   }
 
-  await uploadFile(file)
+  await uploadFiles(files)
 
   if (input) {
     input.value = ''
@@ -1058,9 +1537,7 @@ const onDropFiles = async (event: DragEvent) => {
     return
   }
 
-  for (const file of files) {
-    await uploadFile(file)
-  }
+  await uploadFiles(files)
 }
 
 const capturePhoto = async () => {
@@ -1078,6 +1555,61 @@ const capturePhoto = async () => {
     // Ignore when camera is unavailable outside mobile shell
   } finally {
     uploadingAttachment.value = false
+  }
+}
+
+const openAttachmentPreview = (attachment: TicketAttachment) => {
+  previewAttachment.value = attachment
+  attachmentPreviewOpen.value = true
+}
+
+const attachmentDisplayName = (attachment: TicketAttachment) => {
+  const trimmed = attachment.storageKey.trim()
+  if (!trimmed) {
+    return attachment.id
+  }
+
+  const parts = trimmed.split('/')
+  return parts[parts.length - 1] || trimmed
+}
+
+const isPendingAttachment = (attachment: TicketAttachment) =>
+  attachment.storageKey.startsWith('pending/')
+
+const deleteAttachment = async (attachment: TicketAttachment) => {
+  if (deletingAttachmentId.value || uploadingAttachment.value) {
+    return
+  }
+
+  if (typeof window !== 'undefined') {
+    const confirmed = window.confirm(`Delete attachment "${attachmentDisplayName(attachment)}"?`)
+    if (!confirmed) {
+      return
+    }
+  }
+
+  deletingAttachmentId.value = attachment.id
+
+  try {
+    await repository.deleteAttachment(attachment.id)
+    await syncStore.syncNow()
+
+    if (previewAttachment.value?.id === attachment.id) {
+      attachmentPreviewOpen.value = false
+      previewAttachment.value = null
+    }
+
+    toast.show({
+      type: 'success',
+      message: 'Attachment deleted'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to delete attachment'
+    })
+  } finally {
+    deletingAttachmentId.value = null
   }
 }
 
@@ -1106,15 +1638,24 @@ const formatBytes = (size: number) => {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`
 }
 
-const providerLabel = (provider: string) => {
-  if (provider === 'stripe') {
-    return 'Stripe'
+const fileIcon = (mimeType: string) => {
+  if (mimeType.startsWith('image/')) {
+    return '🖼️'
   }
 
-  if (provider === 'manual') {
-    return 'Manual'
+  if (mimeType.includes('pdf')) {
+    return '📄'
   }
 
-  return provider
+  if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv')) {
+    return '📊'
+  }
+
+  if (mimeType.includes('word') || mimeType.includes('text')) {
+    return '📝'
+  }
+
+  return '📎'
 }
+
 </script>

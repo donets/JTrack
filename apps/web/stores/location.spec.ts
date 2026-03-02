@@ -2,6 +2,29 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLocationStore } from './location'
 
+const demoMemberships = [
+  {
+    id: 'loc-1',
+    name: 'Main Office',
+    timezone: 'Europe/Minsk',
+    address: 'Street 1',
+    role: 'Owner',
+    membershipStatus: 'active',
+    createdAt: '2026-03-01T10:00:00.000Z',
+    updatedAt: '2026-03-01T10:00:00.000Z'
+  },
+  {
+    id: 'loc-2',
+    name: 'Warehouse',
+    timezone: 'Europe/Minsk',
+    address: null,
+    role: 'Manager',
+    membershipStatus: 'active',
+    createdAt: '2026-03-01T10:00:00.000Z',
+    updatedAt: '2026-03-01T10:00:00.000Z'
+  }
+] as const
+
 const createCollectionMock = (ids: string[] = ['doc-1']) => {
   const remove = vi.fn()
   const bulkRemove = vi.fn()
@@ -54,6 +77,7 @@ describe('location store', () => {
 
   it('removes records from non-active locations and old sync checkpoints', async () => {
     const tickets = createCollectionMock(['ticket-1'])
+    const activities = createCollectionMock(['activity-1'])
     const comments = createCollectionMock(['comment-1'])
     const attachments = createCollectionMock(['attachment-1'])
     const payments = createCollectionMock(['payment-1'])
@@ -64,6 +88,7 @@ describe('location store', () => {
     vi.stubGlobal('useRxdb', () => ({
       collections: {
         tickets,
+        ticketActivities: activities,
         ticketComments: comments,
         ticketAttachments: attachments,
         paymentRecords: payments,
@@ -77,7 +102,7 @@ describe('location store', () => {
 
     await locationStore.cleanupLocationScopedData('loc-2')
 
-    for (const collection of [tickets, comments, attachments, payments, outbox, pendingUploads]) {
+    for (const collection of [tickets, activities, comments, attachments, payments, outbox, pendingUploads]) {
       expect(collection.find).toHaveBeenCalledWith({
         selector: {
           locationId: { $ne: 'loc-2' }
@@ -96,6 +121,7 @@ describe('location store', () => {
 
   it('removes all location-scoped records when location is unset', async () => {
     const tickets = createCollectionMock(['ticket-1', 'ticket-2'])
+    const activities = createCollectionMock(['activity-1'])
     const comments = createCollectionMock(['comment-1'])
     const attachments = createCollectionMock(['attachment-1'])
     const payments = createCollectionMock(['payment-1'])
@@ -106,6 +132,7 @@ describe('location store', () => {
     vi.stubGlobal('useRxdb', () => ({
       collections: {
         tickets,
+        ticketActivities: activities,
         ticketComments: comments,
         ticketAttachments: attachments,
         paymentRecords: payments,
@@ -119,10 +146,11 @@ describe('location store', () => {
 
     await locationStore.cleanupLocationScopedData(null)
 
-    for (const collection of [tickets, comments, attachments, payments, outbox, pendingUploads]) {
+    for (const collection of [tickets, activities, comments, attachments, payments, outbox, pendingUploads]) {
       expect(collection.find).toHaveBeenCalledWith()
     }
     expect(tickets.bulkRemove).toHaveBeenCalledWith(['ticket-1', 'ticket-2'])
+    expect(activities.bulkRemove).toHaveBeenCalledWith(['activity-1'])
     expect(comments.bulkRemove).toHaveBeenCalledWith(['comment-1'])
     expect(attachments.bulkRemove).toHaveBeenCalledWith(['attachment-1'])
     expect(payments.bulkRemove).toHaveBeenCalledWith(['payment-1'])
@@ -145,5 +173,49 @@ describe('location store', () => {
       '[location] failed to cleanup location-scoped data',
       cleanupError
     )
+  })
+
+  it('restores cached memberships and keeps selected active location', () => {
+    const locationStore = useLocationStore()
+    localStorage.setItem('jtrack.activeLocationId', 'loc-2')
+    localStorage.setItem('jtrack.locationMemberships', JSON.stringify(demoMemberships))
+
+    locationStore.restoreActiveLocation()
+    const restored = locationStore.restoreCachedMemberships()
+
+    expect(restored).toBe(true)
+    expect(locationStore.loaded).toBe(true)
+    expect(locationStore.memberships).toEqual(demoMemberships)
+    expect(locationStore.activeLocationId).toBe('loc-2')
+    expect(locationStore.activeLocation?.name).toBe('Warehouse')
+  })
+
+  it('falls back to first cached membership when active location is stale', () => {
+    const locationStore = useLocationStore()
+    localStorage.setItem('jtrack.activeLocationId', 'stale-loc')
+    localStorage.setItem('jtrack.locationMemberships', JSON.stringify(demoMemberships))
+
+    locationStore.restoreActiveLocation()
+    const restored = locationStore.restoreCachedMemberships()
+
+    expect(restored).toBe(true)
+    expect(locationStore.activeLocationId).toBe('loc-1')
+    expect(localStorage.getItem('jtrack.activeLocationId')).toBe('loc-1')
+  })
+
+  it('persists memberships snapshot after successful loadLocations', async () => {
+    const locationStore = useLocationStore()
+    const cleanupSpy = vi.spyOn(locationStore, 'cleanupLocationScopedData').mockResolvedValue()
+    vi.stubGlobal('useApiClient', () => ({
+      get: vi.fn().mockResolvedValue([...demoMemberships])
+    }))
+
+    await locationStore.loadLocations()
+
+    expect(locationStore.loaded).toBe(true)
+    expect(locationStore.memberships).toEqual(demoMemberships)
+    expect(locationStore.activeLocationId).toBe('loc-1')
+    expect(cleanupSpy).toHaveBeenCalledWith('loc-1')
+    expect(localStorage.getItem('jtrack.locationMemberships')).toBe(JSON.stringify(demoMemberships))
   })
 })

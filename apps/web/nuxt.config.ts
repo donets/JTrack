@@ -1,5 +1,10 @@
 import { defineNuxtConfig } from 'nuxt/config'
 
+const devOfflineToggle = process.env.NUXT_PUBLIC_ENABLE_DEV_OFFLINE
+const enableDevOffline =
+  devOfflineToggle === 'true' ||
+  (typeof devOfflineToggle === 'undefined' && process.env.NODE_ENV !== 'production')
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',
   ssr: false,
@@ -27,7 +32,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3011'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3011',
+      enableDevOffline
     }
   },
   app: {
@@ -45,6 +51,9 @@ export default defineNuxtConfig({
   },
   pwa: {
     registerType: 'autoUpdate',
+    devOptions: {
+      enabled: false
+    },
     manifest: {
       name: 'JTrack Field Service CRM',
       short_name: 'JTrack',

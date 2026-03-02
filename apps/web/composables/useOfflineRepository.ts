@@ -2,6 +2,7 @@ import type {
   CreateAttachmentMetadataInput,
   CreateCommentInput,
   CreatePaymentRecordInput,
+  TicketChecklistItem,
   Ticket,
   TicketStatus
 } from '@jtrack/shared'
@@ -21,8 +22,10 @@ interface PendingAttachmentUploadInput {
 
 interface SaveTicketInput {
   id?: string
+  ticketNumber?: number | null
   title?: string
   description?: string | null
+  checklist?: TicketChecklistItem[]
   status?: TicketStatus
   assignedToUserId?: string | null
   scheduledStartAt?: string | null
@@ -80,10 +83,12 @@ export const useOfflineRepository = () => {
     const ticket: Ticket = {
       id: ticketId,
       locationId: existingTicket?.locationId ?? locationId,
+      ticketNumber: existingTicket?.ticketNumber,
       createdByUserId: existingTicket?.createdByUserId ?? userId,
       assignedToUserId: existingTicket?.assignedToUserId ?? null,
       title: existingTicket?.title ?? 'Untitled Ticket',
       description: existingTicket?.description ?? null,
+      checklist: existingTicket?.checklist ?? [],
       status: existingTicket?.status ?? 'New',
       scheduledStartAt: existingTicket?.scheduledStartAt ?? null,
       scheduledEndAt: existingTicket?.scheduledEndAt ?? null,
@@ -99,8 +104,16 @@ export const useOfflineRepository = () => {
       ticket.title = input.title
     }
 
+    if (input.ticketNumber !== undefined) {
+      ticket.ticketNumber = input.ticketNumber ?? undefined
+    }
+
     if (input.description !== undefined) {
       ticket.description = input.description ?? null
+    }
+
+    if (input.checklist !== undefined) {
+      ticket.checklist = input.checklist
     }
 
     if (input.status !== undefined) {
@@ -134,7 +147,9 @@ export const useOfflineRepository = () => {
     if (existing) {
       await existing.incrementalPatch({
         title: ticket.title,
+        ticketNumber: ticket.ticketNumber,
         description: ticket.description,
+        checklist: ticket.checklist,
         status: ticket.status,
         assignedToUserId: ticket.assignedToUserId,
         scheduledStartAt: ticket.scheduledStartAt,
@@ -190,6 +205,52 @@ export const useOfflineRepository = () => {
     return comment
   }
 
+  const deleteComment = async (commentId: string) => {
+    const comment = await db.collections.ticketComments.findOne(commentId).exec()
+
+    if (!comment) {
+      return
+    }
+
+    const now = new Date().toISOString()
+
+    await comment.incrementalPatch({
+      deletedAt: now,
+      updatedAt: now
+    })
+
+    await enqueueOutbox('ticketComments', 'delete', { id: commentId })
+  }
+
+  const updateComment = async (commentId: string, body: string) => {
+    const { userId } = requireContext()
+    const commentDoc = await db.collections.ticketComments.findOne(commentId).exec()
+
+    if (!commentDoc) {
+      throw new Error('Comment not found')
+    }
+
+    const current = commentDoc.toJSON()
+    if (current.authorUserId !== userId) {
+      throw new Error('Only comment author can edit comment')
+    }
+
+    const now = new Date().toISOString()
+    const updatedComment = {
+      ...current,
+      body,
+      updatedAt: now
+    }
+
+    await commentDoc.incrementalPatch({
+      body,
+      updatedAt: now
+    })
+
+    await enqueueOutbox('ticketComments', 'update', updatedComment)
+    return updatedComment
+  }
+
   const addAttachmentMetadata = async (input: CreateAttachmentMetadataInput) => {
     const { userId, locationId } = requireContext()
     const now = new Date().toISOString()
@@ -215,6 +276,35 @@ export const useOfflineRepository = () => {
     await enqueueOutbox('ticketAttachments', 'create', attachment)
 
     return attachment
+  }
+
+  const deleteAttachment = async (attachmentId: string) => {
+    const attachment = await db.collections.ticketAttachments.findOne(attachmentId).exec()
+
+    if (!attachment) {
+      return
+    }
+
+    const now = new Date().toISOString()
+
+    await attachment.incrementalPatch({
+      deletedAt: now,
+      updatedAt: now
+    })
+
+    const pendingUploads = await db.collections.pendingAttachmentUploads
+      .find({
+        selector: {
+          attachmentId
+        }
+      })
+      .exec()
+
+    if (pendingUploads.length > 0) {
+      await db.collections.pendingAttachmentUploads.bulkRemove(pendingUploads.map((doc) => doc.primary))
+    }
+
+    await enqueueOutbox('ticketAttachments', 'delete', { id: attachmentId })
   }
 
   const stageAttachmentUpload = async (input: PendingAttachmentUploadInput) => {
@@ -292,7 +382,10 @@ export const useOfflineRepository = () => {
     saveTicket,
     deleteTicket,
     addComment,
+    updateComment,
+    deleteComment,
     addAttachmentMetadata,
+    deleteAttachment,
     stageAttachmentUpload,
     addPaymentRecord
   }

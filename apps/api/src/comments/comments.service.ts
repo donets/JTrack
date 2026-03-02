@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
-import type { CreateCommentInput } from '@jtrack/shared'
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import type { CreateCommentInput, UpdateCommentInput } from '@jtrack/shared'
 import { serializeDates } from '@/common/date-serializer'
 import { PrismaService } from '@/prisma/prisma.service'
 
@@ -43,7 +43,56 @@ export class CommentsService {
       }
     })
 
+    await this.prisma.ticketActivity.create({
+      data: {
+        ticketId: input.ticketId,
+        locationId,
+        userId: authorUserId,
+        type: 'comment',
+        metadata: {
+          commentId: comment.id,
+          bodyPreview: input.body.slice(0, 160)
+        }
+      }
+    })
+
     return serializeDates(comment)
+  }
+
+  async update(
+    locationId: string,
+    commentId: string,
+    currentUserId: string,
+    input: UpdateCommentInput
+  ) {
+    const existing = await this.prisma.ticketComment.findFirst({
+      where: {
+        id: commentId,
+        locationId,
+        deletedAt: null
+      },
+      select: {
+        id: true,
+        authorUserId: true
+      }
+    })
+
+    if (!existing) {
+      throw new NotFoundException('Comment not found')
+    }
+
+    if (existing.authorUserId !== currentUserId) {
+      throw new ForbiddenException('You can edit only your own comments')
+    }
+
+    const updated = await this.prisma.ticketComment.update({
+      where: { id: commentId },
+      data: {
+        body: input.body
+      }
+    })
+
+    return serializeDates(updated)
   }
 
   async remove(locationId: string, commentId: string) {

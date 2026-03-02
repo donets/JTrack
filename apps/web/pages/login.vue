@@ -115,9 +115,15 @@ const submit = async () => {
 
   try {
     await authStore.login(email.value, password.value)
-    void locationStore.loadLocations().catch((loadError) => {
-      console.warn('[auth] failed to prefetch locations after login', loadError)
-    })
+    locationStore.restoreActiveLocation()
+    locationStore.restoreCachedMemberships()
+
+    if (authStore.isAuthenticated) {
+      void locationStore.loadLocations().catch((loadError) => {
+        console.warn('[auth] failed to prefetch locations after login', loadError)
+      })
+    }
+
     await navigateTo(resolveRedirectTarget())
   } catch (err: any) {
     error.value = err?.data?.message ?? 'Unable to sign in'

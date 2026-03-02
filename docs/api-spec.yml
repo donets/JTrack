@@ -694,6 +694,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Invalid status transition for the user's role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tickets/{id}/activity:
+    get:
+      tags: [Tickets]
+      summary: Get ticket activity timeline
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Chronological activity items (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketActivity'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /comments:
     get:
@@ -735,6 +764,37 @@ paths:
                 $ref: '#/components/schemas/TicketComment'
 
   /comments/{id}:
+    patch:
+      tags: [Comments]
+      summary: Update own comment body
+      parameters:
+        - $ref: '#/components/parameters/XLocationId'
+        - $ref: '#/components/parameters/PathId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommentInput'
+      responses:
+        '200':
+          description: Updated comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketComment'
+        '403':
+          description: Not allowed to edit another user comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     delete:
       tags: [Comments]
       summary: Soft-delete comment
@@ -971,7 +1031,7 @@ paths:
     post:
       tags: [Sync]
       summary: Push client changes
-      description: Body `locationId` must match `x-location-id`.
+      description: Body `locationId` must match `x-location-id`; `changes.ticketActivities` payload is ignored by server.
       parameters:
         - $ref: '#/components/parameters/XLocationId'
       requestBody:
@@ -1184,6 +1244,10 @@ components:
       type: string
       enum: [New, Scheduled, InProgress, Done, Invoiced, Paid, Canceled]
 
+    TicketActivityType:
+      type: string
+      enum: [status_change, assignment, comment, attachment, payment, created]
+
     AttachmentKind:
       type: string
       enum: [Photo, File]
@@ -1359,6 +1423,9 @@ components:
           type: string
         locationId:
           type: string
+        ticketNumber:
+          type: integer
+          minimum: 1
         createdByUserId:
           type: string
         assignedToUserId:
@@ -1369,6 +1436,10 @@ components:
         description:
           type: string
           nullable: true
+        checklist:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketChecklistItem'
         status:
           $ref: '#/components/schemas/TicketStatus'
         scheduledStartAt:
@@ -1400,12 +1471,25 @@ components:
       required:
         - id
         - locationId
+        - ticketNumber
         - createdByUserId
         - title
+        - checklist
         - status
         - currency
         - createdAt
         - updatedAt
+
+    TicketChecklistItem:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        checked:
+          type: boolean
+      required: [id, label, checked]
 
     TicketComment:
       type: object
@@ -1431,6 +1515,31 @@ components:
           format: date-time
           nullable: true
       required: [id, ticketId, locationId, authorUserId, body, createdAt, updatedAt]
+
+    TicketActivity:
+      type: object
+      properties:
+        id:
+          type: string
+        ticketId:
+          type: string
+        locationId:
+          type: string
+        userId:
+          type: string
+          nullable: true
+        type:
+          $ref: '#/components/schemas/TicketActivityType'
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, ticketId, locationId, type, metadata, createdAt, updatedAt]
 
     TicketAttachment:
       type: object
@@ -1571,6 +1680,10 @@ components:
           minLength: 1
         description:
           type: string
+        checklist:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketChecklistItem'
         assignedToUserId:
           type: string
         scheduledStartAt:
@@ -1592,10 +1705,6 @@ components:
     UpdateTicketInput:
       allOf:
         - $ref: '#/components/schemas/CreateTicketInput'
-        - type: object
-          properties:
-            status:
-              $ref: '#/components/schemas/TicketStatus'
 
     UpdateTicketStatusInput:
       type: object
@@ -1613,6 +1722,14 @@ components:
           type: string
           minLength: 1
       required: [ticketId, body]
+
+    UpdateCommentInput:
+      type: object
+      properties:
+        body:
+          type: string
+          minLength: 1
+      required: [body]
 
     PresignInput:
       type: object
@@ -1737,6 +1854,23 @@ components:
             type: string
       required: [created, updated, deleted]
 
+    SyncEntityChangesActivity:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketActivity'
+        updated:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketActivity'
+        deleted:
+          type: array
+          items:
+            type: string
+      required: [created, updated, deleted]
+
     SyncEntityChangesAttachment:
       type: object
       properties:
@@ -1776,13 +1910,15 @@ components:
       properties:
         tickets:
           $ref: '#/components/schemas/SyncEntityChangesTicket'
+        ticketActivities:
+          $ref: '#/components/schemas/SyncEntityChangesActivity'
         ticketComments:
           $ref: '#/components/schemas/SyncEntityChangesComment'
         ticketAttachments:
           $ref: '#/components/schemas/SyncEntityChangesAttachment'
         paymentRecords:
           $ref: '#/components/schemas/SyncEntityChangesPayment'
-      required: [tickets, ticketComments, ticketAttachments, paymentRecords]
+      required: [tickets, ticketActivities, ticketComments, ticketAttachments, paymentRecords]
 
     SyncPullRequest:
       type: object
@@ -1813,6 +1949,9 @@ components:
         ticketsOffset:
           type: integer
           minimum: 0
+        ticketActivitiesOffset:
+          type: integer
+          minimum: 0
         ticketCommentsOffset:
           type: integer
           minimum: 0
@@ -1823,7 +1962,7 @@ components:
           type: integer
           minimum: 0
       required:
-        [snapshotAt, ticketsOffset, ticketCommentsOffset, ticketAttachmentsOffset, paymentRecordsOffset]
+        [snapshotAt, ticketsOffset, ticketActivitiesOffset, ticketCommentsOffset, ticketAttachmentsOffset, paymentRecordsOffset]
 
     SyncPullResponse:
       type: object

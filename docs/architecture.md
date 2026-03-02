@@ -41,7 +41,8 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - `rbac`: role/privilege resolution and access checks.
 - `locations`: tenant container lifecycle.
 - `users`: membership and operator management (including per-location role/status updates through `PATCH /users/:id` with `x-location-id` context).
-- `tickets`, `comments`, `attachments`, `payments`: core domain CRUD.
+- `tickets`, `comments`, `attachments`, `payments`, `ticketActivities`: core domain CRUD and timeline events.
+  - Ticket status transitions are validated server-side against shared role-based transition rules and are accepted only via `PATCH /tickets/{id}/status`.
 - `sync`: delta pull/push and conflict handling.
 - `health`: readiness/liveness probe endpoint with DB connectivity check.
 - `prisma`: DB access abstraction and lifecycle.
@@ -58,6 +59,9 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Prisma schema defines:
   - enums for role/status/provider kinds,
   - referential integrity via foreign keys,
+  - location-scoped sequential ticket numbering (`Ticket.ticketNumber`) for human-readable references,
+  - ticket checklist persisted as JSON array on `Ticket.checklist` (`id`, `label`, `checked`),
+  - immutable per-ticket activity log records (`TicketActivity`) for timeline/audit surfaces,
   - indexes tuned for location-scoped queries and sync windows.
 - Soft-delete only where sync tombstones are required.
 - User deletion is hard-delete with transactional session invalidation (`refreshTokenHash` reset) and reassignment of historical `createdBy`/`assignedTo`/`author`/`uploadedBy` references to a reserved non-admin system user to satisfy FK constraints.
@@ -67,15 +71,39 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 ### 6.1 Web App
 - Nuxt 4 (Vue 3) for UI and routing.
 - RxDB/Dexie as local reactive storage.
+- Local/dev runtime enables dedicated offline service worker by default (unless explicitly disabled via `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=false`), registering `/dev-offline-sw.js` for SPA shell + static asset caching.
+- Dev offline service worker registration ensures controller takeover on first install and warms shell routes/assets cache to improve offline hard-refresh reliability.
 - Global route middleware protects non-public routes and redirects unauthenticated users to `/login?redirect=<target>`.
+  - Route guard bootstrap (`auth.refresh` + location load) is non-blocking so app shell and page skeletons can render immediately.
+  - Middleware revalidates the current route after bootstrap/load completion to apply final auth/location redirects.
+- Auth bootstrap and refresh calls are deduplicated in the Pinia store to prevent parallel `/auth/refresh` bursts (and throttle `429` cascades) on startup.
+- Persisted user snapshot is not trusted before session revalidation when online; when browser is offline, middleware allows snapshot-backed shell access to avoid redirecting to uncached auth chunks.
+- Login also supports offline credential verification: after a successful online login, client stores a salted local verifier (`jtrack.offlineLogin`) derived from email+password via WebCrypto PBKDF2 and can authenticate offline without server roundtrip.
+- Offline fallback also handles browser-reported online state drift (`navigator.onLine=true` during hard reload): auth flow treats fetch-level transport failures as offline candidates and can recover session from cached verifier/user snapshot.
+- In `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true` mode, auth middleware suppresses route redirects while offline to keep cached SPA shell reachable even without a live token refresh.
+- Location memberships are cached in local storage and restored during offline bootstrap, so active location context can survive offline reloads.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
 - Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
+- Ticket detail timeline is composed on client from `ticketActivities` and `ticketComments` streams via `useTicketActivity`.
+- Ticket detail checklist toggles are persisted through ticket patch updates (offline-first) and synchronized via outbox.
+- If RxDB startup hits schema mismatch (`DB6`), client keeps existing IndexedDB untouched and starts on recovery DB names to avoid silent local outbox data loss, then rehydrates via sync.
+- RxDB primary DB name is schema-epoch versioned (`jtrack_crm_v2`) to avoid reopening incompatible legacy schema state.
+- If RxDB `DB6` persists on recovery DB, client falls back to unique emergency DB suffix to unblock startup and rehydrate via sync.
 - Outbox pattern:
   - local mutation first,
   - enqueue operation,
   - background push + pull convergence.
 - On active location switch, client prunes location-scoped RxDB records for non-active locations to prevent cross-tenant accumulation/leakage.
 - Offline attachments are staged in RxDB (`pendingAttachmentUploads`) and converted to regular attachment outbox records after deferred upload when connectivity returns; base64 file payload is stored only in staging collection (attachment placeholder keeps pending metadata without duplicating file bytes).
+- Ticket detail attachments UI separates image thumbnails (with preview modal) and file list metadata, with per-item soft-delete actions.
+- Attachment upload zone supports drag-and-drop multi-file selection with per-file progress/status indicators and batch sync after completion.
+- Activity timeline renders author avatars and relative timestamps, supports edit/delete for own comments, and comment composer supports keyboard submit + voice input button.
+- `/tickets` view integrates `all`, `board`, `calendar`, and `map` tabs with shared filters and query-param state (`view=`).
+- Tickets list `all` tab includes explicit loading, empty, filtered-empty, and recoverable error states.
+- Tickets route renders a page-level skeleton while auth/location context or initial local subscription state is still resolving.
+- App shell startup is non-blocking: sync bootstrap runs in background so layout/sidebar/topbar render immediately on route load.
+- Dashboard route renders a dedicated skeleton state while auth/location role context is resolving.
+- Mobile ticket detail includes compact back-header, quick action buttons (start/navigate/call), and collapsible details/description/comments sections.
 - Dispatch map tab uses Leaflet with OpenStreetMap tiles for interactive job visualization.
 - Until backend geo fields are introduced, map coordinates are deterministic mock points derived from `hash(ticketId + locationId)` inside a fixed viewport bounding box.
 
@@ -101,8 +129,10 @@ sequenceDiagram
 ```
 
 - `GET /tickets` uses offset pagination (`limit`, `offset`) and returns `{ items, page }`.
+- `GET /tickets/:id/activity` returns ticket timeline records ordered by `createdAt DESC`.
 - `POST /sync/pull` uses cursor pagination with per-entity offsets and a fixed `snapshotAt` timestamp to keep multipage pulls consistent.
 - `POST /sync/push` preloads existing records by batched `findMany(where: { id: { in: [...] } })` per entity to avoid N+1 lookups inside mutation loops.
+- `POST /sync/push` ignores client-provided `ticketActivities` mutations; activity timeline remains server-authored audit trail.
 
 ## 8. Security Architecture
 - Access:
@@ -111,7 +141,7 @@ sequenceDiagram
   - invite onboarding uses signed short-lived invite token (`/auth/invite/complete`) and atomically claims membership (`invited` -> `active`) in the same transaction as initial password set.
   - refresh cookie `sameSite` is controlled by `COOKIE_SAME_SITE` (`lax` default; `none` for cross-site web/api domains).
   - refresh cookie `secure` flag is controlled by `COOKIE_SECURE` (fallback: `NODE_ENV === production`); `SameSite=None` forces `secure=true`.
-  - auth brute-force mitigation is enforced via throttling on `/auth/login` and `/auth/refresh`.
+  - auth brute-force mitigation is enforced via throttling on `/auth/login` and `/auth/refresh` in production-like environments.
 - Authorization:
   - location scoping for tenant separation.
   - privilege-based endpoint checks.

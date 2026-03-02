@@ -285,6 +285,7 @@ const mapTickets = computed<DispatchMapTicket[]>(() =>
     .filter((ticket) => !ticket.deletedAt)
     .map((ticket) => ({
       id: ticket.id,
+      ticketNumber: ticket.ticketNumber,
       locationId: ticket.locationId,
       title: ticket.title,
       status: ticket.status,

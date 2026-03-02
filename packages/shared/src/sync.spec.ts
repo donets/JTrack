@@ -9,6 +9,7 @@ describe('sync schemas', () => {
       clientId: 'client-1',
       changes: {
         tickets: { created: [], updated: [], deleted: [] },
+        ticketActivities: { created: [], updated: [], deleted: [] },
         ticketComments: { created: [], updated: [], deleted: [] },
         ticketAttachments: { created: [], updated: [], deleted: [] },
         paymentRecords: { created: [], updated: [], deleted: [] }
@@ -24,6 +25,7 @@ describe('sync schemas', () => {
       syncPullResponseSchema.parse({
         changes: {
           tickets: { created: [], updated: [], deleted: [] },
+          ticketActivities: { created: [], updated: [], deleted: [] },
           ticketComments: { created: [], updated: [], deleted: [] },
           ticketAttachments: { created: [], updated: [], deleted: [] },
           paymentRecords: { created: [], updated: [], deleted: [] }
@@ -47,6 +49,7 @@ describe('sync schemas', () => {
     const parsed = syncPullResponseSchema.parse({
       changes: {
         tickets: { created: [], updated: [], deleted: [] },
+        ticketActivities: { created: [], updated: [], deleted: [] },
         ticketComments: { created: [], updated: [], deleted: [] },
         ticketAttachments: { created: [], updated: [], deleted: [] },
         paymentRecords: { created: [], updated: [], deleted: [] }
@@ -56,6 +59,7 @@ describe('sync schemas', () => {
       nextCursor: {
         snapshotAt: 1_700_000_000_100,
         ticketsOffset: 10,
+        ticketActivitiesOffset: 0,
         ticketCommentsOffset: 2,
         ticketAttachmentsOffset: 1,
         paymentRecordsOffset: 0
