@@ -1,4 +1,6 @@
 const DEV_OFFLINE_SW_PATH = '/dev-offline-sw.js'
+const DEV_OFFLINE_SW_VERSION = 'v3'
+const DEV_OFFLINE_SW_URL = `${DEV_OFFLINE_SW_PATH}?${DEV_OFFLINE_SW_VERSION}`
 const DEV_OFFLINE_SW_CONTROL_RELOAD_KEY = 'jtrack.devOfflineSw.controlReloaded'
 
 export default defineNuxtPlugin(() => {
@@ -26,7 +28,8 @@ export default defineNuxtPlugin(() => {
             registration.installing?.scriptURL ??
             ''
 
-          if (!scriptUrl.endsWith(DEV_OFFLINE_SW_PATH)) {
+          const scriptPath = scriptUrl ? new URL(scriptUrl).pathname : ''
+          if (scriptPath !== DEV_OFFLINE_SW_PATH) {
             await registration.unregister()
           }
         })
@@ -41,7 +44,7 @@ export default defineNuxtPlugin(() => {
         )
       }
 
-      await navigator.serviceWorker.register(DEV_OFFLINE_SW_PATH, {
+      await navigator.serviceWorker.register(DEV_OFFLINE_SW_URL, {
         scope: '/',
         updateViaCache: 'none'
       })
