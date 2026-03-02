@@ -39,6 +39,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@jtrack:5432/jtrack?schema=public
       API_PORT: "3011"
       WEB_ORIGIN: http://localhost:3010
+      NODE_ENV: development
     ports:
       - "3011:3011"
     volumes:
@@ -60,6 +61,8 @@ services:
       pnpm install --frozen-lockfile &&
       pnpm --filter @jtrack/shared build &&
       pnpm --filter @jtrack/web exec nuxt dev --host 0.0.0.0 --port 3010"
+    env_file:
+      - ../.env
     environment:
       NODE_ENV: development
       NUXT_PUBLIC_API_BASE: http://localhost:3011
