@@ -72,7 +72,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Nuxt 4 (Vue 3) for UI and routing.
 - RxDB/Dexie as local reactive storage.
 - Local/dev runtime enables dedicated offline service worker by default (unless explicitly disabled via `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=false`), registering `/dev-offline-sw.js` for SPA shell + static asset caching.
-- Dev offline service worker registration ensures controller takeover on first install and warms shell routes/assets cache to improve offline hard-refresh reliability.
+- Dev offline service worker registration ensures controller takeover on first install and warms shell routes/assets plus recursive `/_nuxt/*` module graph cache for key pages to improve offline hard-refresh reliability.
 - Global route middleware protects non-public routes and redirects unauthenticated users to `/login?redirect=<target>`.
   - Route guard bootstrap (`auth.refresh` + location load) is non-blocking so app shell and page skeletons can render immediately.
   - Middleware revalidates the current route after bootstrap/load completion to apply final auth/location redirects.
