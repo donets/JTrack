@@ -5,6 +5,7 @@
     </label>
 
     <textarea
+      v-bind="attrs"
       :id="textareaId"
       :value="modelValue"
       :rows="rows"
@@ -22,7 +23,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, useAttrs, useId } from 'vue'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = withDefaults(
   defineProps<{
@@ -46,6 +51,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+const attrs = useAttrs()
 const generatedId = useId()
 const textareaId = computed(() => props.id ?? `j-textarea-${generatedId}`)
 const errorId = computed(() => `${textareaId.value}-error`)

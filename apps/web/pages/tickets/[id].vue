@@ -120,7 +120,10 @@
           <JTimeline
             :items="timelineItems"
             :deletable-comment-ids="deletableCommentIds"
+            :editable-comment-ids="editableCommentIds"
             :deleting-comment-id="deletingCommentId"
+            :editing-comment-id="editingCommentId"
+            @edit-comment="openCommentEditModal"
             @delete-comment="deleteComment"
           />
 
@@ -129,6 +132,7 @@
               v-model="commentBody"
               placeholder="Write a comment..."
               :rows="3"
+              @keydown="onCommentEditorKeydown"
             />
 
             <div class="flex flex-wrap items-center justify-end gap-2">
@@ -137,6 +141,9 @@
               </JButton>
               <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="capturePhoto">
                 Photo
+              </JButton>
+              <JButton size="sm" variant="secondary" @click="toggleVoiceComment">
+                {{ voiceCommentActive ? 'Stop Mic' : 'Mic' }}
               </JButton>
               <JButton size="sm" type="submit" :disabled="!commentBody.trim()" :loading="submittingComment">
                 Send
@@ -159,7 +166,10 @@
           <JTimeline
             :items="timelineItems"
             :deletable-comment-ids="deletableCommentIds"
+            :editable-comment-ids="editableCommentIds"
             :deleting-comment-id="deletingCommentId"
+            :editing-comment-id="editingCommentId"
+            @edit-comment="openCommentEditModal"
             @delete-comment="deleteComment"
           />
         </JCard>
@@ -170,6 +180,7 @@
               v-model="commentBody"
               placeholder="Write a comment..."
               :rows="3"
+              @keydown="onCommentEditorKeydown"
             />
 
             <div class="flex flex-wrap items-center justify-end gap-2">
@@ -178,6 +189,9 @@
               </JButton>
               <JButton size="sm" variant="secondary" :disabled="uploadingAttachment" @click="capturePhoto">
                 Photo
+              </JButton>
+              <JButton size="sm" variant="secondary" @click="toggleVoiceComment">
+                {{ voiceCommentActive ? 'Stop Mic' : 'Mic' }}
               </JButton>
               <JButton size="sm" type="submit" :disabled="!commentBody.trim()" :loading="submittingComment">
                 Send
@@ -450,6 +464,31 @@
         <JButton type="submit" form="record-payment-form" :loading="paymentSubmitting">Record Payment</JButton>
       </template>
     </JModal>
+
+    <JModal v-model="commentEditModalOpen" title="Edit Comment" size="md">
+      <form id="edit-comment-form" class="space-y-4" @submit.prevent="submitCommentEdit">
+        <JTextarea
+          v-model="editingCommentBody"
+          label="Comment"
+          :rows="4"
+          @keydown="onEditCommentKeydown"
+        />
+      </form>
+
+      <template #footer>
+        <JButton variant="secondary" :disabled="editingCommentId !== null" @click="closeCommentEditModal">
+          Cancel
+        </JButton>
+        <JButton
+          type="submit"
+          form="edit-comment-form"
+          :loading="editingCommentId !== null"
+          :disabled="!editingCommentBody.trim() || editingCommentBody.trim() === editingCommentInitialBody"
+        >
+          Save
+        </JButton>
+      </template>
+    </JModal>
   </section>
 
   <section v-else class="rounded-xl border border-slate-200 bg-white p-8 text-center text-base text-slate-500">
@@ -493,6 +532,27 @@ interface UploadProgressItem {
   status: 'uploading' | 'done' | 'error'
 }
 
+interface CommentSpeechRecognitionResultEvent {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>
+}
+
+interface CommentSpeechRecognitionErrorEvent {
+  error?: string
+}
+
+interface CommentSpeechRecognition {
+  lang: string
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((event: CommentSpeechRecognitionResultEvent) => void) | null
+  onerror: ((event: CommentSpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+}
+
+type CommentSpeechRecognitionCtor = new () => CommentSpeechRecognition
+
 const route = useRoute()
 const config = useRuntimeConfig()
 const db = useRxdb()
@@ -518,12 +578,18 @@ const uploadingAttachment = ref(false)
 const updatingStatus = ref(false)
 const checklistSaving = ref(false)
 const deletingCommentId = ref<string | null>(null)
+const editingCommentId = ref<string | null>(null)
 const deletingAttachmentId = ref<string | null>(null)
 const attachmentPreviewOpen = ref(false)
 const previewAttachment = ref<TicketAttachment | null>(null)
 const uploadProgressItems = ref<UploadProgressItem[]>([])
 const isDragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const voiceCommentActive = ref(false)
+const commentEditModalOpen = ref(false)
+const commentEditTargetId = ref<string | null>(null)
+const editingCommentBody = ref('')
+const editingCommentInitialBody = ref('')
 const mobileSections = reactive({
   details: false,
   description: true,
@@ -575,6 +641,7 @@ const checklistItems = ref<TicketChecklistItem[]>([])
 let ticketSub: { unsubscribe: () => void } | null = null
 let attachmentsSub: { unsubscribe: () => void } | null = null
 let paymentsSub: { unsubscribe: () => void } | null = null
+let commentSpeechRecognition: CommentSpeechRecognition | null = null
 
 const breadcrumbs = ref<BreadcrumbItem[]>([
   { label: 'Dashboard', to: '/dashboard' },
@@ -689,6 +756,17 @@ const { timelineItems } = useTicketActivity({
 })
 
 const deletableCommentIds = computed(() => {
+  const currentUserId = authStore.user?.id
+  if (!currentUserId) {
+    return []
+  }
+
+  return timelineItems.value
+    .filter((item) => item.type === 'comment' && item.commentId && item.actor.id === currentUserId)
+    .map((item) => item.commentId as string)
+})
+
+const editableCommentIds = computed(() => {
   const currentUserId = authStore.user?.id
   if (!currentUserId) {
     return []
@@ -831,6 +909,10 @@ onUnmounted(() => {
   ticketSub?.unsubscribe()
   attachmentsSub?.unsubscribe()
   paymentsSub?.unsubscribe()
+  if (commentSpeechRecognition) {
+    commentSpeechRecognition.stop()
+    commentSpeechRecognition = null
+  }
 })
 
 const onChecklistToggle = async ({ id, checked }: { id: string; checked: boolean }) => {
@@ -1156,6 +1238,90 @@ const submitPayment = async () => {
   }
 }
 
+const onCommentEditorKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    void addComment()
+  }
+}
+
+const onEditCommentKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault()
+    void submitCommentEdit()
+  }
+}
+
+const resolveSpeechRecognitionCtor = (): CommentSpeechRecognitionCtor | null => {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const candidate = (window as Window & { SpeechRecognition?: CommentSpeechRecognitionCtor })
+    .SpeechRecognition
+  const webkitCandidate = (window as Window & { webkitSpeechRecognition?: CommentSpeechRecognitionCtor })
+    .webkitSpeechRecognition
+
+  return candidate ?? webkitCandidate ?? null
+}
+
+const stopVoiceComment = () => {
+  if (commentSpeechRecognition) {
+    commentSpeechRecognition.stop()
+    commentSpeechRecognition = null
+  }
+  voiceCommentActive.value = false
+}
+
+const startVoiceComment = () => {
+  const RecognitionCtor = resolveSpeechRecognitionCtor()
+  if (!RecognitionCtor) {
+    toast.show({
+      type: 'warning',
+      message: 'Voice input is not supported in this browser'
+    })
+    return
+  }
+
+  const recognition = new RecognitionCtor()
+  recognition.lang = 'en-US'
+  recognition.interimResults = false
+  recognition.maxAlternatives = 1
+  recognition.onresult = (event: CommentSpeechRecognitionResultEvent) => {
+    const transcript = event.results?.[0]?.[0]?.transcript?.trim()
+    if (!transcript) {
+      return
+    }
+
+    commentBody.value = `${commentBody.value.trim()} ${transcript}`.trim()
+  }
+  recognition.onerror = () => {
+    voiceCommentActive.value = false
+    commentSpeechRecognition = null
+    toast.show({
+      type: 'error',
+      message: 'Voice input failed'
+    })
+  }
+  recognition.onend = () => {
+    voiceCommentActive.value = false
+    commentSpeechRecognition = null
+  }
+
+  commentSpeechRecognition = recognition
+  voiceCommentActive.value = true
+  recognition.start()
+}
+
+const toggleVoiceComment = () => {
+  if (voiceCommentActive.value) {
+    stopVoiceComment()
+    return
+  }
+
+  startVoiceComment()
+}
+
 const addComment = async () => {
   if (!commentBody.value.trim() || submittingComment.value) {
     return
@@ -1182,6 +1348,65 @@ const addComment = async () => {
     })
   } finally {
     submittingComment.value = false
+  }
+}
+
+const openCommentEditModal = async (commentId: string) => {
+  if (editingCommentId.value || !editableCommentIds.value.includes(commentId)) {
+    return
+  }
+
+  const commentDoc = await db.collections.ticketComments.findOne(commentId).exec()
+  if (!commentDoc) {
+    toast.show({
+      type: 'error',
+      message: 'Comment not found'
+    })
+    return
+  }
+
+  const comment = commentDoc.toJSON()
+  commentEditTargetId.value = comment.id
+  editingCommentBody.value = comment.body
+  editingCommentInitialBody.value = comment.body.trim()
+  commentEditModalOpen.value = true
+}
+
+const closeCommentEditModal = () => {
+  commentEditModalOpen.value = false
+  commentEditTargetId.value = null
+  editingCommentBody.value = ''
+  editingCommentInitialBody.value = ''
+}
+
+const submitCommentEdit = async () => {
+  if (!commentEditTargetId.value || editingCommentId.value) {
+    return
+  }
+
+  const nextBody = editingCommentBody.value.trim()
+  if (!nextBody || nextBody === editingCommentInitialBody.value) {
+    closeCommentEditModal()
+    return
+  }
+
+  editingCommentId.value = commentEditTargetId.value
+
+  try {
+    await repository.updateComment(commentEditTargetId.value, nextBody)
+    await syncStore.syncNow()
+    closeCommentEditModal()
+    toast.show({
+      type: 'success',
+      message: 'Comment updated'
+    })
+  } catch {
+    toast.show({
+      type: 'error',
+      message: 'Failed to update comment'
+    })
+  } finally {
+    editingCommentId.value = null
   }
 }
 

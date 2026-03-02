@@ -222,6 +222,35 @@ export const useOfflineRepository = () => {
     await enqueueOutbox('ticketComments', 'delete', { id: commentId })
   }
 
+  const updateComment = async (commentId: string, body: string) => {
+    const { userId } = requireContext()
+    const commentDoc = await db.collections.ticketComments.findOne(commentId).exec()
+
+    if (!commentDoc) {
+      throw new Error('Comment not found')
+    }
+
+    const current = commentDoc.toJSON()
+    if (current.authorUserId !== userId) {
+      throw new Error('Only comment author can edit comment')
+    }
+
+    const now = new Date().toISOString()
+    const updatedComment = {
+      ...current,
+      body,
+      updatedAt: now
+    }
+
+    await commentDoc.incrementalPatch({
+      body,
+      updatedAt: now
+    })
+
+    await enqueueOutbox('ticketComments', 'update', updatedComment)
+    return updatedComment
+  }
+
   const addAttachmentMetadata = async (input: CreateAttachmentMetadataInput) => {
     const { userId, locationId } = requireContext()
     const now = new Date().toISOString()
@@ -353,6 +382,7 @@ export const useOfflineRepository = () => {
     saveTicket,
     deleteTicket,
     addComment,
+    updateComment,
     deleteComment,
     addAttachmentMetadata,
     deleteAttachment,

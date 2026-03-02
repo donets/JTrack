@@ -24,15 +24,26 @@
             <p class="text-ink-light">{{ typeLabel(item.type) }}</p>
             <span class="text-slate-400">•</span>
             <p class="text-slate-500" :title="formatAbsolute(item.timestamp)">{{ formatRelative(item.timestamp) }}</p>
-            <button
-              v-if="canDeleteComment(item)"
-              type="button"
-              class="ml-auto text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="deletingCommentId === item.commentId"
-              @click="item.commentId && emit('delete-comment', item.commentId)"
-            >
-              Delete
-            </button>
+            <div v-if="canEditComment(item) || canDeleteComment(item)" class="ml-auto flex items-center gap-2">
+              <button
+                v-if="canEditComment(item)"
+                type="button"
+                class="text-sky hover:text-sky/80 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="editingCommentId === item.commentId || deletingCommentId === item.commentId"
+                @click="item.commentId && emit('edit-comment', item.commentId)"
+              >
+                Edit
+              </button>
+              <button
+                v-if="canDeleteComment(item)"
+                type="button"
+                class="text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="deletingCommentId === item.commentId || editingCommentId === item.commentId"
+                @click="item.commentId && emit('delete-comment', item.commentId)"
+              >
+                Delete
+              </button>
+            </div>
           </div>
 
           <p class="mt-1 whitespace-pre-wrap text-sm text-ink-light">{{ item.content }}</p>
@@ -49,16 +60,21 @@ const props = withDefaults(
   defineProps<{
     items: TimelineItem[]
     deletableCommentIds?: string[]
+    editableCommentIds?: string[]
     deletingCommentId?: string | null
+    editingCommentId?: string | null
   }>(),
   {
     deletableCommentIds: () => [],
-    deletingCommentId: null
+    editableCommentIds: () => [],
+    deletingCommentId: null,
+    editingCommentId: null
   }
 )
 
 const emit = defineEmits<{
   'delete-comment': [commentId: string]
+  'edit-comment': [commentId: string]
 }>()
 
 const dotClasses = (item: TimelineItem) => {
@@ -175,4 +191,7 @@ const initials = (name: string) => {
 
 const canDeleteComment = (item: TimelineItem) =>
   item.type === 'comment' && Boolean(item.commentId) && props.deletableCommentIds.includes(item.commentId as string)
+
+const canEditComment = (item: TimelineItem) =>
+  item.type === 'comment' && Boolean(item.commentId) && props.editableCommentIds.includes(item.commentId as string)
 </script>
