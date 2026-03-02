@@ -18,6 +18,26 @@ interface LocationState {
 }
 
 const canUseClientStorage = import.meta.client || import.meta.env.MODE === 'test'
+const ACTIVE_LOCATION_STORAGE_KEY = 'jtrack.activeLocationId'
+const LOCATION_MEMBERSHIPS_STORAGE_KEY = 'jtrack.locationMemberships'
+
+const isLocationMembership = (value: unknown): value is LocationMembership => {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const item = value as Record<string, unknown>
+  return (
+    typeof item.id === 'string' &&
+    typeof item.name === 'string' &&
+    typeof item.timezone === 'string' &&
+    (typeof item.address === 'string' || item.address === null) &&
+    typeof item.role === 'string' &&
+    typeof item.membershipStatus === 'string' &&
+    typeof item.createdAt === 'string' &&
+    typeof item.updatedAt === 'string'
+  )
+}
 
 export const useLocationStore = defineStore('location', {
   state: (): LocationState => ({
@@ -35,8 +55,48 @@ export const useLocationStore = defineStore('location', {
         return
       }
 
-      const value = localStorage.getItem('jtrack.activeLocationId')
+      const value = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY)
       this.activeLocationId = value
+    },
+
+    restoreCachedMemberships() {
+      if (!canUseClientStorage) {
+        return false
+      }
+
+      const raw = localStorage.getItem(LOCATION_MEMBERSHIPS_STORAGE_KEY)
+      if (!raw) {
+        return false
+      }
+
+      try {
+        const parsed = JSON.parse(raw)
+        if (!Array.isArray(parsed)) {
+          localStorage.removeItem(LOCATION_MEMBERSHIPS_STORAGE_KEY)
+          return false
+        }
+
+        const memberships = parsed.filter(isLocationMembership)
+        if (memberships.length === 0) {
+          localStorage.removeItem(LOCATION_MEMBERSHIPS_STORAGE_KEY)
+          return false
+        }
+
+        this.memberships = memberships
+        this.loaded = true
+
+        if (this.activeLocationId && memberships.some((location) => location.id === this.activeLocationId)) {
+          return true
+        }
+
+        const fallbackLocationId = memberships[0].id
+        this.activeLocationId = fallbackLocationId
+        localStorage.setItem(ACTIVE_LOCATION_STORAGE_KEY, fallbackLocationId)
+        return true
+      } catch {
+        localStorage.removeItem(LOCATION_MEMBERSHIPS_STORAGE_KEY)
+        return false
+      }
     },
 
     setActiveLocation(locationId: string | null) {
@@ -45,9 +105,9 @@ export const useLocationStore = defineStore('location', {
 
       if (canUseClientStorage) {
         if (locationId) {
-          localStorage.setItem('jtrack.activeLocationId', locationId)
+          localStorage.setItem(ACTIVE_LOCATION_STORAGE_KEY, locationId)
         } else {
-          localStorage.removeItem('jtrack.activeLocationId')
+          localStorage.removeItem(ACTIVE_LOCATION_STORAGE_KEY)
         }
       }
 
@@ -64,6 +124,10 @@ export const useLocationStore = defineStore('location', {
       this.memberships = locations
       this.loaded = true
 
+      if (canUseClientStorage) {
+        localStorage.setItem(LOCATION_MEMBERSHIPS_STORAGE_KEY, JSON.stringify(locations))
+      }
+
       if (this.activeLocationId && !locations.find((location) => location.id === this.activeLocationId)) {
         this.setActiveLocation(locations[0]?.id ?? null)
       }
@@ -79,6 +143,10 @@ export const useLocationStore = defineStore('location', {
       this.memberships = []
       this.loaded = false
       this.setActiveLocation(null)
+
+      if (canUseClientStorage) {
+        localStorage.removeItem(LOCATION_MEMBERSHIPS_STORAGE_KEY)
+      }
     },
 
     async cleanupLocationScopedData(locationId: string | null) {

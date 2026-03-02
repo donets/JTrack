@@ -10,6 +10,7 @@ export default defineNuxtPlugin(() => {
 
     if (authStore.isAuthenticated) {
       locationStore.restoreActiveLocation()
+      locationStore.restoreCachedMemberships()
 
       try {
         await locationStore.loadLocations()

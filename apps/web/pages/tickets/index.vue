@@ -38,7 +38,9 @@
       </div>
     </section>
 
-    <template v-if="activeView === 'all'">
+    <TicketsSkeleton v-if="showTicketsSkeleton" />
+
+    <template v-else-if="activeView === 'all'">
       <div v-if="ticketsLoading" class="space-y-2 rounded-xl border border-slate-200 bg-white p-3 sm:p-5">
         <div v-for="rowIndex in 6" :key="`tickets-loading-${rowIndex}`" class="grid grid-cols-7 gap-3">
           <JSkeleton v-for="columnIndex in 7" :key="`tickets-loading-${rowIndex}-${columnIndex}`" height="18px" />
@@ -410,6 +412,18 @@ const createErrors = reactive({
 })
 
 let ticketSubscription: { unsubscribe: () => void } | null = null
+
+const showTicketsSkeleton = computed(() => {
+  if (!authStore.bootstrapped || !locationStore.loaded) {
+    return true
+  }
+
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+
+  return ticketsLoading.value && tickets.value.length === 0 && !ticketsLoadError.value
+})
 
 const columns: TableColumn[] = [
   { key: 'title', label: 'Title', sortable: true },

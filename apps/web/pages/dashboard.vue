@@ -44,11 +44,15 @@ const pageDescription = computed(() =>
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [{ label: pageTitle.value, to: '/dashboard' }])
 
 const showDashboardSkeleton = computed(() => {
+  if (!authStore.bootstrapped) {
+    return true
+  }
+
   if (!authStore.isAuthenticated) {
     return false
   }
 
-  if (!authStore.bootstrapped || !locationStore.loaded) {
+  if (!locationStore.loaded) {
     return true
   }
 
