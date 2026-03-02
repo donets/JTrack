@@ -29,6 +29,12 @@
 - `LocationGuard` validates location membership for non-admin users.
 - `PrivilegesGuard` validates endpoint privileges resolved from role.
 - Internal admins (`isAdmin = true`) bypass membership and privilege constraints, and request context receives synthetic `locationRole=Owner` for downstream consistency.
+- Client route middleware runs auth/location bootstrap in background and then re-validates the current route, allowing immediate shell/skeleton render during refresh-token roundtrip.
+- Client auth store deduplicates concurrent bootstrap/refresh calls; persisted user snapshot is cleared before revalidation in online mode, while offline mode allows snapshot-backed route access to preserve cached shell availability.
+- After successful online login, client stores a salted offline login verifier (`jtrack.offlineLogin`) derived via WebCrypto PBKDF2 from normalized email + password; when browser is offline, login can be completed against this local verifier.
+- PWA service-worker caching is disabled for dev mode by default, and local runtime clears existing SW/cache registrations to prevent serving stale frontend bundles during rapid schema/auth iterations; dev offline mode can be enabled with `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true`, which installs a dedicated local dev service worker for shell/asset caching.
+- In dev offline mode, route middleware also skips auth/location redirect enforcement while offline so cached routes are not replaced by uncached login redirects.
+- Location memberships snapshot is persisted client-side and restored before online reload, allowing dashboard/location context rendering when offline.
 
 ## 5. Data Model Strategy
 - Relational core with explicit foreign keys.
@@ -84,10 +90,14 @@
 - Ticket checklist state is updated through regular ticket outbox updates (no separate checklist entity/collection).
 - Tickets page exposes unified tabs (`all|board|calendar|map`) and persists active view through URL query (`view`).
 - Tickets `all` panel handles RxDB subscription lifecycle with dedicated loading skeleton, empty states, and retryable error state.
+- Tickets route also uses a page-level skeleton during auth/location bootstrap and first local list hydration.
 - Ticket detail mobile mode exposes dedicated action row (`Start Job`, `Navigate`, `Call Customer`) and accordion-style sections.
 - On RxDB schema mismatch during startup (`DB6`), local IndexedDB is reset and collections are recreated to prevent initialization crash.
+- Primary client RxDB name is schema-epoch versioned (`jtrack_crm_v2`) to avoid legacy schema collisions.
+- If reset does not clear `DB6` (e.g. blocked IndexedDB handles), startup falls back to `jtrack_crm_v2_recovery` and then an emergency unique suffix to avoid app-init crash, followed by sync rehydration.
 - Sync plugin initialization is intentionally non-blocking so layout shell can render before bootstrap/sync network calls complete.
 - Dashboard page uses a skeleton loading view while auth bootstrap and location context are still resolving.
+- Offline login can restore user identity without network, but location-dependent dashboard widgets still require previously cached location memberships.
 - On active `locationId` switch, non-active location documents are pruned from RxDB collections (`tickets`, `ticketActivities`, `ticketComments`, `ticketAttachments`, `paymentRecords`, `outbox`, `pendingAttachmentUploads`) and stale sync checkpoints are removed.
 - Logout workflow clears sync metadata and recreates a fresh local RxDB instance for safe same-tab re-login.
 - Dispatch map view is implemented with Leaflet + OpenStreetMap tiles.
@@ -102,7 +112,7 @@
 
 ## 8. Error Handling
 - Auth failures: `401 Unauthorized`.
-- Auth rate-limit exceeded: `429 Too Many Requests`.
+- Auth rate-limit exceeded: `429 Too Many Requests` with message body `Too Many Requests`.
 - Missing location context: `400 Bad Request` (`x-location-id` absent).
 - Permission and membership violations: `403 Forbidden`.
 - Missing domain object: `404 Not Found`.
@@ -119,7 +129,7 @@
   - refresh token cookie is `httpOnly`, path-scoped to `/auth`.
   - refresh token cookie `sameSite` attribute is controlled by `COOKIE_SAME_SITE` (default `lax`; use `none` for cross-site frontend/backend).
   - refresh token cookie `secure` attribute is controlled by `COOKIE_SECURE` (fallback to `NODE_ENV === production`); `SameSite=None` forces `secure=true`.
-  - auth endpoints `/auth/login` and `/auth/refresh` are protected by request throttling.
+  - auth endpoints `/auth/login` and `/auth/refresh` are protected by request throttling in `production`; non-production environments skip throttling for local/dev workflows.
 - Performance:
   - location/update-time indexes for sync and listing patterns.
   - bounded payloads via `GET /tickets` offset pagination and `POST /sync/pull` cursor pagination.
@@ -128,6 +138,8 @@
   - Dockerized local stack with separate containers for web/api/postgres.
   - Default local container endpoints: web `http://localhost:3010`, API `http://localhost:3011`, Postgres `localhost:5433`.
   - Local `docker/docker-compose.yml` runs `web` in `nuxt dev` mode with bind-mounted sources, so HMR works by default.
+  - Web container reads root `../.env` via `env_file`, including `NUXT_PUBLIC_ENABLE_DEV_OFFLINE` for offline testing toggles.
+  - Local `docker/docker-compose.yml` sets API `NODE_ENV=development`, so throttling is skipped for local iterative auth testing.
   - API/Web images are built via multi-stage Dockerfiles to keep runtime layers lean.
   - Docker build context excludes heavy local artifacts via `.dockerignore`.
   - Single-command monorepo dev workflow via Turbo.

@@ -245,6 +245,7 @@ Sliding window counter (Redis or in-memory with TTL for MVP).
 ```
 
 - Return `429 Too Many Requests` with `Retry-After` header.
+- In local/dev profiles (`NODE_ENV != production`) API throttling can be skipped to avoid blocking iterative testing.
 - Login: after 5 failed attempts for a specific email, progressive delay (1s, 2s, 4s, 8s...).
 - Never lock accounts permanently — account lockout is a DoS vector.
 - Log all rate-limit hits with IP + endpoint for monitoring.
@@ -305,6 +306,8 @@ Sliding window counter (Redis or in-memory with TTL for MVP).
 - Route guard behavior: all non-public app routes redirect unauthenticated users to `/login?redirect=<original-path>`.
 - If access token refresh fails on an authenticated page request, client redirects to `/login?redirect=<current-path>`.
 - After successful sign-in, client immediately navigates to `redirect` target (or `/dashboard`) and preloads locations in background (location fetch failure must not block navigation).
+- Offline sign-in fallback is supported: if network login fails while browser is offline, client can verify credentials against a local salted verifier created from the last successful online login on this browser.
+- Offline sign-in only restores location context when memberships were previously cached (`jtrack.locationMemberships`); otherwise dashboard renders without location-bound widgets until reconnect.
 - If protected-route location bootstrap fails in middleware, session state is cleared and client returns to `/login?redirect=<current-path>` to avoid blank screen states.
 - After signup: redirect to "Check your email" screen with email displayed and "Resend" button (rate-limited to 1 per 60s)
 - After password reset request: same "Check your email" screen

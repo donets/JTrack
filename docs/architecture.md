@@ -71,12 +71,22 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 ### 6.1 Web App
 - Nuxt 4 (Vue 3) for UI and routing.
 - RxDB/Dexie as local reactive storage.
+- Local/dev runtime proactively unregisters service workers and clears PWA caches by default to avoid stale client bundles after schema/auth middleware updates; this reset can be disabled for offline testing via `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true`, which registers a dedicated lightweight dev service worker (`/dev-offline-sw.js`) for SPA shell + static asset caching.
 - Global route middleware protects non-public routes and redirects unauthenticated users to `/login?redirect=<target>`.
+  - Route guard bootstrap (`auth.refresh` + location load) is non-blocking so app shell and page skeletons can render immediately.
+  - Middleware revalidates the current route after bootstrap/load completion to apply final auth/location redirects.
+- Auth bootstrap and refresh calls are deduplicated in the Pinia store to prevent parallel `/auth/refresh` bursts (and throttle `429` cascades) on startup.
+- Persisted user snapshot is not trusted before session revalidation when online; when browser is offline, middleware allows snapshot-backed shell access to avoid redirecting to uncached auth chunks.
+- Login also supports offline credential verification: after a successful online login, client stores a salted local verifier (`jtrack.offlineLogin`) derived from email+password via WebCrypto PBKDF2 and can authenticate offline without server roundtrip.
+- In `NUXT_PUBLIC_ENABLE_DEV_OFFLINE=true` mode, auth middleware suppresses route redirects while offline to keep cached SPA shell reachable even without a live token refresh.
+- Location memberships are cached in local storage and restored during offline bootstrap, so active location context can survive offline reloads.
 - RxDB v16 document writes use `incrementalPatch`/`incrementalModify` (not `atomicPatch`) for compatibility.
 - Logout flow destroys local RxDB storage and immediately recreates a clean instance for same-tab re-login safety.
 - Ticket detail timeline is composed on client from `ticketActivities` and `ticketComments` streams via `useTicketActivity`.
 - Ticket detail checklist toggles are persisted through ticket patch updates (offline-first) and synchronized via outbox.
 - If RxDB startup hits schema mismatch (`DB6`), client resets local IndexedDB and recreates collections to recover startup, then rehydrates via sync.
+- RxDB primary DB name is schema-epoch versioned (`jtrack_crm_v2`) to avoid reopening incompatible legacy schema state.
+- If RxDB `DB6` persists after reset (blocked stale handles), client falls back to recovery DB names (`jtrack_crm_v2_recovery`, then unique emergency suffix) to unblock startup and rehydrate via sync.
 - Outbox pattern:
   - local mutation first,
   - enqueue operation,
@@ -88,6 +98,7 @@ For local Docker development, `docker/docker-compose.yml` runs the `web` service
 - Activity timeline renders author avatars and relative timestamps, and allows users to soft-delete their own comments.
 - `/tickets` view integrates `all`, `board`, `calendar`, and `map` tabs with shared filters and query-param state (`view=`).
 - Tickets list `all` tab includes explicit loading, empty, filtered-empty, and recoverable error states.
+- Tickets route renders a page-level skeleton while auth/location context or initial local subscription state is still resolving.
 - App shell startup is non-blocking: sync bootstrap runs in background so layout/sidebar/topbar render immediately on route load.
 - Dashboard route renders a dedicated skeleton state while auth/location role context is resolving.
 - Mobile ticket detail includes compact back-header, quick action buttons (start/navigate/call), and collapsible details/description/comments sections.
