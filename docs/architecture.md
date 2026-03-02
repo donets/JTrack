@@ -171,7 +171,7 @@ sequenceDiagram
     - Uses Render Postgres `jtrack-db`.
     - Uses Dockerfile `CMD` for startup (apply Prisma migrations, optional demo seed, then start API).
     - API port resolution supports `API_PORT` and falls back to Render `PORT`.
-  - Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json`
+- Frontend (Vercel): `/Users/vlad/Projects/JTrack/vercel.json` and `/Users/vlad/Projects/JTrack/apps/web/vercel.json`
     - Builds static Nuxt output via `pnpm --filter @jtrack/web build:mobile`.
     - Publishes `apps/web/.output/public`.
     - Root route `/` is explicitly prerendered in Nuxt route rules to guarantee static entrypoint generation.
@@ -179,6 +179,7 @@ sequenceDiagram
     - App routes (`/login`, `/dashboard`, etc.) are served via SPA rewrite fallback and are not prerendered to avoid route payload fetches (`/_payload.json`) on client navigation.
     - Nuxt payload extraction is disabled in web config to prevent runtime `/_payload.json` requests in static SPA mode.
     - SPA fallback rewrite to `/index.html`.
+    - Duplicate Vercel config is kept in `apps/web/vercel.json` to preserve rewrites when Vercel project `Root Directory` is set to `apps/web`.
 - Production target:
   - stateless API instances behind load balancer,
   - managed PostgreSQL,
